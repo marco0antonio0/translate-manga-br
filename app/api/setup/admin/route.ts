@@ -13,6 +13,8 @@ function asText(value: unknown) {
 }
 
 function isLocalSetupRequest(request: Request) {
+  if (process.env.ALLOW_REMOTE_SETUP === '1') return true
+
   const forwardedFor = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
   if (forwardedFor && forwardedFor !== '127.0.0.1' && forwardedFor !== '::1') return false
 
