@@ -5,6 +5,8 @@ import { Loader2 } from 'lucide-react'
 import LoginPageClient from './page-client'
 import { authController } from '@/lib/backend/auth/auth.module'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Tradutor de Manga Online: Login e Inicio Rapido',
   description:

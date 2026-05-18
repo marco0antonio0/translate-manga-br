@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import SetupPageClient from './page-client'
 import { authController } from '@/lib/backend/auth/auth.module'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Configuração inicial',
   description: 'Configuração inicial do administrador do sistema.',
