@@ -18,8 +18,17 @@ function mapUser(row: any): LocalUser {
 
 export class AuthRepository {
   hasAnyUser() {
-    const row = db.prepare('SELECT COUNT(1) AS total FROM users').get() as { total?: number } | undefined
-    return Number(row?.total ?? 0) > 0
+    try {
+      const row = db.prepare('SELECT COUNT(1) AS total FROM users').get() as
+        | { total?: number }
+        | undefined
+      return Number(row?.total ?? 0) > 0
+    } catch (error: any) {
+      if (error?.code === 'SQLITE_ERROR' && String(error?.message ?? '').includes('no such table')) {
+        return false
+      }
+      throw error
+    }
   }
 
   createInitialAdmin(name: string, email: string, password: string) {
