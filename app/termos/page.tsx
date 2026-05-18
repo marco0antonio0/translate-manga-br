@@ -37,7 +37,6 @@ export default function TermosPage() {
 
         <div className="space-y-8 text-sm text-muted-foreground leading-relaxed">
 
-          {/* 1 */}
           <section>
             <h2 className="text-base font-semibold text-foreground mb-2">1. Sobre o Projeto</h2>
             <p>
@@ -55,7 +54,6 @@ export default function TermosPage() {
             </p>
           </section>
 
-          {/* 2 */}
           <section>
             <h2 className="text-base font-semibold text-foreground mb-2">2. Aceitação dos Termos</h2>
             <p>
@@ -69,7 +67,6 @@ export default function TermosPage() {
             </ul>
           </section>
 
-          {/* 3 */}
           <section>
             <h2 className="text-base font-semibold text-foreground mb-2">3. Modelo Gratuito e Open Source</h2>
             <p>
@@ -86,7 +83,6 @@ export default function TermosPage() {
             </p>
           </section>
 
-          {/* 4 */}
           <section>
             <h2 className="text-base font-semibold text-foreground mb-2">4. Conteúdo Enviado pelo Usuário e Direitos Autorais</h2>
             <p>
@@ -111,7 +107,6 @@ export default function TermosPage() {
             </p>
           </section>
 
-          {/* 5 */}
           <section>
             <h2 className="text-base font-semibold text-foreground mb-2">5. Uso Permitido</h2>
             <p>O usuário poderá utilizar o MangaIOTranslate para:</p>
@@ -123,7 +118,6 @@ export default function TermosPage() {
             </ul>
           </section>
 
-          {/* 6 */}
           <section>
             <h2 className="text-base font-semibold text-foreground mb-2">6. Uso Proibido</h2>
             <p>É expressamente vedado utilizar este software para:</p>
@@ -136,7 +130,6 @@ export default function TermosPage() {
             </ul>
           </section>
 
-          {/* 7 */}
           <section>
             <h2 className="text-base font-semibold text-foreground mb-2">7. Armazenamento Local e Perda de Dados</h2>
             <p>
@@ -153,7 +146,6 @@ export default function TermosPage() {
             </ul>
           </section>
 
-          {/* 8 */}
           <section>
             <h2 className="text-base font-semibold text-foreground mb-2">8. Isenção de Responsabilidade</h2>
             <p>
@@ -172,7 +164,6 @@ export default function TermosPage() {
             </ul>
           </section>
 
-          {/* 9 — Privacidade */}
           <section>
             <h2 className="text-base font-semibold text-foreground mb-2">9. Política de Privacidade</h2>
             <p>
@@ -225,7 +216,6 @@ export default function TermosPage() {
             </p>
           </section>
 
-          {/* 10 */}
           <section>
             <h2 className="text-base font-semibold text-foreground mb-2">10. Alterações nos Termos</h2>
             <p>
@@ -234,7 +224,6 @@ export default function TermosPage() {
             </p>
           </section>
 
-          {/* 11 */}
           <section>
             <h2 className="text-base font-semibold text-foreground mb-2">11. Lei Aplicável</h2>
             <p>

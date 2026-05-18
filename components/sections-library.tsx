@@ -484,7 +484,6 @@ export function SectionsLibrary() {
           continue
         }
       } catch {
-        // silencioso
       }
 
       if (!Number.isFinite(section.images_count) || section.images_count <= 0) continue
@@ -509,7 +508,6 @@ export function SectionsLibrary() {
         localStorage.setItem(`${SECTION_READ_LS_PREFIX}${section.id}`, 'done')
         localDoneSectionIds.add(String(section.id))
       } catch {
-        // silencioso: leitura local pode falhar em casos de JSON inválido
       }
     }
 
@@ -555,14 +553,12 @@ export function SectionsLibrary() {
             try {
               localStorage.setItem(`${SECTION_READ_LS_PREFIX}${id}`, 'done')
             } catch {
-              // silencioso
             }
           }
           return next
         })
       })
       .catch(() => {
-        // silencioso — estado local já foi aplicado
       })
   }, [sections])
 
@@ -747,23 +743,18 @@ export function SectionsLibrary() {
 
   return (
     <div className="space-y-4">
-      {/* CTA — Nova Tradução */}
       <Link href="/inicio/secoes/nova" data-tour="new-section">
         <div className="relative cursor-pointer rounded-xl overflow-hidden border border-primary/30 hover:border-primary/60 transition-all duration-300 group bg-card">
-          {/* brilho de fundo no hover */}
           <div className="absolute inset-0 bg-linear-to-br from-primary/8 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-          {/* faixa superior */}
           <div className="h-0.75 w-full bg-linear-to-r from-primary/40 via-primary to-primary/40" />
 
           <div className="px-5 py-4 sm:px-6 sm:py-5 flex items-center gap-4 sm:gap-5">
-            {/* ícone */}
             <div className="relative shrink-0">
               <div className="rounded-2xl bg-primary/15 group-hover:bg-primary/22 p-3.5 transition-colors duration-300">
                 <Upload className="h-6 w-6 text-primary" />
               </div>
             </div>
 
-            {/* texto */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-base font-semibold text-foreground group-hover:text-primary transition-colors duration-200">
@@ -781,7 +772,6 @@ export function SectionsLibrary() {
               </p>
             </div>
 
-            {/* botão */}
             <div className="shrink-0 flex items-center gap-2 rounded-lg border border-primary/35 bg-primary/10 px-3.5 py-2 text-sm font-medium text-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all duration-200">
               <PlusSquare className="h-4 w-4" />
               <span className="hidden sm:inline">Criar</span>

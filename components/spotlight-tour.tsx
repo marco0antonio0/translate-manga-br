@@ -265,7 +265,6 @@ export function SpotlightTour({
   // ── Tooltip content (shared between mobile and desktop) ──
   const tooltipContent = (
     <div className="rounded-xl border border-border bg-card shadow-2xl overflow-hidden">
-      {/* Progress bar */}
       <div className="h-0.75 w-full bg-muted">
         <div
           className="h-full bg-primary transition-all duration-500"
@@ -274,7 +273,6 @@ export function SpotlightTour({
       </div>
 
       <div className="p-4 flex flex-col gap-3">
-        {/* Header */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-start gap-2.5 min-w-0">
             <div className={cn(
@@ -305,7 +303,6 @@ export function SpotlightTour({
           {currentStep.description}
         </p>
 
-        {/* Keyboard hints — desktop only */}
         {!mobile && (
           <div className="pl-7 flex items-center gap-1.5 flex-wrap">
             {(['←', '→', 'Esc'] as const).map((key, i) => (
@@ -320,7 +317,6 @@ export function SpotlightTour({
           </div>
         )}
 
-        {/* Dots + navigation */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 pl-7">
             {steps.map((_, i) => (
@@ -373,7 +369,6 @@ export function SpotlightTour({
 
   const overlay = (
     <>
-      {/* SVG Backdrop with spotlight cutout */}
       <svg
         className="tour-backdrop-in"
         style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', zIndex: 9997, pointerEvents: 'none' }}
@@ -398,10 +393,8 @@ export function SpotlightTour({
         <rect x="0" y="0" width="100%" height="100%" fill="rgba(0,0,0,0.78)" mask="url(#tour-spotlight-mask)" />
       </svg>
 
-      {/* Click-to-skip backdrop */}
       <div style={{ position: 'fixed', inset: 0, zIndex: 9998 }} onClick={handleSkip} />
 
-      {/* Spotlight pulse ring */}
       {rect && (
         <div
           className="tour-pulse-ring"
@@ -436,11 +429,9 @@ export function SpotlightTour({
           onClick={e => e.stopPropagation()}
         >
           <div className="rounded-t-2xl border-t border-x border-border bg-card shadow-2xl overflow-hidden">
-            {/* drag handle */}
             <div className="flex justify-center pt-2.5 pb-1">
               <div className="w-10 h-1 rounded-full bg-muted-foreground/20" />
             </div>
-            {/* Progress bar */}
             <div className="h-0.75 w-full bg-muted">
               <div
                 className="h-full bg-primary transition-all duration-500"
@@ -448,7 +439,6 @@ export function SpotlightTour({
               />
             </div>
             <div className="p-4 flex flex-col gap-3">
-              {/* Header */}
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-start gap-2.5 min-w-0 flex-1">
                   <div className={cn(
@@ -478,7 +468,6 @@ export function SpotlightTour({
                 {currentStep.description}
               </p>
 
-              {/* Dots + navigation */}
               <div className="flex items-center justify-between gap-3 pt-1">
                 <div className="flex items-center gap-2 pl-7">
                   {steps.map((_, i) => (
@@ -525,7 +514,6 @@ export function SpotlightTour({
           style={{ ...desktopStyle, zIndex: 10000 }}
           onClick={e => e.stopPropagation()}
         >
-          {/* Arrow pointing to element */}
           {desktopArrow && (
             <div
               style={{

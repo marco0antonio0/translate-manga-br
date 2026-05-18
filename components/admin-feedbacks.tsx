@@ -124,7 +124,6 @@ export function AdminFeedbacks() {
 
       {data && (
         <>
-          {/* Resumo */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { label: 'Total', value: data.total_feedbacks },
@@ -139,7 +138,6 @@ export function AdminFeedbacks() {
             ))}
           </div>
 
-          {/* Problemas reportados */}
           {reports.length > 0 && (
             <Card className="overflow-hidden">
               <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-destructive/5">
@@ -177,7 +175,6 @@ export function AdminFeedbacks() {
             </Card>
           )}
 
-          {/* Avaliações */}
           {ratings.length > 0 && (
             <Card className="overflow-hidden">
               <div className="flex items-center gap-2 px-4 py-3 border-b border-border">

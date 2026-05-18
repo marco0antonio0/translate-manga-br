@@ -1497,7 +1497,6 @@ export function SectionCreateForm() {
             </div>
           </div>
 
-          {/* Toggle PDF / PDF em Massa / Imagens */}
           <div className="flex rounded-md border border-border overflow-hidden w-fit">
             <button
               type="button"
@@ -1587,7 +1586,6 @@ export function SectionCreateForm() {
             </div>
           )}
 
-          {/* Inputs ocultos */}
           <Input
             ref={fileInputRef}
             type="file"
@@ -1612,7 +1610,6 @@ export function SectionCreateForm() {
             disabled={isCreatingSection || isPreparingUploads || uploadMode !== 'images'}
           />
 
-          {/* Zona de drop */}
           {(() => {
             const pdfSingleBlocked = uploadMode === 'pdf' && uploadItems.length > 0
             const pdfBatchBlocked =
@@ -1839,7 +1836,6 @@ export function SectionCreateForm() {
         </Card>
 
         <Card data-tour="lang-config" className="overflow-hidden">
-          {/* Header sempre visível */}
           <div className="p-4 space-y-3">
             <button
               type="button"
@@ -1852,7 +1848,6 @@ export function SectionCreateForm() {
                 : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />}
             </button>
 
-            {/* Idiomas e provedor — sempre visíveis */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <div className="space-y-1">
                 <label className="text-sm font-medium text-foreground" htmlFor="section-source-lang">
@@ -2049,7 +2044,6 @@ export function SectionCreateForm() {
             </div>
           </div>
 
-          {/* Opções avançadas — colapsáveis */}
           {configExpanded && (
             <div className="px-4 pb-4 border-t border-border pt-4 space-y-3">
               <div className="space-y-2">

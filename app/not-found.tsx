@@ -5,13 +5,11 @@ import { ArrowRight, Home, Search } from 'lucide-react'
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center px-4">
-      {/* Ambient glow */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(240,199,72,0.08),transparent)]"
       />
 
-      {/* Floating Japanese chars */}
       <div className="pointer-events-none fixed inset-0 select-none overflow-hidden">
         {(['404', '？', '迷', '子', '…'] as const).map((char, i) => (
           <span
@@ -30,7 +28,6 @@ export default function NotFound() {
       </div>
 
       <div className="relative z-10 flex flex-col items-center text-center max-w-md">
-        {/* Logo */}
         <Link href="/" className="mb-8">
           <Image
             src="/logo.png"
@@ -41,7 +38,6 @@ export default function NotFound() {
           />
         </Link>
 
-        {/* 404 */}
         <p className="text-8xl font-black text-amber-400 leading-none">404</p>
 
         <h1 className="mt-4 text-2xl font-bold text-white">
@@ -52,7 +48,6 @@ export default function NotFound() {
           Volte para o início e continue traduzindo seus mangás favoritos.
         </p>
 
-        {/* CTAs */}
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/"
@@ -70,7 +65,6 @@ export default function NotFound() {
           </Link>
         </div>
 
-        {/* Sugestões */}
         <div className="mt-10 w-full rounded-2xl border border-white/10 bg-zinc-900/60 p-5 text-left backdrop-blur-sm">
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-zinc-500">
             <Search className="h-3.5 w-3.5" />

@@ -340,7 +340,6 @@ export function AdminSectionsQueue() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <Card className="p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -369,7 +368,6 @@ export function AdminSectionsQueue() {
         </div>
       </Card>
 
-      {/* Feedback */}
       {error && (
         <Card className="p-3 flex items-center gap-2 text-sm text-destructive bg-destructive/10 border-destructive/30">
           <AlertCircle className="h-4 w-4 shrink-0" />
@@ -382,7 +380,6 @@ export function AdminSectionsQueue() {
         </Card>
       )}
 
-      {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-6 gap-3">
         <Card className="p-4 flex items-center gap-3">
           <div className="rounded-xl bg-primary/10 p-2.5 shrink-0">
@@ -444,7 +441,6 @@ export function AdminSectionsQueue() {
         </Card>
       </div>
 
-      {/* Tabela / Cards */}
       <Card className="overflow-hidden p-0">
         {isLoadingQueue && !queueData ? (
           <div className="flex items-center justify-center py-12 text-muted-foreground">
@@ -457,7 +453,6 @@ export function AdminSectionsQueue() {
           </div>
         ) : (
           <>
-            {/* Mobile: cards */}
             <div className="divide-y divide-border lg:hidden">
               {queueData.items.map((item) => {
                 const normalizedJobStatus = normalizeStatus(item.jobStatus)
@@ -557,7 +552,6 @@ export function AdminSectionsQueue() {
               })}
             </div>
 
-            {/* Desktop: tabela */}
             <div className="hidden lg:block overflow-x-auto">
               <Table>
                 <TableHeader>

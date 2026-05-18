@@ -1464,7 +1464,6 @@ function OcrTextOverlay({
     try {
       pointerTarget.setPointerCapture(event.pointerId)
     } catch {
-      // ignore pointer-capture failures
     }
 
     const pointerId = event.pointerId
@@ -1528,7 +1527,6 @@ function OcrTextOverlay({
       try {
         pointerTarget.releasePointerCapture(pointerId)
       } catch {
-        // ignore
       }
     }
 
@@ -1550,7 +1548,6 @@ function OcrTextOverlay({
     try {
       pointerTarget.setPointerCapture(event.pointerId)
     } catch {
-      // ignore pointer-capture failures in unsupported browsers
     }
 
     const overlayElement = overlayRef.current
@@ -1627,7 +1624,6 @@ function OcrTextOverlay({
       try {
         pointerTarget.releasePointerCapture(pointerId)
       } catch {
-        // ignore
       }
     }
 
@@ -1913,7 +1909,6 @@ function OcrTextOverlay({
           try {
             pointerTarget.setPointerCapture(event.pointerId)
           } catch {
-            // ignore pointer-capture failures
           }
 
           const pointerId = event.pointerId
@@ -2016,7 +2011,6 @@ function OcrTextOverlay({
             try {
               pointerTarget.releasePointerCapture(pointerId)
             } catch {
-              // ignore
             }
           }
 
@@ -2073,7 +2067,6 @@ function OcrTextOverlay({
           try {
             pointerTarget.setPointerCapture(pointerId)
           } catch {
-            // ignore pointer-capture failures
           }
 
           onSelectItem?.(imageId, item.id)
@@ -2102,7 +2095,6 @@ function OcrTextOverlay({
             try {
               pointerTarget.releasePointerCapture(pointerId)
             } catch {
-              // ignore
             }
           }
 
@@ -2735,7 +2727,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
         setOverlayDragEnabledTarget(null)
         overlayStateLastSavedRef.current = JSON.stringify(buildOverlayStatePayload(parsed))
       } catch {
-        // silencioso: fallback para estado local padrão
       } finally {
         if (!cancelled) {
           setIsOverlayStateReady(true)
@@ -2837,7 +2828,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
         const parsedRole = parsedRoleValue === null ? null : Math.floor(parsedRoleValue)
         setUserRole(parsedRole)
       } catch {
-        // silencioso — role permanece com fallback de segurança
       }
     }
     void fetchRoleAndPlan()
@@ -3088,7 +3078,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
 
           overlayStateLastSavedRef.current = serializedToPersist
         } catch {
-          // silencioso: mantém estado local e tenta salvar na próxima mudança
         }
       })()
     }, 700)
@@ -3130,7 +3119,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
         setReadPages(new Set(ids))
       }
     } catch {
-      // silencioso
     }
   }, [sectionId])
 
@@ -3146,7 +3134,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
       try {
         localStorage.setItem(`${READ_PAGES_LS_PREFIX}${sectionId}`, JSON.stringify([...next]))
       } catch {
-        // silencioso
       }
       return next
     })
@@ -3192,7 +3179,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
           try {
             localStorage.setItem(`${READ_PAGES_LS_PREFIX}${sectionId}`, JSON.stringify([...next]))
           } catch {
-            // silencioso
           }
 
           return next
@@ -3224,7 +3210,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
         localStorage.removeItem(`${SECTION_READ_LS_PREFIX}${sectionId}`)
       }
     } catch {
-      // silencioso
     }
 
     if (typeof window !== 'undefined') {
@@ -3235,7 +3220,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
           })
         )
       } catch {
-        // silencioso
       }
     }
 
@@ -3855,7 +3839,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
     try {
       pointerTarget.setPointerCapture(event.pointerId)
     } catch {
-      // ignore pointer-capture failures
     }
 
     const pointerId = event.pointerId
@@ -3889,7 +3872,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
       try {
         pointerTarget.releasePointerCapture(pointerId)
       } catch {
-        // ignore
       }
     }
 
@@ -4402,7 +4384,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
         },
       }))
     } catch {
-      // silencioso
     } finally {
       setOcrOverlayColorLoadingByImageId((prev) => ({ ...prev, [imageId]: false }))
     }
@@ -6694,7 +6675,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
                 )
               })}
 
-              {/* Card de conclusão — scroll mode */}
               {sectionImages.length > 0 && (
               <div className="w-full pt-8 pb-4 flex flex-col items-center gap-4 border-t border-border mt-4">
                 <div className="text-center space-y-1">
@@ -6860,7 +6840,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
           const hasQueueActionButtons = canShowProcessButton || canShowReprocessButton
           return (
         <div className="flex flex-col gap-2">
-          {/* Linha 1: navegação + ações secundárias */}
           <div className="flex items-center gap-2">
             <Button asChild variant="outline" size="sm" className="shrink-0">
               <Link href={backToLibraryHref}>
@@ -7619,7 +7598,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
                           </div>
                         )}
 
-                        {/* Clique na imagem abre a leitura */}
                         <button
                           type="button"
                           onClick={() => openReadingPage(idx)}
@@ -7684,7 +7662,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
 
           {pageEndSuggestions.length > 0 && (
             <div className="space-y-2">
-              {/* Atual → Próximo */}
               <div className="rounded-2xl border border-border bg-card overflow-hidden">
                 <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
                   <span className="text-[11px] text-muted-foreground">Lendo agora</span>
@@ -7704,7 +7681,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
                 </Link>
               </div>
 
-              {/* Carrossel */}
               <div className="overflow-hidden rounded-2xl border border-border bg-card">
                 <div className="flex items-center justify-between border-b border-border px-4 py-3">
                   <div className="flex items-center gap-2">
@@ -7766,7 +7742,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
                     })}
                   </div>
 
-                  {/* Botão prev dentro da div */}
                   {suggestionsCanScrollLeft && (
                     <button
                       type="button"
@@ -7777,7 +7752,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
                     </button>
                   )}
 
-                  {/* Botão next dentro da div */}
                   {suggestionsCanScrollRight && (
                     <button
                       type="button"

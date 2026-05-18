@@ -56,7 +56,6 @@ export default function LoginPageClient() {
 
       } catch {
         setAuthCheckReason('')
-        // Segue para tela de login em caso de erro de rede
       } finally {
         window.clearTimeout(timeoutId)
         setIsCheckingSession(false)

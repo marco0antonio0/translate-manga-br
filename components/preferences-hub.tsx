@@ -809,11 +809,9 @@ export function PreferencesHub() {
           ) : null}
         </TabsList>
 
-        {/* ── Profile ── */}
         <TabsContent value="profile" className="space-y-4">
           <Card className="p-4 md:p-6">
             <div className="grid gap-6 md:grid-cols-[180px_minmax(0,1fr)]">
-              {/* Photo */}
               <div className="flex flex-col items-center gap-2">
                 <input
                   ref={fileInputRef}
@@ -851,7 +849,6 @@ export function PreferencesHub() {
                 </Button>
               </div>
 
-              {/* Fields */}
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="profile-name">Nome</Label>
@@ -1020,7 +1017,6 @@ export function PreferencesHub() {
           </TabsContent>
         ) : null}
 
-        {/* ── Categories ── */}
         <TabsContent value="categories" className="space-y-4">
           <Card className="space-y-4 p-4 md:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1036,7 +1032,6 @@ export function PreferencesHub() {
             </div>
 
             <div className="grid gap-5 xl:grid-cols-[280px_1fr]">
-              {/* Left panel */}
               <div className="space-y-3 rounded-lg border p-3">
                 <div className="flex gap-2">
                   <Input
@@ -1099,7 +1094,6 @@ export function PreferencesHub() {
                 </div>
               </div>
 
-              {/* Right panel */}
               {!selectedCategory ? (
                 <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">
                   <FolderTree className="mb-3 h-10 w-10 text-muted-foreground/40" />
@@ -1110,7 +1104,6 @@ export function PreferencesHub() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* Rename / delete */}
                   <Card className="space-y-3 p-4">
                     <div className="flex items-center justify-between gap-2">
                       <h3 className="text-sm font-semibold">Editar categoria</h3>
@@ -1156,7 +1149,6 @@ export function PreferencesHub() {
                     ) : null}
                   </Card>
 
-                  {/* Preferences */}
                   <Card className="space-y-5 p-4">
                     <div className="flex items-center justify-between gap-2">
                       <div>

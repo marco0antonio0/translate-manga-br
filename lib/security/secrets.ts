@@ -18,7 +18,6 @@ function keyMaterial() {
       }
     }
   } catch {
-    // fallback abaixo
   }
 
   const dir = path.dirname(KEY_FILE)

@@ -80,7 +80,6 @@ export function ReportModal({ open, sectionId, onClose }: ReportModalProps) {
           </div>
         ) : (
           <>
-            {/* Header */}
             <div className="relative bg-destructive/8 border-b border-border/50 px-6 pt-6 pb-5">
               <div className="flex items-start gap-3 pr-2">
                 <div className="rounded-xl bg-destructive/15 p-2.5 shrink-0">
@@ -101,7 +100,6 @@ export function ReportModal({ open, sectionId, onClose }: ReportModalProps) {
             </div>
 
             <div className="px-6 py-5 flex flex-col gap-5">
-              {/* Tipos de problema */}
               <div className="grid grid-cols-2 gap-2">
                 {PROBLEM_TYPES.map((type) => (
                   <button
@@ -121,7 +119,6 @@ export function ReportModal({ open, sectionId, onClose }: ReportModalProps) {
                 ))}
               </div>
 
-              {/* Descrição */}
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-foreground">
                   Descrição <span className="text-muted-foreground font-normal">(opcional)</span>
@@ -135,7 +132,6 @@ export function ReportModal({ open, sectionId, onClose }: ReportModalProps) {
                 />
               </div>
 
-              {/* Ações */}
               <div className="flex items-center gap-3">
                 <Button
                   type="button"

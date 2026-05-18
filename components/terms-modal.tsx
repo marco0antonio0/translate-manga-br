@@ -73,7 +73,6 @@ export function TermsModal({ open, onAccept }: TermsModalProps) {
           <DialogDescription>Aceite os termos para continuar</DialogDescription>
         </DialogHeader>
 
-        {/* ── Área rolável ── */}
         <div className="relative">
           <div
             ref={scrollRef}
@@ -81,7 +80,6 @@ export function TermsModal({ open, onAccept }: TermsModalProps) {
             className="overflow-y-auto px-6 pt-6 pb-4 space-y-4"
             style={{ maxHeight: 'calc(90dvh - 180px)' }}
           >
-            {/* Boas-vindas */}
             <div className="flex flex-col items-center text-center gap-3">
               <div className="rounded-2xl bg-primary/10 p-4">
                 <Languages className="h-10 w-10 text-primary" />
@@ -95,7 +93,6 @@ export function TermsModal({ open, onAccept }: TermsModalProps) {
               </div>
             </div>
 
-            {/* Destaques */}
             <div className="grid grid-cols-1 gap-2 pb-6">
               <div className="flex items-start gap-3 rounded-lg bg-muted/30 px-3 py-2.5">
                 <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
@@ -132,7 +129,6 @@ export function TermsModal({ open, onAccept }: TermsModalProps) {
             </div>
           </div>
 
-          {/* Indicador de scroll — fade + badge */}
           <div
             className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 transition-opacity duration-300"
             style={{ opacity: isAtBottom ? 0 : 1 }}
@@ -147,7 +143,6 @@ export function TermsModal({ open, onAccept }: TermsModalProps) {
           </div>
         </div>
 
-        {/* ── Aceite — sempre visível na base ── */}
         <div className="px-6 pb-6 pt-3 border-t border-border bg-background space-y-3">
           <label
             className={`flex items-start gap-3 cursor-pointer group rounded-lg p-2 transition-all ${

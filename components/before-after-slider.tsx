@@ -34,7 +34,6 @@ export function BeforeAfterSlider() {
       if (original) setOriginalImage(original)
       if (translated) setTranslatedImage(translated)
     } catch {
-      // ignore malformed storage data
     }
   }, [])
 
@@ -154,7 +153,6 @@ export function BeforeAfterSlider() {
 
   return (
     <div id="galeria-traducoes" className="rounded-t-2xl border border-white/10 bg-zinc-900/60 p-5 backdrop-blur-sm">
-      {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-semibold text-white">Galeria de Traduções</p>
         <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] text-zinc-500">
@@ -162,13 +160,11 @@ export function BeforeAfterSlider() {
         </span>
       </div>
 
-      {/* Labels */}
       <div className="mt-3 flex justify-between text-[11px] font-medium">
         <span className="text-zinc-500">Original</span>
         <span className="text-amber-400">Traduzido ✓</span>
       </div>
 
-      {/* Slider container */}
       <div
         ref={containerRef}
         onMouseDown={onMouseDown}
@@ -176,28 +172,22 @@ export function BeforeAfterSlider() {
         className="relative mt-2 overflow-hidden rounded-xl border border-white/10 select-none"
         style={{ cursor: isDragging ? 'col-resize' : 'ew-resize', aspectRatio: '572 / 1024' }}
       >
-        {/* Back layer: translated image (full width) */}
         <div className="absolute inset-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={translatedImage} alt="Mangá traduzido" className="h-full w-full object-cover" />
         </div>
 
-        {/* Front layer: original image clipped to `position`% from left */}
         <div
           className="absolute inset-0 overflow-hidden"
           style={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={originalImage} alt="Mangá original" className="h-full w-full object-cover" />
         </div>
 
-        {/* Divider line */}
         <div
           className="absolute top-0 bottom-0 w-px bg-amber-400 shadow-[0_0_8px_2px_rgba(240,199,72,0.5)]"
           style={{ left: `${position}%`, transform: 'translateX(-50%)' }}
         />
 
-        {/* Drag handle */}
         <div
           className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full border-2 border-amber-400 bg-zinc-950 shadow-lg shadow-amber-400/30"
           style={{ left: `${position}%` }}
@@ -208,21 +198,18 @@ export function BeforeAfterSlider() {
           </svg>
         </div>
 
-        {/* "Before" label badge */}
         {position > 12 && (
           <div className="pointer-events-none absolute left-2 top-2 rounded-md bg-zinc-950/90 px-2.5 py-1 text-xs font-bold text-white shadow-md">
             Antes
           </div>
         )}
 
-        {/* "After" label badge */}
         {position < 88 && (
           <div className="pointer-events-none absolute right-2 top-2 rounded-md bg-amber-400 px-2.5 py-1 text-xs font-bold text-amber-950 shadow-md">
             Depois
           </div>
         )}
 
-        {/* Hint overlay (fades after first interaction) */}
         {!hasInteracted && (
           <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-6 opacity-80">
             <div className="flex items-center gap-2 rounded-full border border-white/20 bg-zinc-950/80 px-3 py-1.5 text-[11px] text-zinc-300 backdrop-blur-sm">
@@ -236,12 +223,10 @@ export function BeforeAfterSlider() {
         )}
       </div>
 
-      {/* Attribution */}
       <p className="mt-3 text-[10px] leading-relaxed text-zinc-600">
         Quadrinho original gerado por IA apenas para fins demonstrativos. Tradução realizada pelo software <span className="text-zinc-500">MangaIOTranslate</span>. Nenhum conteúdo protegido por direitos autorais foi utilizado.
       </p>
 
-      {/* Progress indicator */}
       <div className="mt-2 flex items-center gap-2">
         <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/10">
           <div

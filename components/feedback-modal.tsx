@@ -80,7 +80,6 @@ export function FeedbackModal({ open, sectionId, onClose, onSubmitted }: Feedbac
           </div>
         ) : (
           <>
-            {/* ── Header com gradiente ── */}
             <div className="relative bg-linear-to-br from-primary/15 via-primary/8 to-transparent px-6 pt-6 pb-5 border-b border-border/50">
               <button
                 onClick={handleClose}
@@ -107,7 +106,6 @@ export function FeedbackModal({ open, sectionId, onClose, onSubmitted }: Feedbac
             </div>
 
             <div className="px-6 py-6 flex flex-col gap-6">
-              {/* ── Estrelas ── */}
               <div className="flex flex-col items-center gap-3">
                 <div
                   className="flex items-center gap-2"
@@ -143,7 +141,6 @@ export function FeedbackModal({ open, sectionId, onClose, onSubmitted }: Feedbac
                 </div>
               </div>
 
-              {/* ── Comentário ── */}
               {!showComment ? (
                 <button
                   type="button"
@@ -167,7 +164,6 @@ export function FeedbackModal({ open, sectionId, onClose, onSubmitted }: Feedbac
                 </div>
               )}
 
-              {/* ── Ações ── */}
               <div className="flex items-center gap-3">
                 <Button
                   type="button"

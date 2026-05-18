@@ -349,7 +349,6 @@ export function UsersManagement() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <Card className="p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -373,7 +372,6 @@ export function UsersManagement() {
         </div>
       </Card>
 
-      {/* Feedback */}
       {error && (
         <Card className="p-3 flex items-center gap-2 text-sm text-destructive bg-destructive/10 border-destructive/30">
           <AlertCircle className="h-4 w-4 shrink-0" />
@@ -386,7 +384,6 @@ export function UsersManagement() {
         </Card>
       )}
 
-      {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <Card className="p-4 flex items-center gap-3">
           <div className="rounded-xl bg-primary/10 p-2.5 shrink-0">
@@ -428,7 +425,6 @@ export function UsersManagement() {
         </Card>
       </div>
 
-      {/* Lista */}
       <Card className="overflow-hidden p-0">
         {isLoadingUsers ? (
           <div className="flex items-center justify-center py-12 text-muted-foreground">
@@ -442,7 +438,6 @@ export function UsersManagement() {
           </div>
         ) : (
           <>
-            {/* Mobile: cards */}
             <div className="divide-y divide-border lg:hidden">
               {sortedByGerado.map((user) => {
                 const pct = usagePercent(user.gerado, user.limite)
@@ -495,7 +490,6 @@ export function UsersManagement() {
               })}
             </div>
 
-            {/* Desktop: tabela */}
             <div className="hidden lg:block overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -569,7 +563,6 @@ export function UsersManagement() {
         )}
       </Card>
 
-      {/* Dialog — Limites */}
       <Dialog open={isLimitDialogOpen} onOpenChange={(open) => { if (!open) closeLimitDialog() }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -632,7 +625,6 @@ export function UsersManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog — Senha */}
       <Dialog open={isPasswordDialogOpen} onOpenChange={(open) => { if (!open) closePasswordDialog() }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
