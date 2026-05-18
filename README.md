@@ -133,6 +133,20 @@ npm run build      # build de produção
 npm run start      # start de produção
 ```
 
+## Configuração de tradução com OpenRouter
+
+Agora é possível adicionar um provider do OpenRouter para tradução aprimorada usando API key.
+
+Passos:
+1. Acesse `/inicio/preferencias` com usuário admin.
+2. Em OpenRouter, informe sua API key.
+3. Selecione o modelo/provider desejado para tradução.
+4. Salve a configuração e execute a tradução da seção normalmente.
+
+Observações:
+- A chave é armazenada de forma segura (criptografada em repouso).
+- Sem API key configurada, o projeto continua funcionando com os provedores já disponíveis.
+
 ## Como contribuir
 
 Contribuições são bem-vindas.

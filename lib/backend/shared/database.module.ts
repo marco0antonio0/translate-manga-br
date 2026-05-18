@@ -11,10 +11,12 @@ if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true })
 
 const db = new Database(dbFile)
 db.pragma('busy_timeout = 10000')
-db.pragma('journal_mode = WAL')
+
 const shouldBootstrapSchema = process.env.SKIP_DB_BOOTSTRAP !== '1'
 
 if (shouldBootstrapSchema) {
+  // This pragma writes to DB metadata; avoid running it during build-time module evaluation.
+  db.pragma('journal_mode = WAL')
   db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
