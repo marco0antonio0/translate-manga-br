@@ -57,6 +57,9 @@ python-api/**/*.pyc
 python-api/**/*.pyo
 python-api/models/.hf-cache/
 python-api/models/*.onnx
+!python-api/models/yolo.onnx
+!python-api/models/paddleocr_det.onnx
+!python-api/models/paddleocr_rec.onnx
 python-api/processing_logs/
 python-api/.pytest_cache/
 python-api/.ruff_cache/
