@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import os
 import sys
 from pathlib import Path
@@ -20,6 +21,7 @@ app = FastAPI(
     description="API para detectar baloes, extrair OCR, traduzir e devolver imagem traduzida.",
     version="1.0.0",
 )
+logger = logging.getLogger(__name__)
 _ocr_keepalive_task: asyncio.Task | None = None
 
 if settings.enable_cors:
@@ -44,8 +46,10 @@ async def _ocr_keepalive_loop() -> None:
     interval = max(20, int(settings.ocr_keepalive_interval_sec))
     while True:
         await asyncio.sleep(interval)
-        # Mantém os modelos residentes com warmup periódico.
-        await asyncio.to_thread(ocr_service.warmup, float(settings.ocr_keepalive_timeout_sec))
+        try:
+            await asyncio.to_thread(ocr_service.warmup, float(settings.ocr_keepalive_timeout_sec))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("OCR keepalive warmup failed: %s", exc)
 
 
 @app.on_event("startup")
@@ -53,7 +57,10 @@ async def _startup_ocr_warmup() -> None:
     global _ocr_keepalive_task
 
     if settings.ocr_warmup_on_startup:
-        await asyncio.to_thread(ocr_service.warmup, float(settings.ocr_keepalive_timeout_sec))
+        try:
+            await asyncio.to_thread(ocr_service.warmup, float(settings.ocr_keepalive_timeout_sec))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("OCR startup warmup failed, continuing without pre-warm: %s", exc)
 
     if settings.ocr_keepalive_enabled:
         _ocr_keepalive_task = asyncio.create_task(_ocr_keepalive_loop())
