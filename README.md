@@ -147,6 +147,34 @@ npm run build      # build de produção
 npm run start      # start de produção
 ```
 
+## Migrações SQLite (versionadas)
+
+O schema do banco local é gerenciado por migrações versionadas em `lib/backend/shared/migrations/`.
+
+- Tabela de controle: `schema_migrations`
+- Aplicação: automática no bootstrap da aplicação
+- Compatibilidade: bancos legados sem `schema_migrations` são atualizados sem perda de dados (migrações idempotentes com `IF NOT EXISTS`)
+
+### Fluxo em instalação nova
+
+- O app cria `storage/local.sqlite`
+- Aplica todas as migrações pendentes em ordem de versão
+
+### Fluxo em upgrade
+
+- Ao iniciar uma versão nova, o app aplica apenas migrações ainda não registradas em `schema_migrations`
+
+### Backup recomendado antes de upgrade
+
+```bash
+cp storage/local.sqlite storage/local.sqlite.bak.$(date +%Y%m%d-%H%M%S)
+```
+
+### Skip de bootstrap/migração (cenários especiais)
+
+- Mantido o comportamento via `SKIP_DB_BOOTSTRAP=1`
+- Uso recomendado apenas para cenários controlados (testes específicos, diagnóstico)
+
 ## Configuração de tradução com OpenRouter
 
 Agora é possível adicionar um provider do OpenRouter para tradução aprimorada usando API key.
