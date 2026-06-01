@@ -38,6 +38,7 @@ interface PreparedUploadItem {
   sourceName: string
   files: File[]
   rawPdf?: File
+  previewUrl?: string
 }
 
 type BatchPdfUploadPhase = 'pending' | 'preparing' | 'uploading' | 'assigning-category' | 'success' | 'error'
@@ -470,6 +471,36 @@ async function extractPdfToImages(
   return results.filter((file): file is File => Boolean(file))
 }
 
+async function extractPdfFirstPageThumbnail(pdfFile: File) {
+  const pdfjsLib = await getPdfjsLib()
+  const arrayBuffer = await pdfFile.arrayBuffer()
+  const pdf = await pdfjsLib.getDocument({
+    data: arrayBuffer,
+    disableFontFace: true,
+    useSystemFonts: false,
+  }).promise
+
+  try {
+    const page = await pdf.getPage(1)
+    const baseViewport = page.getViewport({ scale: 1 })
+    const targetWidth = 140
+    const scale = Math.max(0.2, targetWidth / Math.max(1, baseViewport.width))
+    const viewport = page.getViewport({ scale })
+
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('2d')
+    if (!context) return null
+
+    canvas.width = Math.max(1, Math.floor(viewport.width))
+    canvas.height = Math.max(1, Math.floor(viewport.height))
+    await page.render({ canvasContext: context, viewport }).promise
+    return canvas.toDataURL('image/jpeg', 0.8)
+  } finally {
+    pdf.cleanup()
+    pdf.destroy()
+  }
+}
+
 function normalizeSectionCategoryOptions(value: unknown) {
   if (!Array.isArray(value)) return [] as string[]
 
@@ -514,6 +545,7 @@ export function SectionCreateForm() {
   const imageInputRef = useRef<HTMLInputElement | null>(null)
   const sectionCategoryTriggerRef = useRef<HTMLButtonElement | null>(null)
   const sectionCategorySkipCloseCommitRef = useRef(false)
+  const uploadItemsRef = useRef<PreparedUploadItem[]>([])
 
   const [uploadMode, setUploadMode] = useState<UploadMode>('pdf')
   const [name, setName] = useState('')
@@ -548,6 +580,12 @@ export function SectionCreateForm() {
   const [isDeleteCategoryDialogOpen, setIsDeleteCategoryDialogOpen] = useState(false)
   const [categoryToDelete, setCategoryToDelete] = useState('')
   const [isDeletingCategory, setIsDeletingCategory] = useState(false)
+
+  const revokePreviewUrl = (url?: string) => {
+    if (url && url.startsWith('blob:')) {
+      URL.revokeObjectURL(url)
+    }
+  }
 
   const sourceLanguageOptions = STATIC_LANGUAGES
   const targetLanguageOptions = STATIC_LANGUAGES.filter((o) => o.code !== 'auto')
@@ -588,6 +626,9 @@ export function SectionCreateForm() {
     () => uploadItems.flatMap((item) => item.files),
     [uploadItems]
   )
+  useEffect(() => {
+    uploadItemsRef.current = uploadItems
+  }, [uploadItems])
   const hasLoadedPdf = uploadItems.length > 0
   const sourcePdfCount = useMemo(
     () => uploadItems.length,
@@ -709,6 +750,7 @@ export function SectionCreateForm() {
 
   useEffect(() => {
     if (uploadMode === 'pdf-batch' && !canUsePdfBatch) {
+      uploadItems.forEach((item) => revokePreviewUrl(item.previewUrl))
       setUploadMode('pdf')
       setUploadItems([])
       setBatchPdfStatusByItemId({})
@@ -716,7 +758,13 @@ export function SectionCreateForm() {
       if (fileInputRef.current) fileInputRef.current.value = ''
       if (imageInputRef.current) imageInputRef.current.value = ''
     }
-  }, [canUsePdfBatch, uploadMode])
+  }, [canUsePdfBatch, uploadItems, uploadMode])
+
+  useEffect(() => {
+    return () => {
+      uploadItemsRef.current.forEach((item) => revokePreviewUrl(item.previewUrl))
+    }
+  }, [])
 
   useEffect(() => {
     setBatchPdfStatusByItemId((previous) => {
@@ -1022,6 +1070,7 @@ export function SectionCreateForm() {
         id: createUploadItemId(),
         sourceName: file.name,
         files: [file],
+        previewUrl: URL.createObjectURL(file),
       }))
       if (currentCount === 0 && selectedFiles[0]) {
         const suggestion = buildSectionNameSuggestionFromImage(selectedFiles[0].name)
@@ -1069,11 +1118,13 @@ export function SectionCreateForm() {
         return currentName
       })
 
+      const previewUrl = await extractPdfFirstPageThumbnail(selectedPdf).catch(() => null)
       setUploadItems([{
         id: createUploadItemId(),
         sourceName: selectedPdf.name,
         files: [],
         rawPdf: selectedPdf,
+        previewUrl: previewUrl ?? undefined,
       }])
       return
     }
@@ -1096,14 +1147,20 @@ export function SectionCreateForm() {
       )
     }
 
-    const preparedItems: PreparedUploadItem[] = pdfsToProcess
-      .filter((f): f is File => Boolean(f))
-      .map((pdfFile) => ({
-        id: createUploadItemId(),
-        sourceName: pdfFile.name,
-        files: [],
-        rawPdf: pdfFile,
-      }))
+    const preparedItems: PreparedUploadItem[] = await Promise.all(
+      pdfsToProcess
+        .filter((f): f is File => Boolean(f))
+        .map(async (pdfFile) => {
+          const previewUrl = await extractPdfFirstPageThumbnail(pdfFile).catch(() => null)
+          return {
+            id: createUploadItemId(),
+            sourceName: pdfFile.name,
+            files: [],
+            rawPdf: pdfFile,
+            previewUrl: previewUrl ?? undefined,
+          }
+        })
+    )
 
     if (preparedItems.length === 0) {
       toast.error('Nenhum PDF válido foi preparado.')
@@ -1130,7 +1187,11 @@ export function SectionCreateForm() {
   }
 
   const handleRemoveUploadItem = (itemId: string) => {
-    setUploadItems((prev) => prev.filter((item) => item.id !== itemId))
+    setUploadItems((prev) => {
+      const target = prev.find((item) => item.id === itemId)
+      revokePreviewUrl(target?.previewUrl)
+      return prev.filter((item) => item.id !== itemId)
+    })
     setBatchPdfStatusByItemId((prev) => {
       if (!(itemId in prev)) return prev
       const next = { ...prev }
@@ -1142,6 +1203,7 @@ export function SectionCreateForm() {
   }
 
   const handleClearUploads = () => {
+    uploadItems.forEach((item) => revokePreviewUrl(item.previewUrl))
     setUploadItems([])
     setBatchPdfStatusByItemId({})
     if (fileInputRef.current) fileInputRef.current.value = ''
@@ -1764,7 +1826,14 @@ export function SectionCreateForm() {
                     className="flex items-start justify-between gap-2 rounded-md border border-border/70 bg-background/60 px-2 py-1.5"
                   >
                     <div className="min-w-0 flex items-center gap-2">
-                      {uploadMode === 'images'
+                      {item.previewUrl ? (
+                        <img
+                          src={item.previewUrl}
+                          alt={`Preview ${item.sourceName}`}
+                          className="h-[100px] w-[70px] rounded-sm border border-border/60 object-cover shrink-0"
+                          loading="lazy"
+                        />
+                      ) : uploadMode === 'images'
                         ? <FileImage className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         : <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
                       <div className="min-w-0">
