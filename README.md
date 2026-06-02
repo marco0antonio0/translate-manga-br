@@ -145,7 +145,33 @@ npm run dev        # Next + Python local (script integrado)
 npm run dev:web    # apenas Next
 npm run build      # build de produção
 npm run start      # start de produção
+npm run security:deps  # audita npm, proveniencia npm e Python
 ```
+
+## Monitoramento de dependencias
+
+Este repositório passa a usar uma estrategia em camadas:
+
+- `Dependency Review` em PR para bloquear novas dependencias vulneraveis
+- `Dependabot` semanal para npm, pip e GitHub Actions
+- workflow diario/manual com `npm audit`, `npm audit signatures` e `pip-audit`
+
+Auditoria local:
+
+```bash
+npm run security:deps
+```
+
+Arquivos gerados:
+
+- `storage/security/dependency-risk-report.md`
+- `storage/security/dependency-risk-report.json`
+
+Workflows:
+
+- `.github/workflows/dependency-review.yml`
+- `.github/workflows/dependency-risk-monitor.yml`
+- `.github/dependabot.yml`
 
 ## Migrações SQLite (versionadas)
 
