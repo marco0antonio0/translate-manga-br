@@ -74,7 +74,7 @@
   },
   "optionalDependencies": {
     "@tailwindcss/oxide-linux-x64-gnu": "^4.2.1",
-    "@tailwindcss/oxide-wasm32-wasi": "^4.2.1"
+    "@tailwindcss/oxide-wasm32-wasi": "^4.3.0"
   },
   "overrides": {
     "postcss": "8.5.10",
