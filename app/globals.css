@@ -182,3 +182,135 @@
   background: color-mix(in oklch, var(--primary) 70%, white 30%);
   animation: payment-success-dot-float 1.15s ease-out infinite;
 }
+
+/* =====================================================================
+   Motivos visuais "anime/mangá" — preservam a paleta (primária rosa/
+   magenta + acento roxo). Tudo decorativo: usado via classes utilitárias.
+   ===================================================================== */
+
+/* Screentone / halftone de mangá (pontilhado de meio-tom) */
+.anime-halftone {
+  background-image: radial-gradient(
+    color-mix(in oklch, var(--primary) 42%, transparent) 1.1px,
+    transparent 1.3px
+  );
+  background-size: 9px 9px;
+}
+
+.anime-halftone-accent {
+  background-image: radial-gradient(
+    color-mix(in oklch, var(--accent) 45%, transparent) 1.1px,
+    transparent 1.3px
+  );
+  background-size: 10px 10px;
+}
+
+/* Linhas de velocidade / ação irradiando do centro */
+.anime-speedlines {
+  background-image: repeating-conic-gradient(
+    from 0deg at 50% 50%,
+    color-mix(in oklch, var(--primary) 16%, transparent) 0deg 1.1deg,
+    transparent 1.1deg 5deg
+  );
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, transparent 28%, black 78%);
+  mask-image: radial-gradient(circle at 50% 50%, transparent 28%, black 78%);
+}
+
+/* Varredura de brilho (estilo painel de mangá) no hover */
+.anime-shine {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: inherit;
+}
+.anime-shine::before {
+  content: '';
+  position: absolute;
+  top: -25%;
+  left: 0;
+  width: 45%;
+  height: 150%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    color-mix(in oklch, white 30%, transparent),
+    transparent
+  );
+  transform: translateX(-160%) skewX(-18deg);
+}
+.group:hover .anime-shine::before {
+  animation: anime-sweep 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes anime-sweep {
+  0% { transform: translateX(-160%) skewX(-18deg); }
+  100% { transform: translateX(320%) skewX(-18deg); }
+}
+
+/* Flutuar suave para sparkles / acentos */
+@keyframes anime-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.65; }
+  50% { transform: translateY(-7px) rotate(8deg); opacity: 1; }
+}
+.anime-float { animation: anime-float 3.2s ease-in-out infinite; }
+.anime-float-delayed { animation: anime-float 3.8s ease-in-out 0.6s infinite; }
+
+/* Pulso de brilho neon (glow) para selos de destaque */
+@keyframes anime-glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 35%, transparent); }
+  50% { box-shadow: 0 0 16px 2px color-mix(in oklch, var(--primary) 45%, transparent); }
+}
+.anime-glow-pulse { animation: anime-glow-pulse 2.6s ease-in-out infinite; }
+
+/* Texto com gradiente rosa→roxo (kanji / títulos) — versão clara p/ legibilidade */
+.anime-gradient-text {
+  background-image: linear-gradient(
+    100deg,
+    color-mix(in oklch, var(--primary) 70%, white 30%),
+    color-mix(in oklch, var(--accent) 55%, white 45%)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Pétalas de sakura caindo (decoração de fundo, atrás do conteúdo) */
+@keyframes anime-petal-fall {
+  0%   { transform: translateY(-20%) translateX(0) rotate(0deg); opacity: 0; }
+  12%  { opacity: 0.85; }
+  88%  { opacity: 0.85; }
+  100% { transform: translateY(420%) translateX(24px) rotate(260deg); opacity: 0; }
+}
+.anime-petal {
+  position: absolute;
+  top: 0;
+  width: 11px;
+  height: 11px;
+  background: color-mix(in oklch, var(--primary) 65%, white 30%);
+  border-radius: 100% 0 100% 0;
+  filter: drop-shadow(0 0 3px color-mix(in oklch, var(--primary) 40%, transparent));
+  animation: anime-petal-fall linear infinite;
+  pointer-events: none;
+}
+
+/* Balanço suave do mascote */
+@keyframes anime-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+.anime-bob { animation: anime-bob 3.6s ease-in-out infinite; }
+
+/* Estrelinhas "kira-kira" cintilando */
+@keyframes anime-twinkle {
+  0%, 100% { transform: scale(0.6) rotate(0deg); opacity: 0.35; }
+  50%      { transform: scale(1.15) rotate(35deg); opacity: 1; }
+}
+.anime-twinkle { animation: anime-twinkle 2.4s ease-in-out infinite; }
+
+/* Entrada com "pop" estilo selo de anime */
+@keyframes anime-pop-in {
+  0%   { transform: scale(0.4) rotate(-12deg); opacity: 0; }
+  60%  { transform: scale(1.08) rotate(4deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.anime-pop-in { animation: anime-pop-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
