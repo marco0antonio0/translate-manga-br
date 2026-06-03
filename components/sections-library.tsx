@@ -21,6 +21,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useIsMobile } from '@/components/ui/use-mobile'
 import { SpotlightTour, checkTourDone, type TourStep } from '@/components/spotlight-tour'
+import { AnimeMascot, SakuraPetals, KiraSparkle } from '@/components/anime-decorations'
 import { SECTION_READ_LS_PREFIX } from '@/components/section-reader'
 import {
   buildImageViewUrl,
@@ -42,7 +43,6 @@ import {
   PlusSquare,
   RefreshCw,
   Trash2,
-  Image as ImageIcon,
   Upload,
   Sparkles,
 } from 'lucide-react'
@@ -744,15 +744,18 @@ export function SectionsLibrary() {
   return (
     <div className="space-y-4">
       <Link href="/inicio/secoes/nova" data-tour="new-section">
-        <div className="relative cursor-pointer rounded-xl overflow-hidden border border-primary/30 hover:border-primary/60 transition-all duration-300 group bg-card">
-          <div className="absolute inset-0 bg-linear-to-br from-primary/8 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-          <div className="h-0.75 w-full bg-linear-to-r from-primary/40 via-primary to-primary/40" />
+        <div className="relative cursor-pointer rounded-xl overflow-hidden border border-primary/30 hover:border-primary/70 transition-all duration-300 group bg-card hover:shadow-[0_0_30px_-6px_color-mix(in_oklch,var(--primary)_45%,transparent)]">
+          {/* Glow suave no hover (sem poluir o texto) */}
+          <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+          <div className="anime-shine" />
+          <div className="h-0.75 w-full bg-linear-to-r from-primary via-accent to-primary" />
 
-          <div className="px-5 py-4 sm:px-6 sm:py-5 flex items-center gap-4 sm:gap-5">
+          <div className="relative px-5 py-4 sm:px-6 sm:py-5 flex items-center gap-4 sm:gap-5">
             <div className="relative shrink-0">
-              <div className="rounded-2xl bg-primary/15 group-hover:bg-primary/22 p-3.5 transition-colors duration-300">
-                <Upload className="h-6 w-6 text-primary" />
+              <div className="rounded-2xl bg-linear-to-br from-primary/25 to-accent/20 group-hover:from-primary/35 group-hover:to-accent/30 p-3.5 ring-1 ring-primary/30 group-hover:ring-primary/60 transition-all duration-300 group-hover:shadow-[0_0_20px_-2px_color-mix(in_oklch,var(--primary)_55%,transparent)]">
+                <Upload className="h-6 w-6 text-primary group-hover:scale-110 transition-transform duration-300" />
               </div>
+              <Sparkles className="anime-float absolute -right-1.5 -top-1.5 h-4 w-4 text-accent drop-shadow-[0_0_6px_color-mix(in_oklch,var(--accent)_70%,transparent)]" />
             </div>
 
             <div className="flex-1 min-w-0">
@@ -760,7 +763,8 @@ export function SectionsLibrary() {
                 <span className="text-base font-semibold text-foreground group-hover:text-primary transition-colors duration-200">
                   Nova Tradução
                 </span>
-                <span className="hidden sm:inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-medium text-primary">
+                <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-linear-to-r from-primary to-accent px-2 py-0.5 text-[11px] font-semibold text-primary-foreground shadow-sm">
+                  <Sparkles className="h-3 w-3" />
                   IA
                 </span>
               </div>
@@ -772,8 +776,9 @@ export function SectionsLibrary() {
               </p>
             </div>
 
-            <div className="shrink-0 flex items-center gap-2 rounded-lg border border-primary/35 bg-primary/10 px-3.5 py-2 text-sm font-medium text-primary group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all duration-200">
-              <PlusSquare className="h-4 w-4" />
+            <div className="relative shrink-0 flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3.5 py-2 text-sm font-semibold text-primary group-hover:bg-linear-to-r group-hover:from-primary group-hover:to-accent group-hover:text-primary-foreground group-hover:border-transparent transition-all duration-200">
+              <KiraSparkle className="anime-twinkle absolute -right-1.5 -top-1.5 h-3.5 w-3.5" />
+              <PlusSquare className="h-4 w-4 group-hover:rotate-90 transition-transform duration-300" />
               <span className="hidden sm:inline">Criar</span>
             </div>
           </div>
@@ -810,13 +815,45 @@ export function SectionsLibrary() {
       )}
 
 
-      <section className="mt-3 rounded-xl bg-muted/20 p-4 sm:p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Biblioteca de Seções</h1>
-            <p className="text-sm text-muted-foreground">
-              Navegue pelas seções criadas, abra páginas e acompanhe status de processamento.
-            </p>
+      <section className="relative mt-3 overflow-hidden rounded-xl border border-primary/20 bg-linear-to-br from-card via-card to-accent/10 p-4 sm:p-5 lg:pr-44">
+        {/* Camadas decorativas estilo anime */}
+        <div className="pointer-events-none absolute -right-12 -top-16 h-52 w-52 rounded-full bg-primary/25 blur-3xl" />
+        <div className="pointer-events-none absolute -left-10 bottom-0 h-36 w-36 rounded-full bg-accent/20 blur-3xl" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-linear-to-r from-primary via-accent to-primary" />
+        <SakuraPetals />
+
+        {/* Estrelinhas kira-kira cintilando (na faixa inferior, longe dos controles) */}
+        <KiraSparkle className="anime-twinkle pointer-events-none absolute bottom-5 right-[34%] z-0 h-4 w-4" />
+        <KiraSparkle className="anime-twinkle pointer-events-none absolute bottom-12 right-[26%] z-0 h-3 w-3 [animation-delay:0.8s]" />
+        <KiraSparkle className="anime-twinkle pointer-events-none absolute bottom-3 right-[44%] z-0 hidden h-5 w-5 sm:block [animation-delay:1.4s]" />
+
+        {/* Mascote anime espiando no canto (telas grandes) */}
+        <div className="anime-bob pointer-events-none absolute bottom-0 right-4 z-0 hidden w-32 lg:block xl:right-8 xl:w-36">
+          <div className="anime-pop-in absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-2xl rounded-bl-sm border border-primary/30 bg-card/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-lg shadow-primary/10 backdrop-blur">
+            Vamos traduzir? <span className="text-primary">✨</span>
+          </div>
+          <AnimeMascot className="w-full drop-shadow-[0_8px_18px_color-mix(in_oklch,var(--primary)_40%,transparent)]" />
+        </div>
+
+        <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            {/* Mascote pequeno (telas médias) */}
+            <div className="anime-bob -mt-1 hidden h-16 w-16 shrink-0 sm:block lg:hidden">
+              <AnimeMascot variant="star" className="h-full w-full drop-shadow-[0_4px_10px_color-mix(in_oklch,var(--primary)_35%,transparent)]" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                  Biblioteca de Seções
+                </h1>
+                <span className="select-none rounded-md bg-primary/15 px-1.5 py-0.5 text-xs font-medium text-primary">
+                  ライブラリ
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Navegue pelas seções criadas, abra páginas e acompanhe status de processamento.
+              </p>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -869,33 +906,39 @@ export function SectionsLibrary() {
               <button
                 type="button"
                 className={cn(
-                  'shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                  'shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
                   !selectedCategoryFilter
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-border bg-background text-muted-foreground hover:bg-muted'
+                    ? 'border-transparent bg-linear-to-r from-primary to-accent text-primary-foreground shadow-sm shadow-primary/30'
+                    : 'border-border bg-background text-muted-foreground hover:border-primary/50 hover:bg-muted hover:text-foreground'
                 )}
                 onClick={() => handleCategoryFilterChange('')}
               >
                 Todas ({sectionsPagination.total})
               </button>
-              {categorySummaryItems.map((categoryItem) => (
-                <button
-                  key={categoryItem.label}
-                  type="button"
-                  className={cn(
-                    'shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
-                    toCategoryKey(selectedCategoryFilter) === toCategoryKey(categoryItem.label)
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-border bg-background text-muted-foreground hover:bg-muted'
-                  )}
-                  onClick={() => handleCategoryFilterChange(categoryItem.label)}
-                >
-                  <span>{categoryItem.label}</span>
-                  <span className="ml-1.5 rounded-full bg-black/10 px-1.5 py-0.5 text-[10px]">
-                    {categoryItem.count}
-                  </span>
-                </button>
-              ))}
+              {categorySummaryItems.map((categoryItem) => {
+                const isActive = toCategoryKey(selectedCategoryFilter) === toCategoryKey(categoryItem.label)
+                return (
+                  <button
+                    key={categoryItem.label}
+                    type="button"
+                    className={cn(
+                      'shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+                      isActive
+                        ? 'border-transparent bg-linear-to-r from-primary to-accent text-primary-foreground shadow-sm shadow-primary/30'
+                        : 'border-border bg-background text-muted-foreground hover:border-primary/50 hover:bg-muted hover:text-foreground'
+                    )}
+                    onClick={() => handleCategoryFilterChange(categoryItem.label)}
+                  >
+                    <span>{categoryItem.label}</span>
+                    <span className={cn(
+                      'ml-1.5 rounded-full px-1.5 py-0.5 text-[10px]',
+                      isActive ? 'bg-white/25 text-white' : 'bg-primary/15 text-primary'
+                    )}>
+                      {categoryItem.count}
+                    </span>
+                  </button>
+                )
+              })}
               {isLoadingCategories && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1.5 text-xs text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -937,10 +980,14 @@ export function SectionsLibrary() {
             ))}
           </div>
         ) : sections.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border/70 bg-muted/10 py-12 text-center">
-            <div className="flex flex-col items-center gap-4">
-              <div className="rounded-2xl bg-muted/40 p-4">
-                <Upload className="h-8 w-8 text-muted-foreground" />
+          <div className="relative overflow-hidden rounded-xl border border-dashed border-primary/30 bg-muted/10 py-12 text-center">
+            <div className="anime-halftone pointer-events-none absolute inset-0 opacity-[0.05]" />
+            <div className="pointer-events-none absolute left-1/2 top-0 h-32 w-32 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
+            <KiraSparkle className="anime-twinkle pointer-events-none absolute left-[30%] top-6 h-4 w-4" />
+            <KiraSparkle className="anime-twinkle pointer-events-none absolute right-[28%] top-10 h-5 w-5 [animation-delay:1s]" />
+            <div className="relative flex flex-col items-center gap-4">
+              <div className="anime-bob relative w-28">
+                <AnimeMascot variant="star" className="w-full drop-shadow-[0_6px_16px_color-mix(in_oklch,var(--primary)_35%,transparent)]" />
               </div>
               <div>
                 <p className="text-sm font-medium text-foreground">Nenhuma seção ainda</p>
@@ -976,7 +1023,7 @@ export function SectionsLibrary() {
                   return (
                     <article
                       key={section.id}
-                      className="group cursor-pointer rounded-xl bg-card/70 p-2 sm:p-2.5 ring-1 ring-border/40 transition-all duration-200 hover:bg-card hover:ring-primary/40"
+                      className="group relative cursor-pointer rounded-xl bg-card/70 p-2 sm:p-2.5 ring-1 ring-border/40 transition-all duration-200 hover:bg-card hover:ring-primary/50 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_-12px_color-mix(in_oklch,var(--primary)_55%,transparent)]"
                       onClick={() => {
                         const detailHref = safeCurrentPage > 1
                           ? `/inicio/secoes/${section.id}?page=${safeCurrentPage}`
@@ -984,11 +1031,11 @@ export function SectionsLibrary() {
                         router.push(detailHref)
                       }}
                     >
-                      <div className="relative aspect-3/4 overflow-hidden rounded-lg bg-muted/35">
+                      <div className="relative aspect-3/4 overflow-hidden rounded-lg bg-muted/35 ring-1 ring-inset ring-white/5">
                         {readSectionIds.has(String(section.id)) && (
-                          <div className="absolute left-2 top-2 z-20 inline-flex items-center gap-1 rounded-full border border-emerald-700 bg-emerald-600 px-2 py-1 text-[10px] font-semibold text-white shadow">
+                          <div className="absolute left-2 top-2 z-20 inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-linear-to-r from-emerald-600 to-emerald-500 px-2 py-1 text-[10px] font-semibold text-white shadow-lg shadow-emerald-900/40">
                             <CheckCircle2 className="h-3.5 w-3.5 text-white" />
-                              Lido 
+                              Lido
                           </div>
                         )}
                         {coverUrl ? (
@@ -1008,15 +1055,26 @@ export function SectionsLibrary() {
                             />
                           </>
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                            <ImageIcon className="h-8 w-8" />
+                          <div className="relative flex h-full w-full flex-col items-center justify-center gap-2 bg-linear-to-br from-primary/20 via-muted/30 to-accent/20 text-center">
+                            <div className="anime-halftone absolute inset-0 opacity-[0.07]" />
+                            <KiraSparkle className="anime-twinkle absolute right-2 top-2 h-3.5 w-3.5" />
+                            <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-card/50 ring-1 ring-primary/30 backdrop-blur-sm">
+                              <BookOpen className="h-5.5 w-5.5 text-primary" />
+                            </div>
+                            <span className="relative line-clamp-2 px-3 text-[11px] font-medium text-muted-foreground">
+                              {section.name}
+                            </span>
                           </div>
                         )}
 
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 rounded-md bg-black/55 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                          <BookOpen className="h-7 w-7 text-white drop-shadow" />
-                          <span className="text-xs font-semibold tracking-wide text-white drop-shadow">Ler</span>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-linear-to-t from-primary/70 via-black/55 to-black/30 opacity-0 backdrop-blur-[1px] transition-opacity duration-200 group-hover:opacity-100">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 ring-2 ring-white/70 backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
+                            <BookOpen className="h-6 w-6 text-white drop-shadow" />
+                          </div>
+                          <span className="text-xs font-bold uppercase tracking-[0.18em] text-white drop-shadow">Ler</span>
                         </div>
+                        {/* Varredura de brilho estilo mangá */}
+                        <div className="anime-shine" />
                       </div>
 
                       <div className="mt-3 space-y-2">
@@ -1028,7 +1086,15 @@ export function SectionsLibrary() {
                         </p>
 
                         <div className="flex flex-wrap items-center gap-1">
-                          <Badge variant="secondary">{formatStatus(section.status)}</Badge>
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              queueState.completed &&
+                                'border border-emerald-500/40 bg-emerald-500/15 text-emerald-300'
+                            )}
+                          >
+                            {formatStatus(section.status)}
+                          </Badge>
                           <div className="hidden flex-wrap gap-1 sm:flex">
                             <Badge variant="outline">
                               {section.source_lang} → {section.target_lang}
