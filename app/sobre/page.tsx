@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { SiteFooter } from '@/components/site-footer'
 import {
   BookOpen,
   ExternalLink,
@@ -205,6 +206,8 @@ export default function SobrePublicPage() {
         </Card>
 
       </main>
+
+      <SiteFooter />
     </div>
   )
 }

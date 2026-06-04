@@ -25,6 +25,7 @@ import {
   Settings2,
 } from 'lucide-react'
 import { TermsModal, hasAcceptedTerms } from '@/components/terms-modal'
+import { SiteFooter } from '@/components/site-footer'
 
 type NavItem = {
   href: string
@@ -288,9 +289,11 @@ function InicioLayoutContent({
         </div>
       </header>
 
-      <main className="flex-1 max-w-screen-2xl w-full mx-auto px-3 sm:px-4 py-4 pb-24 sm:py-6 md:pb-6">
+      <main className="flex-1 max-w-screen-2xl w-full mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {children}
       </main>
+
+      <SiteFooter compact className="mb-20 md:mb-0" />
 
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur md:hidden">
         <div
