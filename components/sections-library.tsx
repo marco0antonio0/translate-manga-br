@@ -980,6 +980,7 @@ export function SectionsLibrary() {
         ) : sections.length === 0 ? (
           <div className="relative overflow-hidden rounded-xl border border-dashed border-primary/30 bg-muted/10 py-12 text-center">
             <div className="anime-halftone pointer-events-none absolute inset-0 opacity-[0.05]" />
+            <SakuraPetals className="opacity-70" />
             <div className="pointer-events-none absolute left-1/2 top-0 h-32 w-32 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
             <KiraSparkle className="anime-twinkle pointer-events-none absolute left-[30%] top-6 h-4 w-4" />
             <KiraSparkle className="anime-twinkle pointer-events-none absolute right-[28%] top-10 h-5 w-5 [animation-delay:1s]" />
@@ -1007,7 +1008,7 @@ export function SectionsLibrary() {
               </div>
             ) : (
               <div data-tour="sections-grid" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-                {paginatedSections.map((section) => {
+                {paginatedSections.map((section, index) => {
                   const queueState = getSectionQueueState(section, null)
                   const priorityInfo = getSectionPriorityInfo(section.priority)
                   const coverUrl = section.cover?.image_id
@@ -1020,7 +1021,8 @@ export function SectionsLibrary() {
                   return (
                     <article
                       key={section.id}
-                      className="group relative cursor-pointer rounded-xl bg-card/70 p-2 sm:p-2.5 ring-1 ring-border/40 transition-all duration-200 hover:bg-card hover:ring-primary/50 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_-12px_color-mix(in_oklch,var(--primary)_55%,transparent)]"
+                      className="anime-rise group relative cursor-pointer rounded-xl bg-card/70 p-2 sm:p-2.5 ring-1 ring-border/40 transition-all duration-200 hover:bg-card hover:ring-primary/50 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_-12px_color-mix(in_oklch,var(--primary)_55%,transparent)]"
+                      style={{ animationDelay: `${Math.min(index, 9) * 55}ms` }}
                       onClick={() => {
                         const detailHref = safeCurrentPage > 1
                           ? `/inicio/secoes/${section.id}?page=${safeCurrentPage}`

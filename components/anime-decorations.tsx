@@ -1,5 +1,6 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
 
 type MascotVariant = 'reader' | 'wink' | 'star'
@@ -168,38 +169,62 @@ export function KiraSparkle({ className }: { className?: string }) {
   )
 }
 
-type Petal = { left: string; size: number; duration: string; delay: string; opacity: number }
+type Petal = {
+  left: string
+  size: number
+  fall: string // duração da queda (vertical)
+  spin: string // duração do balanço/giro 3D
+  delay: string
+  sway: string // amplitude lateral
+  opacity: number
+  accent?: boolean // pétala em tom de destaque (roxo) p/ variar
+}
 
 // Configuração determinística (evita mismatch de hidratação no Next).
 const PETALS: Petal[] = [
-  { left: '6%', size: 10, duration: '9s', delay: '0s', opacity: 0.7 },
-  { left: '18%', size: 8, duration: '11s', delay: '1.5s', opacity: 0.6 },
-  { left: '34%', size: 12, duration: '8s', delay: '3s', opacity: 0.8 },
-  { left: '52%', size: 9, duration: '12s', delay: '0.8s', opacity: 0.55 },
-  { left: '68%', size: 11, duration: '10s', delay: '2.2s', opacity: 0.7 },
-  { left: '82%', size: 8, duration: '13s', delay: '4s', opacity: 0.5 },
-  { left: '93%', size: 10, duration: '9.5s', delay: '1s', opacity: 0.65 },
+  { left: '4%', size: 12, fall: '9s', spin: '3.6s', delay: '0s', sway: '18px', opacity: 0.75 },
+  { left: '12%', size: 8, fall: '12s', spin: '5s', delay: '1.4s', sway: '12px', opacity: 0.6, accent: true },
+  { left: '21%', size: 14, fall: '8s', spin: '4.2s', delay: '3.1s', sway: '22px', opacity: 0.85 },
+  { left: '30%', size: 9, fall: '11s', spin: '3.2s', delay: '0.6s', sway: '14px', opacity: 0.55 },
+  { left: '39%', size: 11, fall: '10s', spin: '4.8s', delay: '2.3s', sway: '20px', opacity: 0.7, accent: true },
+  { left: '48%', size: 7, fall: '13.5s', spin: '5.4s', delay: '4.2s', sway: '10px', opacity: 0.5 },
+  { left: '56%', size: 13, fall: '8.5s', spin: '3.8s', delay: '1.1s', sway: '24px', opacity: 0.8 },
+  { left: '64%', size: 9, fall: '11.5s', spin: '4.4s', delay: '3.6s', sway: '15px', opacity: 0.6, accent: true },
+  { left: '72%', size: 10, fall: '9.5s', spin: '3.4s', delay: '0.3s', sway: '18px', opacity: 0.72 },
+  { left: '80%', size: 8, fall: '12.5s', spin: '5.2s', delay: '2.8s', sway: '12px', opacity: 0.55 },
+  { left: '88%', size: 12, fall: '8.8s', spin: '4s', delay: '1.8s', sway: '21px', opacity: 0.8, accent: true },
+  { left: '95%', size: 9, fall: '10.5s', spin: '4.6s', delay: '3.9s', sway: '14px', opacity: 0.6 },
 ]
 
 /**
  * Pétalas de sakura caindo. Posicionar dentro de um container
  * `relative overflow-hidden`. Decorativo / pointer-events-none.
+ *
+ * @param count limita a quantidade de pétalas (padrão: todas).
  */
-export function SakuraPetals({ className }: { className?: string }) {
+export function SakuraPetals({ className, count }: { className?: string; count?: number }) {
+  const petals = typeof count === 'number' ? PETALS.slice(0, Math.max(0, count)) : PETALS
   return (
-    <div className={cn('pointer-events-none absolute inset-0 overflow-hidden', className)} aria-hidden="true">
-      {PETALS.map((petal, index) => (
+    <div
+      className={cn('pointer-events-none absolute inset-0 overflow-hidden perspective-[600px]', className)}
+      aria-hidden="true"
+    >
+      {petals.map((petal, index) => (
         <span
           key={index}
           className="anime-petal"
-          style={{
-            left: petal.left,
-            width: petal.size,
-            height: petal.size,
-            opacity: petal.opacity,
-            animationDuration: petal.duration,
-            animationDelay: petal.delay,
-          }}
+          style={
+            {
+              left: petal.left,
+              '--petal-size': `${petal.size}px`,
+              '--petal-opacity': petal.opacity,
+              '--petal-fall': petal.fall,
+              '--petal-spin': petal.spin,
+              '--petal-delay': petal.delay,
+              '--petal-sway': petal.sway,
+              '--petal-color': petal.accent ? 'var(--accent)' : 'var(--primary)',
+            } as CSSProperties
+          }
         />
       ))}
     </div>
