@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import ReactPaginate from 'react-paginate'
 import {
@@ -968,13 +967,12 @@ export function SectionsLibrary() {
             {Array.from({ length: sectionsPerPage }).map((_, i) => (
               <div key={i} className="rounded-xl bg-card/70 p-2 sm:p-2.5 ring-1 ring-border/40">
                 <Skeleton className="aspect-3/4 w-full rounded-lg" />
-                <div className="mt-3 space-y-2">
+                <div className="mt-2.5 space-y-2">
                   <Skeleton className="h-4 w-3/4 rounded" />
-                  <div className="flex gap-1">
-                    <Skeleton className="h-5 w-14 rounded-full" />
-                    <Skeleton className="h-5 w-14 rounded-full" />
+                  <div className="flex items-center justify-between gap-2">
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                    <Skeleton className="h-3 w-16 rounded" />
                   </div>
-                  <Skeleton className="h-3 w-1/3 rounded" />
                 </div>
               </div>
             ))}
@@ -1012,13 +1010,12 @@ export function SectionsLibrary() {
                 {paginatedSections.map((section) => {
                   const queueState = getSectionQueueState(section, null)
                   const priorityInfo = getSectionPriorityInfo(section.priority)
-                  const providerLabel = 'Google'
-                  const priorityCode =
-                    priorityInfo.badgeLabel.match(/P\d+/i)?.[0]?.toUpperCase() ?? priorityInfo.badgeLabel
                   const coverUrl = section.cover?.image_id
                     ? buildImageViewUrl(section.id, section.cover.image_id, 'original')
                     : null
                   const isCoverLoaded = coverUrl ? Boolean(loadedImageUrls[coverUrl]) : true
+                  const isRead = readSectionIds.has(String(section.id))
+                  const showPriorityTag = priorityInfo.tier !== 'low' && priorityInfo.tier !== 'custom'
 
                   return (
                     <article
@@ -1032,12 +1029,48 @@ export function SectionsLibrary() {
                       }}
                     >
                       <div className="relative aspect-3/4 overflow-hidden rounded-lg bg-muted/35 ring-1 ring-inset ring-white/5">
-                        {readSectionIds.has(String(section.id)) && (
-                          <div className="absolute left-2 top-2 z-20 inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-linear-to-r from-emerald-600 to-emerald-500 px-2 py-1 text-[10px] font-semibold text-white shadow-lg shadow-emerald-900/40">
-                            <CheckCircle2 className="h-3.5 w-3.5 text-white" />
+                        {/* Tags no canto superior esquerdo (estilo catálogo) */}
+                        <div className="absolute left-2 top-2 z-20 flex flex-col items-start gap-1">
+                          {isRead && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-linear-to-r from-emerald-600 to-emerald-500 px-2 py-0.5 text-[10px] font-semibold text-white shadow-lg shadow-emerald-900/40">
+                              <CheckCircle2 className="h-3 w-3 text-white" />
                               Lido
-                          </div>
-                        )}
+                            </span>
+                          )}
+                          <span
+                            className={cn(
+                              'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold shadow-sm backdrop-blur-sm',
+                              queueState.completed
+                                ? 'border border-emerald-400/40 bg-emerald-500/85 text-white'
+                                : 'border border-amber-400/40 bg-amber-500/85 text-white'
+                            )}
+                          >
+                            {formatStatus(section.status)}
+                          </span>
+                          {showPriorityTag && (
+                            <span className="inline-flex items-center rounded-full border border-primary/50 bg-primary/85 px-2 py-0.5 text-[10px] font-semibold text-primary-foreground shadow-sm backdrop-blur-sm">
+                              {priorityInfo.badgeLabel}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Excluir seção (aparece ao passar o mouse) */}
+                        <button
+                          type="button"
+                          aria-label={`Excluir seção ${section.name}`}
+                          className="absolute right-2 top-2 z-20 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white opacity-0 backdrop-blur-sm transition-all duration-200 hover:border-destructive hover:bg-destructive group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-40"
+                          disabled={deletingSectionId === section.id}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSectionToDelete(section)
+                          }}
+                        >
+                          {deletingSectionId === section.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
+                        </button>
                         {coverUrl ? (
                           <>
                             {!isCoverLoaded && <Skeleton className="absolute inset-0 rounded-none" />}
@@ -1077,7 +1110,7 @@ export function SectionsLibrary() {
                         <div className="anime-shine" />
                       </div>
 
-                      <div className="mt-3 space-y-2">
+                      <div className="mt-2.5 space-y-2">
                         <p
                           className="truncate text-sm font-medium text-foreground transition-colors group-hover:text-primary sm:text-base"
                           title={section.name}
@@ -1085,91 +1118,18 @@ export function SectionsLibrary() {
                           {section.name}
                         </p>
 
-                        <div className="flex flex-wrap items-center gap-1">
-                          <Badge
-                            variant="secondary"
-                            className={cn(
-                              queueState.completed &&
-                                'border border-emerald-500/40 bg-emerald-500/15 text-emerald-300'
-                            )}
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-foreground">
+                            <BookOpen className="h-3 w-3 text-primary" />
+                            {section.images_count} págs
+                          </span>
+                          <span
+                            className="truncate text-[11px] text-muted-foreground"
+                            title={`Atualizado em ${formatSectionDate(section.updated_at)}`}
                           >
-                            {formatStatus(section.status)}
-                          </Badge>
-                          <div className="hidden flex-wrap gap-1 sm:flex">
-                            <Badge variant="outline">
-                              {section.source_lang} → {section.target_lang}
-                            </Badge>
-                            <Badge variant="outline">{providerLabel}</Badge>
-                            <Badge
-                              variant="outline"
-                              className={cn(priorityInfo.tier === 'admin' && 'border-primary/50 text-primary')}
-                            >
-                              {priorityInfo.badgeLabel}
-                            </Badge>
-                          </div>
+                            {formatSectionDate(section.updated_at)}
+                          </span>
                         </div>
-                        <p className="truncate text-[11px] text-muted-foreground sm:hidden">
-                          <span>
-                            {section.source_lang} → {section.target_lang}
-                          </span>
-                          <span className="px-1">•</span>
-                          <span>{providerLabel}</span>
-                          <span className="px-1">•</span>
-                          <span className={cn(priorityInfo.tier === 'admin' && 'font-medium text-primary')}>
-                            {priorityCode}
-                          </span>
-                        </p>
-
-                        <p
-                          className={cn(
-                            'text-xs',
-                            readSectionIds.has(String(section.id))
-                              ? 'text-green-600 dark:text-green-400 sm:text-muted-foreground'
-                              : 'text-muted-foreground'
-                          )}
-                        >
-                          {section.images_count} páginas
-                          <span className="hidden sm:inline"> • {priorityInfo.description}</span>
-                        </p>
-                        <p className="hidden text-xs text-muted-foreground sm:block">
-                          Atualizado em {formatSectionDate(section.updated_at)}
-                        </p>
-                      </div>
-
-                      <div
-                        className={cn(
-                          'flex flex-wrap items-center gap-2',
-                          queueState.canQueue ? 'mt-3' : 'mt-0 sm:mt-3 justify-between'
-                        )}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Button asChild size="sm" variant="outline" className="hidden flex-1 min-w-0 sm:flex sm:min-w-30">
-                          <Link href={`/inicio/secoes/${section.id}`}>
-                            <BookOpen className="h-4 w-4" />
-                            Abrir
-                          </Link>
-                        </Button>
-
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="hidden text-muted-foreground hover:border-destructive/50 hover:text-destructive sm:inline-flex"
-                          disabled={deletingSectionId === section.id}
-                          onClick={() => setSectionToDelete(section)}
-                        >
-                          {deletingSectionId === section.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </Button>
-
-                        {!queueState.canQueue && (
-                          <Badge variant={queueState.completed ? 'secondary' : 'outline'}>
-                            {queueState.completed ? 'Concluída' : 'Em fila'}
-                          </Badge>
-                        )}
                       </div>
                     </article>
                   )
