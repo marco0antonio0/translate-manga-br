@@ -58,22 +58,110 @@ export HF_HOME="${HF_HOME:-$PY_DIR/models/.hf-cache}"
 export HUGGINGFACE_HUB_CACHE="${HUGGINGFACE_HUB_CACHE:-$PY_DIR/models/.hf-cache/hub}"
 export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}"
 export OCR_USE_LOCAL_ONNX="${OCR_USE_LOCAL_ONNX:-true}"
+export PYTHON_API_PORT="${PYTHON_API_PORT:-8023}"
+export NEXT_PORT="${NEXT_PORT:-3080}"
+export AUTO_KILL_DEV_PORTS="${AUTO_KILL_DEV_PORTS:-true}"
+
+pids_on_port() {
+  fuser -n tcp "$1" 2>/dev/null || true
+}
+
+is_project_process() {
+  local pid="$1"
+  local cwd=""
+
+  cwd="$(readlink "/proc/$pid/cwd" 2>/dev/null || true)"
+  [ "$cwd" = "$ROOT_DIR" ] || [ "$cwd" = "$PY_DIR" ]
+}
+
+wait_for_port_release() {
+  local port="$1"
+
+  for _ in {1..20}; do
+    if [ -z "$(pids_on_port "$port")" ]; then
+      return 0
+    fi
+    sleep 0.2
+  done
+
+  return 1
+}
+
+ensure_port_available() {
+  local name="$1"
+  local port="$2"
+  local pids
+  local pid
+  local blocked=0
+
+  pids="$(pids_on_port "$port")"
+  if [ -z "$pids" ]; then
+    return 0
+  fi
+
+  if [ "$AUTO_KILL_DEV_PORTS" != "true" ]; then
+    echo "[dev] porta $port em uso para $name. Finalize o processo ou use outra porta."
+    return 1
+  fi
+
+  for pid in $pids; do
+    if is_project_process "$pid"; then
+      echo "[dev] encerrando processo antigo do projeto na porta $port (pid $pid)"
+      pkill -TERM -P "$pid" >/dev/null 2>&1 || true
+      kill "$pid" >/dev/null 2>&1 || true
+    else
+      echo "[dev] porta $port em uso por outro processo (pid $pid); nao vou encerrar automaticamente"
+      blocked=1
+    fi
+  done
+
+  if [ "$blocked" -eq 1 ]; then
+    echo "[dev] defina ${name}_PORT com outra porta ou finalize o processo acima."
+    return 1
+  fi
+
+  wait_for_port_release "$port"
+}
 
 cleanup() {
+  local exit_code=$?
+  trap - EXIT INT TERM
+
+  if [ -n "${NEXT_PID:-}" ] && kill -0 "$NEXT_PID" >/dev/null 2>&1; then
+    kill "$NEXT_PID" >/dev/null 2>&1 || true
+  fi
+
   if [ -n "${PY_PID:-}" ] && kill -0 "$PY_PID" >/dev/null 2>&1; then
+    pkill -TERM -P "$PY_PID" >/dev/null 2>&1 || true
     kill "$PY_PID" >/dev/null 2>&1 || true
   fi
+
+  if [ -n "${NEXT_PID:-}" ]; then
+    wait "$NEXT_PID" >/dev/null 2>&1 || true
+  fi
+
+  if [ -n "${PY_PID:-}" ]; then
+    wait "$PY_PID" >/dev/null 2>&1 || true
+  fi
+
+  exit "$exit_code"
 }
 
 trap cleanup EXIT INT TERM
 
-echo "[dev] iniciando API Python em http://localhost:8023"
+ensure_port_available "PYTHON_API" "$PYTHON_API_PORT"
+ensure_port_available "NEXT" "$NEXT_PORT"
+
+echo "[dev] iniciando API Python em http://localhost:$PYTHON_API_PORT"
 (
   cd "$PY_DIR"
-  exec "$PY_BIN" -m uvicorn app.main:app --host 0.0.0.0 --port 8023 --reload
+  exec "$PY_BIN" -m uvicorn app.main:app --host 0.0.0.0 --port "$PYTHON_API_PORT" --reload
 ) &
 PY_PID=$!
 
-echo "[dev] iniciando Next.js"
+echo "[dev] iniciando Next.js em http://localhost:$NEXT_PORT"
 cd "$ROOT_DIR"
-exec next dev -p 3080
+next dev -p "$NEXT_PORT" &
+NEXT_PID=$!
+
+wait -n "$PY_PID" "$NEXT_PID"

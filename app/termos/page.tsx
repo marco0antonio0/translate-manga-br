@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { ArrowLeft, ShieldCheck } from 'lucide-react'
+import { SiteFooter } from '@/components/site-footer'
 import {
   LEGAL_AWARENESS_DECLARATION,
   LEGAL_LAST_UPDATED,
@@ -77,6 +78,8 @@ export default function TermosPage() {
 
         </div>
       </div>
+
+      <SiteFooter />
     </div>
   )
 }
