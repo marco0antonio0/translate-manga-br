@@ -275,21 +275,38 @@
 }
 
 /* Pétalas de sakura caindo (decoração de fundo, atrás do conteúdo) */
+/* Queda vertical: usa `top` (relativo ao container) p/ atravessar toda a altura. */
 @keyframes anime-petal-fall {
-  0%   { transform: translateY(-20%) translateX(0) rotate(0deg); opacity: 0; }
-  12%  { opacity: 0.85; }
-  88%  { opacity: 0.85; }
-  100% { transform: translateY(420%) translateX(24px) rotate(260deg); opacity: 0; }
+  0%   { top: -12%; opacity: 0; }
+  8%   { opacity: var(--petal-opacity, 0.8); }
+  92%  { opacity: var(--petal-opacity, 0.8); }
+  100% { top: 112%; opacity: 0; }
+}
+/* Balanço lateral + giro 3D (folha rodopiando ao cair). */
+@keyframes anime-petal-sway {
+  0%   { transform: translateX(0) rotateZ(0deg) rotateY(0deg); }
+  25%  { transform: translateX(var(--petal-sway, 16px)) rotateZ(70deg) rotateY(140deg); }
+  50%  { transform: translateX(calc(var(--petal-sway, 16px) * 0.15)) rotateZ(150deg) rotateY(220deg); }
+  75%  { transform: translateX(calc(var(--petal-sway, 16px) * -1)) rotateZ(235deg) rotateY(320deg); }
+  100% { transform: translateX(0) rotateZ(320deg) rotateY(360deg); }
 }
 .anime-petal {
   position: absolute;
   top: 0;
-  width: 11px;
-  height: 11px;
-  background: color-mix(in oklch, var(--primary) 65%, white 30%);
+  width: var(--petal-size, 11px);
+  height: var(--petal-size, 11px);
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--petal-color, var(--primary)) 80%, white 20%),
+    color-mix(in oklch, var(--petal-color, var(--primary)) 45%, white 55%)
+  );
   border-radius: 100% 0 100% 0;
-  filter: drop-shadow(0 0 3px color-mix(in oklch, var(--primary) 40%, transparent));
-  animation: anime-petal-fall linear infinite;
+  filter: drop-shadow(0 1px 3px color-mix(in oklch, var(--petal-color, var(--primary)) 40%, transparent));
+  will-change: top, transform, opacity;
+  animation:
+    anime-petal-fall var(--petal-fall, 10s) linear infinite,
+    anime-petal-sway var(--petal-spin, 4s) ease-in-out infinite;
+  animation-delay: var(--petal-delay, 0s);
   pointer-events: none;
 }
 
@@ -314,3 +331,24 @@
   100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 .anime-pop-in { animation: anime-pop-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* Entrada suave (fade + sobe) — usada nos cards da biblioteca com stagger */
+@keyframes anime-rise {
+  0%   { transform: translateY(14px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.anime-rise { animation: anime-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+
+/* Acessibilidade: respeita quem prefere menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  .anime-petal,
+  .anime-float,
+  .anime-float-delayed,
+  .anime-bob,
+  .anime-twinkle,
+  .anime-glow-pulse,
+  .anime-rise {
+    animation: none !important;
+  }
+  .anime-petal { opacity: 0 !important; }
+}
