@@ -12,4 +12,4 @@ ultralytics>=8.2.0
 onnxruntime>=1.18.0
 deep-translator>=1.11.4
 dghs-imgutils>=0.18.1
-pypdfium2>=4.30.0
+pypdfium2>=5.10.1
