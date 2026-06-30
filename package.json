@@ -73,7 +73,7 @@
     "zod": "^3.24.1"
   },
   "optionalDependencies": {
-    "@tailwindcss/oxide-linux-x64-gnu": "^4.2.1",
+    "@tailwindcss/oxide-linux-x64-gnu": "^4.3.2",
     "@tailwindcss/oxide-wasm32-wasi": "^4.2.1"
   },
   "overrides": {
