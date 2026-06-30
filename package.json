@@ -65,7 +65,7 @@
     "react-hook-form": "^7.54.1",
     "react-paginate": "^8.3.0",
     "react-resizable-panels": "^2.1.7",
-    "recharts": "2.15.0",
+    "recharts": "3.9.0",
     "socket.io-client": "^4.8.3",
     "sonner": "^1.7.1",
     "tailwind-merge": "^3.3.1",
