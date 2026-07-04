@@ -1,2 +1,4 @@
 models/*.pt filter=lfs diff=lfs merge=lfs -text
 models/*.onnx filter=lfs diff=lfs merge=lfs -text
+models/paddleocr_v5_dict.txt filter=lfs diff=lfs merge=lfs -text
+models/paddleocr_v5_latin_dict.txt filter=lfs diff=lfs merge=lfs -text

@@ -8,6 +8,11 @@ import type { ImageKind, ResolvedImageFile } from './sections.types'
 const sectionsRoot = path.resolve(process.cwd(), 'storage', 'sections')
 if (!fs.existsSync(sectionsRoot)) fs.mkdirSync(sectionsRoot, { recursive: true })
 
+const SECTION_IMAGE_PROCESSING_CONCURRENCY = Math.max(
+  1,
+  Math.floor(Number(process.env.SECTION_IMAGE_PROCESSING_CONCURRENCY ?? 10) || 10)
+)
+
 function extFromName(name: string) {
   const ext = path.extname(name || '').trim().toLowerCase()
   if (!ext || ext.length > 10) return '.bin'
@@ -307,9 +312,17 @@ export class SectionsRepository {
         ORDER BY order_index ASC
       `).all(sectionId) as any[]
 
-      for (const image of images) {
-        await this.translateImage(sectionId, image, sourceLang, targetLang, providerLang)
-      }
+      const concurrency = Math.max(1, Math.min(SECTION_IMAGE_PROCESSING_CONCURRENCY, images.length))
+      let cursor = 0
+      await Promise.all(
+        Array.from({ length: concurrency }, async () => {
+          while (true) {
+            const image = images[cursor++]
+            if (!image) return
+            await this.translateImage(sectionId, image, sourceLang, targetLang, providerLang)
+          }
+        })
+      )
 
       const remaining = db.prepare(`
         SELECT COUNT(*) as count FROM section_images

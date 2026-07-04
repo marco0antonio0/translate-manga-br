@@ -977,6 +977,14 @@ function isImageOcrReady(image: SectionImage | null) {
   return isOcrCompletedStatus(image.status) || isOcrCompletedStatus(image.translation_status)
 }
 
+function isImageProcessing(image: SectionImage | null) {
+  if (!image || isImageTranslated(image)) return false
+  return (
+    PROCESSING_STATUSES.has(normalizeStatus(image.status))
+    || PROCESSING_STATUSES.has(normalizeStatus(image.translation_status))
+  )
+}
+
 function clampPercent(value: number) {
   if (!Number.isFinite(value)) return 0
   return Math.max(0, Math.min(100, value))
@@ -2479,7 +2487,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
   const derivedProcessingCount = useMemo(
     () => (
       section?.images ?? []
-    ).filter((img) => img.selected_for_processing && img.translation_status === 'processing').length,
+    ).filter((img) => img.selected_for_processing && isImageProcessing(img)).length,
     [section?.images]
   )
   const derivedQueuedCount = useMemo(
@@ -5264,9 +5272,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
     const translatedAvailable = readingTranslatedAvailable
     const displayUrl = readingDisplayUrl
 
-    const statusA = normalizeStatus(currentPage.status)
-    const statusB = normalizeStatus(currentPage.translation_status)
-    const isCurrentProcessing = !translatedAvailable && (PROCESSING_STATUSES.has(statusA) || PROCESSING_STATUSES.has(statusB))
+    const isCurrentProcessing = isImageProcessing(currentPage)
 
     return (
       <div className="fixed inset-0 bg-background z-70 flex flex-col">
@@ -5619,7 +5625,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
                       alt={`Página ${currentPage.order_index + 1}`}
                       className={cn(
                         'w-full h-auto block mx-auto transition-opacity duration-200',
-                        isReadingImageLoading ? 'opacity-0' : 'opacity-100'
+                        isReadingImageLoading ? 'opacity-0' : isCurrentProcessing ? 'opacity-40' : 'opacity-100'
                       )}
                       loading="eager"
                       decoding="async"
@@ -6133,6 +6139,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
                       <option key={image.id} value={idx}>
                         Página {image.order_index + 1}
                         {isImageTranslated(image) ? ' (Traduzida)' : ''}
+                        {isImageProcessing(image) ? ' (Processando)' : ''}
                         {readPages.has(image.id) ? ' ✓' : ''}
                       </option>
                     ))}
@@ -6177,9 +6184,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
                 const imgUrl = imgTranslated
                   ? buildImageViewUrl(section.id, image.id, 'translated')
                   : buildImageViewUrl(section.id, image.id, 'original')
-                const statusA = normalizeStatus(image.status)
-                const statusB = normalizeStatus(image.translation_status)
-                const isProcessing = !imgTranslated && (PROCESSING_STATUSES.has(statusA) || PROCESSING_STATUSES.has(statusB))
+                const isProcessing = isImageProcessing(image)
                 const shouldUseImageOcrOverlay = !imgTranslated
                 const imageOverlayItems = filterOverlayItemsByHiddenIds(
                   mergeOverlayItems(
@@ -6239,7 +6244,11 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
                     <img
                       src={isRevealed ? imgUrl : undefined}
                       alt={`Página ${image.order_index + 1}`}
-                      className={cn('w-full h-auto block', !isRevealed && 'hidden')}
+                      className={cn(
+                        'w-full h-auto block transition-opacity duration-200',
+                        !isRevealed && 'hidden',
+                        isProcessing && 'opacity-40'
+                      )}
                       decoding="async"
                       onLoad={(event) => {
                         markImageAsLoaded(imgUrl)
@@ -7448,6 +7457,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
                   const translatedViewUrl = buildImageViewUrl(section.id, image.id, 'translated')
                   const previewUrl = translatedAvailable ? translatedViewUrl : originalViewUrl
                   const isPreviewLoaded = Boolean(loadedImageUrls[previewUrl])
+                  const isProcessing = isImageProcessing(image)
                   const shouldUseImageOcrOverlay = !translatedAvailable
                   const imageOverlayItems = filterOverlayItemsByHiddenIds(
                     mergeOverlayItems(
@@ -7480,7 +7490,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
                           alt={`Página ${image.order_index + 1} - ${section.name}`}
                           className={cn(
                             'block h-auto w-full transition-opacity duration-200',
-                            isPreviewLoaded ? 'opacity-100' : 'opacity-0'
+                            isPreviewLoaded ? (isProcessing ? 'opacity-40' : 'opacity-100') : 'opacity-0'
                           )}
                           loading="lazy"
                           decoding="async"
@@ -7530,6 +7540,14 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
                         {shouldUseImageOcrOverlay && imageOverlayLoading && (
                           <div className="absolute right-2 top-2 rounded-full border border-blue-500/35 bg-blue-500/15 px-2 py-1 text-[10px] font-medium text-blue-600 dark:text-blue-300">
                             OCR...
+                          </div>
+                        )}
+                        {isProcessing && (
+                          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-background/65">
+                            <div className="rounded-full border border-primary/30 bg-background/90 px-3 py-1.5 text-xs font-medium text-primary shadow-sm">
+                              <Loader2 className="mr-1.5 inline h-3.5 w-3.5 animate-spin align-[-2px]" />
+                              Processando
+                            </div>
                           </div>
                         )}
 

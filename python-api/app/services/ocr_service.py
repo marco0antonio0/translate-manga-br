@@ -59,6 +59,24 @@ class OCRService:
         settings.ocr_rec_onnx_path.parent.mkdir(parents=True, exist_ok=True)
         settings.ocr_rec_dict_path.parent.mkdir(parents=True, exist_ok=True)
 
+        if settings.ocr_model_generation != "v4":
+            required = [
+                settings.ocr_det_onnx_path,
+                settings.ocr_rec_onnx_path,
+                settings.ocr_rec_dict_path,
+            ]
+            if settings.ocr_rec_model_fallbacks:
+                required.extend([settings.ocr_rec_fallback_onnx_path, settings.ocr_rec_fallback_dict_path])
+            missing = [str(p) for p in required if not p.exists()]
+            if missing:
+                raise RuntimeError(
+                    "Modelos PP-OCRv5 ausentes em models/: "
+                    + ", ".join(missing)
+                    + ". Rode 'git lfs pull' ou 'python scripts/fetch_ocr_models.py', "
+                    "ou use OCR_MODEL_GENERATION=v4 para os modelos antigos."
+                )
+            return
+
         if settings.ocr_det_onnx_path.exists() and settings.ocr_rec_onnx_path.exists() and settings.ocr_rec_dict_path.exists():
             return
 
@@ -107,6 +125,42 @@ class OCRService:
             )
 
     @staticmethod
+    def _planned_ocr_workers() -> int:
+        configured = max(0, int(settings.ocr_parallelism))
+        if configured > 0:
+            return configured
+        cpu = os.cpu_count() or 2
+        return 1 if cpu <= 2 else max(2, min(4, cpu // 2))
+
+    @staticmethod
+    def _make_onnx_session(path: str):
+        # Sessão própria com threads divididas entre os workers do pool de OCR;
+        # o default do onnxruntime (todos os cores por sessão) causa oversubscription.
+        import onnxruntime as ort
+
+        configured = max(0, int(settings.ocr_intra_op_threads))
+        if configured <= 0:
+            cpu = os.cpu_count() or 2
+            configured = max(1, cpu // OCRService._planned_ocr_workers())
+
+        opts = ort.SessionOptions()
+        opts.intra_op_num_threads = configured
+        opts.inter_op_num_threads = 1
+        opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+        return ort.InferenceSession(path, sess_options=opts, providers=["CPUExecutionProvider"])
+
+    @staticmethod
+    def _local_model_paths() -> tuple[dict[str, str], dict[str, tuple[str, str]]]:
+        det_paths = {settings.ocr_det_model: str(settings.ocr_det_onnx_path)}
+        rec_paths = {settings.ocr_rec_model: (str(settings.ocr_rec_onnx_path), str(settings.ocr_rec_dict_path))}
+        for fallback in settings.ocr_rec_model_fallbacks:
+            rec_paths[fallback] = (
+                str(settings.ocr_rec_fallback_onnx_path),
+                str(settings.ocr_rec_fallback_dict_path),
+            )
+        return det_paths, rec_paths
+
+    @staticmethod
     def _patch_imgutils_to_local_onnx() -> None:
         if not settings.ocr_use_local_onnx:
             return
@@ -115,29 +169,36 @@ class OCRService:
 
         from imgutils.ocr import detect as detect_mod
         from imgutils.ocr import recognize as rec_mod
-        from imgutils.utils import open_onnx_model, ts_lru_cache
+        from imgutils.utils import ts_lru_cache
 
         original_det_open = detect_mod._open_ocr_detection_model
         original_rec_open = rec_mod._open_ocr_recognition_model
         original_rec_dict = rec_mod._open_ocr_recognition_dictionary
 
+        det_paths, rec_paths = OCRService._local_model_paths()
+
         @ts_lru_cache()
         def _open_det_local(model: str):
-            if model == settings.ocr_det_model:
-                return open_onnx_model(str(settings.ocr_det_onnx_path))
+            path = det_paths.get(model)
+            if path:
+                return OCRService._make_onnx_session(path)
             return original_det_open(model)
 
         @ts_lru_cache()
         def _open_rec_local(model: str):
-            if model == settings.ocr_rec_model:
-                return open_onnx_model(str(settings.ocr_rec_onnx_path))
+            entry = rec_paths.get(model)
+            if entry:
+                return OCRService._make_onnx_session(entry[0])
             return original_rec_open(model)
 
         @ts_lru_cache()
         def _open_dict_local(model: str):
-            if model == settings.ocr_rec_model:
-                with settings.ocr_rec_dict_path.open("r", encoding="utf-8") as f:
-                    dict_ = [line.strip() for line in f]
+            entry = rec_paths.get(model)
+            if entry:
+                # rstrip apenas do \n: o dict v5 tem entradas como U+3000 que .strip() apagaria,
+                # e remover/alterar linhas quebra o alinhamento de índices do decode CTC.
+                with open(entry[1], "r", encoding="utf-8") as f:
+                    dict_ = [line.rstrip("\r\n") for line in f]
                 return ["<blank>", *dict_, " "]
             return original_rec_dict(model)
 
@@ -152,6 +213,40 @@ class OCRService:
     def seconds_since_last_activity(self) -> float:
         with self._activity_lock:
             return max(0.0, time.monotonic() - self._last_activity)
+
+    @staticmethod
+    def _estimate_char_height(crop_bgr: np.ndarray) -> float:
+        """Mede a altura tipica do glifo via componentes conectados.
+
+        Não usa _find_line_segments (projeção horizontal): em balões com entrelinha
+        apertada, linhas próximas se fundem num único "segmento" cobrindo quase toda
+        a altura do crop, o que faz a escala subestimar (ou até encolher) o texto.
+        """
+        h, w = crop_bgr.shape[:2]
+        if h == 0 or w == 0:
+            return float(h)
+
+        gray = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+        _, th = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        ink = (255 - th) if float(np.mean(th)) > 127.0 else th
+
+        num_labels, _, stats, _ = cv2.connectedComponentsWithStats((ink > 0).astype(np.uint8), connectivity=8)
+        if num_labels <= 1:
+            return float(h)
+
+        heights: list[float] = []
+        for idx in range(1, num_labels):
+            comp_h = float(stats[idx, cv2.CC_STAT_HEIGHT])
+            area = int(stats[idx, cv2.CC_STAT_AREA])
+            # Descarta ruído de 1-2px e blobs grandes (borda do balão atravessando o crop).
+            if area < 3 or comp_h < 3 or comp_h > h * 0.85:
+                continue
+            heights.append(comp_h)
+
+        if not heights:
+            return float(h)
+        return float(np.median(heights))
 
     @staticmethod
     def _normalize_text(text: str) -> str:
@@ -194,6 +289,50 @@ class OCRService:
         if min(h, w) >= 56:
             return crop_bgr
         return cv2.resize(crop_bgr, None, fx=2.0, fy=2.0, interpolation=cv2.INTER_CUBIC)
+
+    def _prepare_crop(self, crop_bgr: np.ndarray) -> np.ndarray:
+        """Escala o crop para altura de linha ~ideal do rec (25-48px) e adiciona borda branca.
+
+        O rec do PaddleOCR normaliza linhas para 48px de altura; linhas muito menores
+        chegam borradas e linhas gigantes perdem detalhe. A borda evita que o det
+        perca texto encostado na margem do box do YOLO.
+        """
+        if crop_bgr is None or crop_bgr.size == 0:
+            return crop_bgr
+
+        h, w = crop_bgr.shape[:2]
+        char_h = self._estimate_char_height(crop_bgr)
+
+        # Altura de glifo (letra) é menor que a altura de linha (inclui ascendentes/
+        # descendentes e entrelinha); ~1.6x aproxima a altura de linha a partir do
+        # glifo medido via componentes conectados.
+        line_h = char_h * 1.6
+
+        target = float(max(16, settings.ocr_target_line_height))
+        scale = target / max(1.0, line_h)
+        scale = float(np.clip(scale, 0.5, float(settings.ocr_max_scale)))
+
+        max_side = float(max(320, settings.ocr_max_side))
+        longest = float(max(h, w))
+        if longest * scale > max_side:
+            scale = max_side / longest
+
+        if abs(scale - 1.0) > 0.05:
+            interp = cv2.INTER_CUBIC if scale > 1.0 else cv2.INTER_AREA
+            crop_bgr = cv2.resize(crop_bgr, None, fx=scale, fy=scale, interpolation=interp)
+
+        border = max(0, int(settings.ocr_border_px))
+        if border > 0:
+            crop_bgr = cv2.copyMakeBorder(
+                crop_bgr,
+                border,
+                border,
+                border,
+                border,
+                cv2.BORDER_CONSTANT,
+                value=(255, 255, 255),
+            )
+        return crop_bgr
 
     def _load_ocr_callable(self):
         if self._ocr_callable is not None:
@@ -664,10 +803,22 @@ class OCRService:
         positioned_items: list[dict[str, float | str]] = []
         loose_texts: list[str] = []
 
+        min_score = float(settings.ocr_min_rec_score)
+
+        def _score_ok(score: Any) -> bool:
+            if score is None:
+                return True
+            try:
+                return float(score) >= min_score
+            except (TypeError, ValueError):
+                return True
+
         for it in result:
             if isinstance(it, dict):
                 text = str(it.get("text") or it.get("rec_text") or it.get("label") or "").strip()
                 box = it.get("box") or it.get("bbox") or it.get("points")
+                if not _score_ok(it.get("score") or it.get("rec_score") or it.get("confidence")):
+                    continue
                 rect = self._box_rect(box)
                 if text:
                     if rect is None:
@@ -690,11 +841,16 @@ class OCRService:
             if isinstance(it, (list, tuple)):
                 text_candidate = ""
                 box_candidate = None
+                score_candidate = None
                 for v in it:
                     if isinstance(v, str) and not text_candidate:
                         text_candidate = v.strip()
                     elif isinstance(v, (list, tuple)) and box_candidate is None:
                         box_candidate = v
+                    elif isinstance(v, (int, float)) and not isinstance(v, bool) and score_candidate is None:
+                        score_candidate = float(v)
+                if not _score_ok(score_candidate):
+                    continue
                 if text_candidate:
                     rect = self._box_rect(box_candidate)
                     if rect is None:
@@ -754,6 +910,10 @@ class OCRService:
         sy = sum(y for _, y in pts) / len(pts)
         return sx, sy
 
+    # Diacríticos que não existem em PT/EN/JP corretos: quase sempre são o rec
+    # multilíngue (dict com pinyin/alemão) lendo errado um acento português.
+    _SUSPECT_DIACRITICS = "äëïöüÄËÏÖÜèìòùÈÌÒÙ"
+
     @staticmethod
     def _text_quality_score(text: str) -> float:
         txt = (text or "").strip()
@@ -768,6 +928,7 @@ class OCRService:
         printable = sum(ch.isprintable() for ch in visible) / n
         alnum = sum(ch.isalnum() for ch in visible) / n
         noise = sum(ch in "{}[]<>|\\~`_^" for ch in visible) / n
+        suspect_accents = sum(ch in OCRService._SUSPECT_DIACRITICS for ch in visible)
         repeats = len(re.findall(r"(.)\1{4,}", txt))
         long_token_penalty = sum(1 for tok in txt.split() if len(tok) >= 28)
 
@@ -776,6 +937,7 @@ class OCRService:
             + printable * 18.0
             + alnum * 10.0
             - noise * 26.0
+            - (suspect_accents * 3.0)
             - (repeats * 4.5)
             - (long_token_penalty * 2.0)
         )
@@ -797,21 +959,33 @@ class OCRService:
             return False
         if joined > 0:
             return False
+        # Provável acento PT lido errado: deixa o par latino tentar antes de encerrar.
+        if any(ch in OCRService._SUSPECT_DIACRITICS for ch in text):
+            return False
         return score >= float(settings.ocr_early_exit_score)
 
     @staticmethod
-    def _variant_images(crop_bgr: np.ndarray) -> list[tuple[str, np.ndarray]]:
+    def _zoom_x2(crop_bgr: np.ndarray) -> np.ndarray:
+        h, w = crop_bgr.shape[:2]
+        if max(h, w) * 2 > max(320, settings.ocr_max_side):
+            return crop_bgr
+        return cv2.resize(crop_bgr, None, fx=2.0, fy=2.0, interpolation=cv2.INTER_CUBIC)
+
+    @staticmethod
+    def _variant_images(crop_bgr: np.ndarray, requested: list[str] | None = None) -> list[tuple[str, np.ndarray]]:
         variant_builders = {
             "raw": lambda img: img,
             "upscale_x2": OCRService._upscale_if_small,
+            "zoom_x2": OCRService._zoom_x2,
             "adaptive_inv": OCRService._adaptive_inv,
             "clahe": OCRService._clahe_bgr,
             "sharpen": OCRService._sharpen,
         }
 
-        requested = [v.lower() for v in settings.ocr_variants if v.strip()]
+        if requested is None:
+            requested = [v.lower() for v in settings.ocr_variants if v.strip()]
         if not requested:
-            requested = ["raw", "adaptive_inv"]
+            requested = ["raw"]
 
         variants: list[tuple[str, np.ndarray]] = []
         for name in requested:
@@ -887,7 +1061,12 @@ class OCRService:
             if segmented:
                 parsed_joined = self._count_joined_word_lines(parsed)
                 segmented_joined = self._count_joined_word_lines(segmented)
-                if segmented_joined < parsed_joined or self._text_quality_score(segmented) >= self._text_quality_score(parsed):
+                seg_score = self._text_quality_score(segmented)
+                par_score = self._text_quality_score(parsed)
+                # Só troca se a segmentação não degradar a qualidade: uma palavra única
+                # legítima de 8+ letras (STRAIGHT, EVERYTHING...) também conta como
+                # "colada" e a re-segmentação pode devolver lixo com score bem menor.
+                if (segmented_joined < parsed_joined and seg_score >= par_score - 2.0) or seg_score > par_score + 4.0:
                     parsed = self._normalize_text(segmented)
         return parsed
 
@@ -940,24 +1119,39 @@ class OCRService:
                         return True
             return False
 
-        # Caminho rápido: tenta só o crop original antes de qualquer preprocess pesado.
-        if _evaluate_variant("orig_raw", crop_bgr):
-            pass
-        else:
-            normalized_crop = crop_bgr
+        # Escala para altura de linha ideal + borda branca antes de qualquer OCR.
+        prepared_crop = crop_bgr
+        try:
+            prepared_crop = self._prepare_crop(crop_bgr)
+        except Exception as e:  # noqa: BLE001
+            errors.append(f"prepare: {e}")
+
+        finished = False
+        for variant_name, variant_bgr in self._variant_images(prepared_crop):
+            if _evaluate_variant(variant_name, variant_bgr):
+                finished = True
+                break
+            if best_text and deadline is not None and (deadline - time.monotonic()) < 0.20:
+                finished = True
+                break
+
+        # Resgate: preprocess pesado só quando o resultado do crop preparado ficou fraco.
+        if not finished and best_score < float(settings.ocr_variant_rescue_score):
+            normalized_crop = prepared_crop
             try:
-                normalized_crop = self._preprocess.normalize(crop_bgr)
+                normalized_crop = self._preprocess.normalize(prepared_crop)
             except Exception as e:  # noqa: BLE001
                 errors.append(f"preprocess: {e}")
 
-            for variant_name, variant_bgr in self._variant_images(normalized_crop):
-                if variant_name == "raw":
-                    continue
-                if _evaluate_variant(f"norm_{variant_name}", variant_bgr):
-                    break
-                if best_text and deadline is not None:
-                    remaining = deadline - time.monotonic()
-                    if remaining < 0.20:
+            tried = {v.lower() for v in settings.ocr_variants}
+            # zoom_x2 primeiro: texto minúsculo é a causa mais comum de score baixo,
+            # e roda sobre o crop preparado (sem o normalize, que borra texto pequeno).
+            if "zoom_x2" not in tried and not _evaluate_variant("zoom_x2", self._zoom_x2(prepared_crop)):
+                rescue = [v for v in ("adaptive_inv", "clahe", "sharpen") if v not in tried]
+                for variant_name, variant_bgr in self._variant_images(normalized_crop, requested=rescue):
+                    if _evaluate_variant(f"norm_{variant_name}", variant_bgr):
+                        break
+                    if best_text and deadline is not None and (deadline - time.monotonic()) < 0.20:
                         break
 
         if best_text and best_variant_bgr is not None and self._count_joined_word_lines(best_text) > 0:
@@ -969,7 +1163,8 @@ class OCRService:
             if segmented:
                 current_best_joined = self._count_joined_word_lines(best_text)
                 seg_joined = self._count_joined_word_lines(segmented)
-                if seg_joined < current_best_joined or self._text_quality_score(segmented) >= (best_score - 1.0):
+                seg_score = self._text_quality_score(segmented)
+                if (seg_joined < current_best_joined and seg_score >= best_score - 2.0) or seg_score > best_score + 4.0:
                     best_text = self._normalize_text(segmented)
                     best_score = self._text_quality_score(best_text)
                     best_joined = self._count_joined_word_lines(best_text)

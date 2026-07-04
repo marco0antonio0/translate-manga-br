@@ -9,6 +9,7 @@ requests>=2.31.0
 torch==2.5.1+cpu
 torchvision==0.20.1+cpu
 ultralytics>=8.2.0
+onnx>=1.16.0
 onnxruntime>=1.18.0
 deep-translator>=1.11.4
 dghs-imgutils>=0.18.1

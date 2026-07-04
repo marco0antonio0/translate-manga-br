@@ -95,38 +95,31 @@ docker compose down            # parar
 
 No Compose, a Python API fica acessível apenas internamente (`python-api:8023`), sem porta pública exposta.
 
+### Produção sem build no servidor
+
+O workflow `.github/workflows/docker-images.yml` compila as imagens no GitHub Actions e publica no GitHub Container Registry (GHCR). O servidor não executa `docker build`: ele apenas baixa a imagem pronta e reinicia os containers.
+
+```bash
+docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+```
+
+O `docker-compose.prod.yml` usa, por padrão:
+
+- `ghcr.io/marco0antonio0/translate-manga-br-nextjs:latest`
+- `ghcr.io/marco0antonio0/translate-manga-br-python-api:latest`
+
+Para fixar uma versão específica:
+
+```bash
+NEXTJS_IMAGE=ghcr.io/marco0antonio0/translate-manga-br-nextjs:sha-<commit> \
+PYTHON_API_IMAGE=ghcr.io/marco0antonio0/translate-manga-br-python-api:sha-<commit> \
+docker compose -f docker-compose.prod.yml up -d
+```
+
 ## 🏗️ Arquitetura
 
-```mermaid
-flowchart LR
-    subgraph Browser
-        UI[Painel Web<br/>React 19 + Tailwind]
-    end
-
-    subgraph "Next.js :3080"
-        API["Route Handlers<br/>app/api/*"]
-        DOMAIN["Domínio<br/>lib/backend/*"]
-        GW["Model Gateway<br/>lib/model-gateway.ts"]
-    end
-
-    subgraph "FastAPI :8023"
-        YOLO["Detecção de balões<br/>YOLO ONNX"]
-        OCR["OCR<br/>PaddleOCR ONNX"]
-    end
-
-    subgraph Storage
-        DB[(SQLite)]
-        FILES["storage/sections"]
-    end
-
-    EXT["Google Translate /<br/>OpenRouter"]
-
-    UI --> API --> DOMAIN
-    DOMAIN --> DB
-    DOMAIN --> FILES
-    DOMAIN --> GW --> YOLO --> OCR
-    DOMAIN --> EXT
-```
+O frontend Next.js serve a interface e os route handlers locais. O domínio em `lib/backend/*` persiste seções, imagens, status e caixas no SQLite, enquanto a FastAPI em `python-api/` executa detecção e OCR. O fluxograma visual completo está na seção [Fluxo de processamento](#-fluxo-de-processamento).
 
 ### Estrutura do repositório
 
@@ -198,6 +191,22 @@ docs/            # diagramas e documentação auxiliar
 | `ALLOW_REMOTE_SETUP` | Permite setup inicial remoto quando definido como `1` |
 | `SKIP_DB_BOOTSTRAP` | Pula bootstrap/migrações SQLite em cenários controlados |
 | `SECURITY_ENABLE_PIP_AUDIT` | Habilita `pip-audit` no script `security:deps` |
+| `SECTION_IMAGE_PROCESSING_CONCURRENCY` | Quantidade de páginas/imagens processadas em paralelo por seção. Padrão: `10` |
+| `NEXTJS_IMAGE` | Imagem do serviço web usada pelo `docker-compose.prod.yml` |
+| `PYTHON_API_IMAGE` | Imagem da FastAPI usada pelo `docker-compose.prod.yml` |
+
+Exemplos:
+
+```bash
+# desenvolvimento local
+SECTION_IMAGE_PROCESSING_CONCURRENCY=5 bun run dev
+
+# Docker Compose
+SECTION_IMAGE_PROCESSING_CONCURRENCY=5 docker compose up -d --build
+
+# produção, sem build no servidor
+SECTION_IMAGE_PROCESSING_CONCURRENCY=5 docker compose -f docker-compose.prod.yml up -d
+```
 
 <details>
 <summary><b>Configurando o OpenRouter</b></summary>
