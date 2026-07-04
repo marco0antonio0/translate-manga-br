@@ -3,32 +3,24 @@ import type { NextRequest } from 'next/server'
 
 const AUTH_TOKEN_COOKIE = 'manga-access-token'
 
-function isStateChangingMethod(method: string) {
-  return method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE'
-}
-
-function firstHeaderValue(value: string | null) {
-  if (!value) return null
-  return value.split(',')[0]?.trim() || null
-}
-
-function isTrustedOrigin(request: NextRequest) {
-  const origin = firstHeaderValue(request.headers.get('origin'))
-  if (!origin) return false
-
-  const forwardedHost = firstHeaderValue(request.headers.get('x-forwarded-host'))
-  const host = forwardedHost || firstHeaderValue(request.headers.get('host'))
-  const forwardedProto = firstHeaderValue(request.headers.get('x-forwarded-proto'))
-  if (!host) return false
-
-  const proto = forwardedProto || request.nextUrl.protocol.replace(':', '')
-  const expectedOrigin = `${proto}://${host}`
-  return origin === expectedOrigin
+function withCorsHeaders(response: NextResponse) {
+  response.headers.set('Access-Control-Allow-Origin', '*')
+  response.headers.set('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
+  response.headers.set(
+    'Access-Control-Allow-Headers',
+    'Authorization, Content-Type, X-API-Key, X-Requested-With'
+  )
+  response.headers.set('Access-Control-Max-Age', '86400')
+  return response
 }
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const response = NextResponse.next()
+  const response = withCorsHeaders(NextResponse.next())
+
+  if (request.method === 'OPTIONS' && pathname.startsWith('/api/')) {
+    return withCorsHeaders(new NextResponse(null, { status: 204 }))
+  }
 
   response.headers.set('X-Frame-Options', 'DENY')
   response.headers.set('X-Content-Type-Options', 'nosniff')
@@ -38,17 +30,6 @@ export function proxy(request: NextRequest) {
     'Content-Security-Policy',
     "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://openrouter.ai; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
   )
-
-  if (pathname.startsWith('/api/') && isStateChangingMethod(request.method) && !isTrustedOrigin(request)) {
-    return NextResponse.json(
-      {
-        message: 'Origem não autorizada',
-        error: 'Forbidden',
-        statusCode: 403,
-      },
-      { status: 403 }
-    )
-  }
 
   // Rotas de autenticação são tratadas pelas APIs /api/auth/*
   if (pathname.startsWith('/api/auth/')) {
@@ -75,13 +56,15 @@ export function proxy(request: NextRequest) {
     const token = request.cookies.get(AUTH_TOKEN_COOKIE)
 
     if (!token) {
-      return NextResponse.json(
-        {
-          message: 'Token inválido ou expirado',
-          error: 'Unauthorized',
-          statusCode: 401,
-        },
-        { status: 401 }
+      return withCorsHeaders(
+        NextResponse.json(
+          {
+            message: 'Token inválido ou expirado',
+            error: 'Unauthorized',
+            statusCode: 401,
+          },
+          { status: 401 }
+        )
       )
     }
   }

@@ -60,8 +60,11 @@ export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}"
 export OCR_USE_LOCAL_ONNX="${OCR_USE_LOCAL_ONNX:-true}"
 export PYTHON_API_PORT="${PYTHON_API_PORT:-8023}"
 export NEXT_PORT="${NEXT_PORT:-3080}"
+export CHROME_EXTENSION_API_BASE_URL="${CHROME_EXTENSION_API_BASE_URL:-http://localhost:$NEXT_PORT}"
 export AUTO_KILL_DEV_PORTS="${AUTO_KILL_DEV_PORTS:-true}"
 export SECTION_IMAGE_PROCESSING_CONCURRENCY="${SECTION_IMAGE_PROCESSING_CONCURRENCY:-10}"
+
+node "$ROOT_DIR/scripts/generate-extension-config.mjs"
 
 pids_on_port() {
   fuser -n tcp "$1" 2>/dev/null || true

@@ -1,0 +1,352 @@
+:root {
+  color-scheme: dark;
+  --background: oklch(0.12 0.01 260);
+  --foreground: oklch(0.95 0 0);
+  --card: oklch(0.16 0.01 260);
+  --card-foreground: oklch(0.95 0 0);
+  --popover: oklch(0.16 0.01 260);
+  --popover-foreground: oklch(0.95 0 0);
+  --primary: oklch(0.65 0.2 330);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.22 0.01 260);
+  --secondary-foreground: oklch(0.95 0 0);
+  --muted: oklch(0.22 0.01 260);
+  --muted-foreground: oklch(0.65 0 0);
+  --accent: oklch(0.55 0.15 280);
+  --accent-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.28 0.01 260);
+  --input: oklch(0.22 0.01 260);
+  --ring: oklch(0.65 0.2 330);
+  --radius: 0.75rem;
+  font-family: Geist, Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: min(360px, 100vw);
+  min-width: 300px;
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  overflow-x: hidden;
+}
+
+main {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  padding: 14px;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.app-header > div:last-child {
+  min-width: 0;
+}
+
+.brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid color-mix(in oklch, var(--primary) 60%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in oklch, var(--primary) 18%, var(--card));
+  overflow: hidden;
+}
+
+.brand-mark img {
+  display: block;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.app-header strong {
+  display: block;
+  overflow: hidden;
+  font-size: 15px;
+  color: var(--foreground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-header span,
+p,
+.hint {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.screen {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.screen[hidden] {
+  display: none;
+}
+
+.hint {
+  margin: 8px 0;
+  text-align: center;
+}
+
+.panel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: color-mix(in oklch, var(--card) 86%, transparent);
+  padding: 10px;
+}
+
+.login-form {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.panel.has-error {
+  border-color: color-mix(in oklch, var(--destructive) 62%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--destructive) 24%, transparent);
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.system-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.system-line span {
+  flex: none;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.system-line strong {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--muted) 72%, transparent);
+  color: var(--foreground);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 6px 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+input,
+select,
+button {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  border-radius: calc(var(--radius) - 2px);
+  font: inherit;
+}
+
+input,
+select {
+  border: 1px solid var(--border);
+  background: var(--input);
+  color: var(--foreground);
+  padding: 0 10px;
+  outline: none;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklch, var(--ring) 25%, transparent);
+}
+
+input[aria-invalid="true"] {
+  border-color: color-mix(in oklch, var(--destructive) 70%, var(--border));
+}
+
+button {
+  border: 1px solid var(--border);
+  background: var(--secondary);
+  color: var(--foreground);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+button.primary {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+button.danger {
+  width: 100%;
+  border-color: color-mix(in oklch, var(--destructive) 42%, var(--border));
+  background: color-mix(in oklch, var(--destructive) 10%, transparent);
+  color: color-mix(in oklch, var(--destructive) 72%, white);
+}
+
+button.danger:hover {
+  border-color: var(--destructive);
+  background: color-mix(in oklch, var(--destructive) 18%, transparent);
+}
+
+button:disabled,
+button.is-busy {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+}
+
+.user-card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: color-mix(in oklch, var(--card) 92%, transparent);
+  padding: 10px;
+}
+
+.user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--primary) 18%, var(--muted));
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.user-info {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.user-info span {
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+
+.user-info strong,
+.user-info small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-info strong {
+  font-size: 13px;
+  color: var(--card-foreground);
+}
+
+.user-info small {
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+
+.actions {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.error-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border: 1px solid color-mix(in oklch, var(--destructive) 55%, var(--border));
+  border-radius: calc(var(--radius) - 2px);
+  background: color-mix(in oklch, var(--destructive) 12%, transparent);
+  color: color-mix(in oklch, var(--destructive) 72%, white);
+  padding: 9px 10px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.error-alert[hidden] {
+  display: none;
+}
+
+.error-alert svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  margin-top: 1px;
+}
+
+#status {
+  min-height: 16px;
+  margin: 0;
+}
+
+@media (max-width: 329px) {
+  body {
+    min-width: 280px;
+  }
+
+  main {
+    padding: 12px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .system-line {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+}

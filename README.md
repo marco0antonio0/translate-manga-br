@@ -125,6 +125,7 @@ O frontend Next.js serve a interface e os route handlers locais. O domínio em `
 
 ```text
 app/             # páginas, layouts e route handlers do Next.js
+chrome-extension/ # extensão Chrome MV3 para usar OCR/tradução no navegador
 components/      # componentes de UI e fluxo de usuário
 lib/             # backend local, domínio, segurança e integrações
 python-api/      # FastAPI, OCR, detecção e pipeline de imagem
@@ -136,6 +137,7 @@ docs/            # diagramas e documentação auxiliar
 | Módulo | Responsabilidade |
 | --- | --- |
 | `app/api/*` | BFF/backend local da aplicação |
+| `chrome-extension/` | Extensão Chrome para abrir um modo leitura em páginas externas e chamar os endpoints locais de OCR/tradução |
 | `lib/backend/*` | Regras de domínio, repositórios e acesso ao SQLite |
 | `lib/model-gateway.ts` | Ponte entre Next.js e a FastAPI |
 | `python-api/` | Detecção de boxes, OCR e endpoints de processamento |

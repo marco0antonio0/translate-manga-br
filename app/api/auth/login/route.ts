@@ -3,7 +3,6 @@ import { cookies } from 'next/headers'
 import { z } from 'zod'
 import { authController } from '@/lib/backend/auth/auth.module'
 import { consumeRateLimit } from '@/lib/security/rate-limit'
-import { isStateChangingMethod, isTrustedOrigin } from '@/lib/security/request-guards'
 import { parseJsonBody } from '@/app/api/_shared/validation'
 
 const AUTH_TOKEN_COOKIE = 'manga-access-token'
@@ -25,10 +24,6 @@ function shouldUseSecureCookie(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    if (isStateChangingMethod(request.method) && !isTrustedOrigin(request)) {
-      return NextResponse.json({ error: 'Origem não autorizada' }, { status: 403 })
-    }
-
     const clientIp = request.headers.get('x-real-ip')
       || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
       || 'local'

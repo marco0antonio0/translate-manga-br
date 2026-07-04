@@ -38,12 +38,14 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Chrome,
   Loader2,
   PlusSquare,
   RefreshCw,
   Trash2,
   Upload,
   Sparkles,
+  ArrowRight,
 } from 'lucide-react'
 
 interface DeleteSectionResponse {
@@ -784,6 +786,46 @@ export function SectionsLibrary() {
         </div>
       </Link>
 
+      {/* Extension Banner */}
+      <Link href="/extensao" className="block">
+        <div className="relative cursor-pointer rounded-xl overflow-hidden border border-primary/40 hover:border-primary/80 transition-all duration-300 group bg-gradient-to-br from-primary/15 via-primary/10 to-accent/8 hover:shadow-[0_0_30px_-6px_color-mix(in_oklch,var(--primary)_50%,transparent)]">
+          {/* Glow background */}
+          <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+          <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-primary/15 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+          <div className="relative px-5 py-4 sm:px-6 sm:py-5 flex items-center gap-4 sm:gap-5">
+            <div className="relative shrink-0">
+              <div className="rounded-2xl bg-linear-to-br from-primary/30 to-accent/20 group-hover:from-primary/45 group-hover:to-accent/35 p-3.5 ring-1 ring-primary/40 group-hover:ring-primary/70 transition-all duration-300 group-hover:shadow-[0_0_20px_-2px_color-mix(in_oklch,var(--primary)_60%,transparent)]">
+                <Chrome className="h-6 w-6 text-primary group-hover:scale-110 transition-transform duration-300" />
+              </div>
+              <Sparkles className="anime-twinkle absolute -right-1.5 -top-1.5 h-4 w-4 text-accent drop-shadow-[0_0_6px_color-mix(in_oklch,var(--accent)_70%,transparent)]" />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-base font-semibold text-foreground group-hover:text-primary transition-colors duration-200">
+                  Extensão para Chrome
+                </span>
+                <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-linear-to-r from-primary/40 to-accent/40 px-2 py-0.5 text-[11px] font-semibold text-primary shadow-sm">
+                  <Sparkles className="h-3 w-3" />
+                  Novo
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-0.5 hidden sm:block">
+                Traduza mangá direto do navegador com nosso leitor integrado. Acesso rápido e controle total.
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5 sm:hidden">
+                Traduza no navegador com a extensão Chrome.
+              </p>
+            </div>
+
+            <div className="relative shrink-0 flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/15 px-3.5 py-2 text-sm font-semibold text-primary group-hover:bg-linear-to-r group-hover:from-primary/40 group-hover:to-accent/40 group-hover:text-primary group-hover:border-primary/60 transition-all duration-200">
+              <span className="hidden sm:inline">Ver Mais</span>
+              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
+            </div>
+          </div>
+        </div>
+      </Link>
 
       {hasReachedGenerationLimit && usageSummary && (
         <Card className="relative overflow-hidden border-border bg-card p-4 sm:p-5 shadow-sm">

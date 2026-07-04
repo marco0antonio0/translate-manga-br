@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Manga Translator Local Reader",
+  "description": "Usa o backend do Manga Translator Local para OCR, tradução e leitura de mangás direto no navegador.",
+  "version": "0.1.0",
+  "action": {
+    "default_icon": {
+      "16": "logo.png",
+      "32": "logo.png",
+      "48": "logo.png",
+      "128": "logo.png"
+    },
+    "default_popup": "popup.html",
+    "default_title": "Manga Translator Local"
+  },
+  "icons": {
+    "16": "logo.png",
+    "32": "logo.png",
+    "48": "logo.png",
+    "128": "logo.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": ["activeTab", "contextMenus", "storage", "tabs"],
+  "host_permissions": ["<all_urls>"]
+}

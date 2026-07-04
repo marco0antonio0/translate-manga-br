@@ -7,10 +7,14 @@
     "node": ">=20.9.0"
   },
   "scripts": {
+    "predev": "node scripts/generate-extension-config.mjs",
     "dev": "bash ./scripts/dev-with-python.sh",
+    "predev:web": "node scripts/generate-extension-config.mjs",
     "dev:web": "next dev -p 3080",
     "dev:local": "npm run dev",
+    "prebuild": "node scripts/generate-extension-config.mjs",
     "build": "next build",
+    "prestart": "node scripts/generate-extension-config.mjs",
     "start": "next start -p 3080",
     "lint": "eslint .",
     "security:deps": "node ./scripts/dependency-risk-check.mjs"
@@ -45,6 +49,7 @@
     "@radix-ui/react-toggle-group": "1.1.11",
     "@radix-ui/react-tooltip": "1.2.8",
     "@vercel/analytics": "1.6.1",
+    "adm-zip": "^0.5.18",
     "autoprefixer": "^10.4.20",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.10.0",

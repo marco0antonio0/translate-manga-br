@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createHash } from 'node:crypto'
 
+import { requireUser, unauthorizedResponse } from '@/app/api/_shared/proxy'
+import { db } from '@/lib/backend/shared/database.module'
 import { redisMGetStrings, redisSetString } from '@/lib/redis-cache'
+import { decryptSecret } from '@/lib/security/secrets'
 
-type TranslationProvider = 'google'
+type TranslationProvider =
+  | { name: 'google' }
+  | { name: 'openrouter'; model: string; apiKey: string }
 
+const ALLOWED_OPENROUTER_MODELS = ['google/gemma-4-31b-it'] as const
 const MAX_BATCH_ITEMS = 300
 const MAX_TEXT_LENGTH = 5000
 const MAX_CONCURRENCY = 4
@@ -26,8 +32,14 @@ function toLanguageCode(value: unknown, fallback: string) {
   return trimmed
 }
 
-function normalizeProvider(_value: unknown): TranslationProvider {
-  return 'google'
+function parseProvider(value: unknown): { name: 'google' } | { name: 'openrouter'; model: string } {
+  if (typeof value !== 'string') return { name: 'google' }
+  const normalized = value.trim()
+  if (normalized.toLowerCase().startsWith('openrouter:')) {
+    const model = normalized.slice('openrouter:'.length).trim()
+    return { name: 'openrouter', model: model || ALLOWED_OPENROUTER_MODELS[0] }
+  }
+  return { name: 'google' }
 }
 
 function toSafeTexts(value: unknown) {
@@ -86,8 +98,81 @@ async function translateWithGoogle(text: string, sourceLang: string, targetLang:
   return translated
 }
 
+function getOpenRouterApiKeyFromDb() {
+  const row = db.prepare('SELECT value FROM kv_store WHERE key = ? LIMIT 1')
+    .get('manga:openrouter:api_key') as { value?: string } | undefined
+  const raw = row?.value ? String(row.value) : ''
+  if (!raw) return ''
+  const decrypted = decryptSecret(raw)
+  return (decrypted || raw || '').trim()
+}
+
+function parseOpenRouterMessageContent(content: unknown) {
+  if (typeof content === 'string') return content.trim()
+  if (!Array.isArray(content)) return ''
+  return content
+    .map((part) => {
+      if (!part || typeof part !== 'object') return ''
+      const text = (part as Record<string, unknown>).text
+      return typeof text === 'string' ? text : ''
+    })
+    .filter(Boolean)
+    .join('\n')
+    .trim()
+}
+
+function buildOpenRouterSystemPrompt(sourceLang: string, targetLang: string) {
+  return [
+    `You are a professional manga/comic translator. Translate the user's text from ${sourceLang} to ${targetLang}.`,
+    'The source text was extracted by OCR from comic speech balloons and may contain recognition errors:',
+    'missing, extra, swapped or misrecognized letters, split or merged words, and stray symbols.',
+    'When a word looks corrupted or incomplete, infer the most likely intended word from the surrounding context',
+    'and translate that intended meaning — prefer the closest real, sensible word instead of translating the noise literally.',
+    'If the text is too garbled to guess, translate the readable parts and keep it coherent.',
+    'Keep the tone natural and colloquial as in comics, preserving punctuation and interjections when it makes sense.',
+    'Return ONLY the translated text, with no quotes, notes, alternatives, or explanations.',
+  ].join(' ')
+}
+
+async function translateWithOpenRouter(
+  text: string,
+  sourceLang: string,
+  targetLang: string,
+  model: string,
+  apiKey: string
+) {
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    cache: 'no-store',
+    body: JSON.stringify({
+      model,
+      temperature: 0,
+      messages: [
+        {
+          role: 'system',
+          content: buildOpenRouterSystemPrompt(sourceLang, targetLang),
+        },
+        { role: 'user', content: text },
+      ],
+    }),
+  })
+  if (!response.ok) throw new Error(`OpenRouter HTTP ${response.status}`)
+
+  const payload = await response.json() as {
+    choices?: Array<{ message?: { content?: unknown } }>
+  }
+  const translated = parseOpenRouterMessageContent(payload?.choices?.[0]?.message?.content)
+  if (!translated) throw new Error('Resposta de tradução OpenRouter inválida')
+  return translated
+}
+
 function resolveProviderCacheToken(provider: TranslationProvider) {
-  return provider
+  return provider.name === 'openrouter' ? `openrouter:${provider.model}` : provider.name
 }
 
 async function translateBatchTexts(
@@ -107,7 +192,9 @@ async function translateBatchTexts(
 
       const sourceText = texts[index]
       try {
-        translations[index] = await translateWithGoogle(sourceText, sourceLang, targetLang)
+        translations[index] = provider.name === 'openrouter'
+          ? await translateWithOpenRouter(sourceText, sourceLang, targetLang, provider.model, provider.apiKey)
+          : await translateWithGoogle(sourceText, sourceLang, targetLang)
       } catch {
         translations[index] = sourceText
       }
@@ -163,7 +250,7 @@ export async function POST(request: NextRequest) {
     const payload = (await request.json()) as TranslateBatchBody
     const sourceLang = toLanguageCode(payload.source_lang, 'auto')
     const targetLang = toLanguageCode(payload.target_lang, 'pt-BR')
-    const provider = normalizeProvider(payload.provider_lang)
+    const requestedProvider = parseProvider(payload.provider_lang)
     const texts = toSafeTexts(payload.texts)
 
     if (texts.length === 0) {
@@ -171,12 +258,34 @@ export async function POST(request: NextRequest) {
         {
           message: 'Nenhum texto válido para tradução.',
           translations: [],
-          provider_lang: provider,
+          provider_lang: requestedProvider.name,
           source_lang: sourceLang,
           target_lang: targetLang,
         },
         { status: 400 }
       )
+    }
+
+    let provider: TranslationProvider = { name: 'google' }
+    if (requestedProvider.name === 'openrouter') {
+      const user = await requireUser()
+      if (!user) return unauthorizedResponse()
+      if (!ALLOWED_OPENROUTER_MODELS.includes(requestedProvider.model as (typeof ALLOWED_OPENROUTER_MODELS)[number])) {
+        return NextResponse.json(
+          { message: 'Modelo OpenRouter não permitido.' },
+          { status: 400 }
+        )
+      }
+
+      const apiKey = getOpenRouterApiKeyFromDb()
+      if (!apiKey) {
+        return NextResponse.json(
+          { message: 'OpenRouter não está configurado.' },
+          { status: 400 }
+        )
+      }
+
+      provider = { name: 'openrouter', model: requestedProvider.model, apiKey }
     }
 
     const providerCacheToken = resolveProviderCacheToken(provider)
@@ -214,8 +323,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       translations,
-      provider_lang: provider,
-      provider_model: null,
+      provider_lang: provider.name,
+      provider_model: provider.name === 'openrouter' ? provider.model : null,
       source_lang: sourceLang,
       target_lang: targetLang,
     })

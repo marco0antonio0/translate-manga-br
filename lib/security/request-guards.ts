@@ -31,3 +31,25 @@ export function isTrustedOrigin(request: Request) {
 
   return origin === expectedOrigin
 }
+
+function getAllowedExtensionOrigins(): string[] {
+  return (process.env.EXTENSION_ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+}
+
+/**
+ * Como isTrustedOrigin, mas também aceita as origens `chrome-extension://<id>`
+ * listadas em EXTENSION_ALLOWED_ORIGINS. Usar apenas em rotas explicitamente
+ * pensadas para a extensão (login/logout) — não substituir isTrustedOrigin
+ * globalmente, para não ampliar a superfície de outras rotas de escrita.
+ */
+export function isTrustedOriginOrExtension(request: Request) {
+  if (isTrustedOrigin(request)) return true
+
+  const origin = firstHeaderValue(request.headers.get('origin'))
+  if (!origin) return false
+
+  return getAllowedExtensionOrigins().includes(origin)
+}

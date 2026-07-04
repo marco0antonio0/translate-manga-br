@@ -7,6 +7,11 @@ import { isStateChangingMethod, isTrustedOrigin } from '@/lib/security/request-g
 const OPENROUTER_KEY_KV = 'manga:openrouter:api_key'
 const OPENROUTER_MODEL_KV = 'manga:openrouter:model'
 const ALLOWED_MODELS = ['google/gemma-4-31b-it'] as const
+type AllowedOpenRouterModel = (typeof ALLOWED_MODELS)[number]
+
+function isAllowedOpenRouterModel(value: string): value is AllowedOpenRouterModel {
+  return ALLOWED_MODELS.includes(value as AllowedOpenRouterModel)
+}
 
 function forbiddenResponse() {
   return NextResponse.json(
@@ -91,7 +96,7 @@ export async function GET() {
     hasApiKey: true,
     isValid: validation.valid,
     availableModels: validation.availableModels,
-    selectedModel: selectedModel && validation.availableModels.includes(selectedModel)
+    selectedModel: selectedModel && isAllowedOpenRouterModel(selectedModel) && validation.availableModels.includes(selectedModel)
       ? selectedModel
       : null,
   })
@@ -134,7 +139,7 @@ export async function PUT(request: Request) {
   setKv(OPENROUTER_KEY_KV, encryptSecret(apiKey))
 
   const selectedModel = getKv(OPENROUTER_MODEL_KV)
-  if (!selectedModel || !validation.availableModels.includes(selectedModel)) {
+  if (!selectedModel || !isAllowedOpenRouterModel(selectedModel) || !validation.availableModels.includes(selectedModel)) {
     if (validation.availableModels.length > 0) {
       setKv(OPENROUTER_MODEL_KV, validation.availableModels[0])
     }
@@ -168,7 +173,7 @@ export async function PATCH(request: Request) {
   const body = payload && typeof payload === 'object' ? payload as Record<string, unknown> : {}
   const model = typeof body.model === 'string' ? body.model.trim() : ''
 
-  if (!ALLOWED_MODELS.includes(model as (typeof ALLOWED_MODELS)[number])) {
+  if (!isAllowedOpenRouterModel(model)) {
     return NextResponse.json(
       { message: 'Modelo não permitido.', error: 'Bad Request', statusCode: 400 },
       { status: 400 }
