@@ -4,11 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        CHROME_EXTENSION_API_BASE_URL: "${CHROME_EXTENSION_API_BASE_URL:-https://open-manga.agevon.com}"
-        NEXT_PUBLIC_SITE_URL: "${NEXT_PUBLIC_SITE_URL:-}"
-        SITE_URL: "${SITE_URL:-}"
-        APP_URL: "${APP_URL:-}"
-        PUBLIC_URL: "${PUBLIC_URL:-}"
+        CHROME_EXTENSION_API_BASE_URL: "https://open-manga.agevon.com"
     container_name: manga-nextjs
     ports:
       - "3080:3080"
@@ -16,7 +12,11 @@ services:
       MODEL_API_BASE_URL: "http://python-api:8023"
       NODE_ENV: "production"
       ALLOW_REMOTE_SETUP: "1"
-      SECTION_IMAGE_PROCESSING_CONCURRENCY: "${SECTION_IMAGE_PROCESSING_CONCURRENCY:-10}"
+      SECTION_IMAGE_PROCESSING_CONCURRENCY: "10"
+      # Necessário em runtime: o prestart (generate-extension-config) regenera o
+      # config.js ao subir o container. Sem esta env, ele cairia no fallback
+      # localhost e a extensão baixada apontaria para http://localhost:3080.
+      CHROME_EXTENSION_API_BASE_URL: "https://open-manga.agevon.com"
     depends_on:
       python-api:
         condition: service_healthy
