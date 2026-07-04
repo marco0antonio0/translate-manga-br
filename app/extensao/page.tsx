@@ -2,11 +2,11 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Chrome, Download, BookOpen, Zap, Shield } from 'lucide-react'
+import { Chrome, Download, BookOpen, Zap, Shield, Smartphone } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Extensão para Chrome',
-  description: 'Baixe e instale a extensão Manga Translator Local para Chrome. Traduza mangá diretamente do navegador com IA.',
+  title: 'Extensão para navegador',
+  description: 'Baixe e instale a extensão Manga Translator Local para Chrome e Firefox Mobile. Traduza mangá diretamente do navegador com IA.',
 }
 
 export default function ExtensaoPage() {
@@ -20,7 +20,7 @@ export default function ExtensaoPage() {
           </Link>
           <div className="flex items-center gap-2 text-primary">
             <Chrome className="w-5 h-5" />
-            <span className="font-semibold">Extensão Chrome</span>
+            <span className="font-semibold">Extensão do navegador</span>
           </div>
         </div>
       </header>
@@ -37,13 +37,19 @@ export default function ExtensaoPage() {
             Tradutor de Manga no Navegador
           </h1>
           <p className="text-lg text-muted-foreground">
-            Instale nossa extensão para Chrome e traduza mangá direto do seu navegador. Acesso rápido, modo leitor integrado e controle total sobre o OCR.
+            Instale nossa extensão para Chrome ou Firefox Mobile e traduza mangá direto do navegador. Acesso rápido, modo leitor integrado e controle total sobre o OCR.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
             <Link href="/download-extensao">
               <Button size="lg" className="gap-2 bg-primary hover:bg-primary/90">
                 <Download className="w-5 h-5" />
-                Baixar Extensão
+                Baixar para Chrome
+              </Button>
+            </Link>
+            <Link href="/download-extensao?target=firefox">
+              <Button size="lg" variant="outline" className="gap-2">
+                <Smartphone className="w-5 h-5" />
+                Baixar para Firefox Mobile
               </Button>
             </Link>
             <Link href="#tutorial">
@@ -100,10 +106,9 @@ export default function ExtensaoPage() {
                   1
                 </div>
                 <div className="space-y-2">
-                  <h3 className="font-semibold text-lg">Abra o Chrome Web Store</h3>
+                  <h3 className="font-semibold text-lg">Baixe o pacote do seu navegador</h3>
                   <p className="text-muted-foreground">
-                    Clique no botão "Baixar do Chrome Web Store" acima ou acesse{' '}
-                    <code className="bg-muted px-2 py-1 rounded text-sm">chrome.google.com/webstore</code>
+                    Use "Baixar para Chrome" no desktop ou "Baixar para Firefox Mobile" no Android.
                   </p>
                 </div>
               </div>
@@ -116,9 +121,9 @@ export default function ExtensaoPage() {
                   2
                 </div>
                 <div className="space-y-2">
-                  <h3 className="font-semibold text-lg">Procure por "Manga Translator Local"</h3>
+                  <h3 className="font-semibold text-lg">Instale em modo desenvolvedor</h3>
                   <p className="text-muted-foreground">
-                    Use a barra de busca para encontrar a extensão Manga Translator Local
+                    No Chrome, use "Carregar sem compactação". No Firefox Mobile, use o fluxo de extensão temporária/debug do Firefox para Android.
                   </p>
                 </div>
               </div>
@@ -131,9 +136,9 @@ export default function ExtensaoPage() {
                   3
                 </div>
                 <div className="space-y-2">
-                  <h3 className="font-semibold text-lg">Clique em "Adicionar ao Chrome"</h3>
+                  <h3 className="font-semibold text-lg">Escolha o ZIP gerado</h3>
                   <p className="text-muted-foreground">
-                    Confirme a instalação clicando no botão azul "Adicionar extensão"
+                    O pacote Chrome usa Manifest V3. O pacote Firefox Mobile usa manifest próprio compatível com background script clássico.
                   </p>
                 </div>
               </div>
@@ -189,7 +194,7 @@ export default function ExtensaoPage() {
             <Card className="p-6 border border-border/50 space-y-3">
               <h3 className="font-semibold text-lg">No modo leitor</h3>
               <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                <li>Clique em "Traduzir página" para processar</li>
+                <li>Clique em "Traduzir" para processar todas as páginas</li>
                 <li>Use zoom com os botões +/-</li>
                 <li>Edite o overlay com duplo clique nos balões</li>
                 <li>Alterne entre paginado e scroll contínuo</li>
@@ -209,7 +214,7 @@ export default function ExtensaoPage() {
                 <span className="group-open:rotate-180 transition">▼</span>
               </summary>
               <p className="text-muted-foreground mt-3">
-                Sim. A extensão conecta ao servidor Next.js/Python em http://localhost:3080 para fazer OCR, tradução e verificar sessão. Configure a URL nas configurações da extensão.
+                Sim. A extensão conecta ao servidor Next.js/Python em http://localhost:3080 para fazer OCR, tradução e verificar sessão. A URL é gerada pelo build/dev a partir das variáveis de ambiente.
               </p>
             </details>
 
@@ -255,7 +260,7 @@ export default function ExtensaoPage() {
                 <span className="group-open:rotate-180 transition">▼</span>
               </summary>
               <p className="text-muted-foreground mt-3">
-                Ao abrir o popup da extensão (após login), na seção "URL do sistema" coloque: <code className="bg-muted px-2 py-1 rounded text-sm">http://localhost:3080</code> (ou a URL do seu servidor). Depois clique "Salvar".
+                Defina a URL via ambiente antes de rodar dev/build, por exemplo <code className="bg-muted px-2 py-1 rounded text-sm">CHROME_EXTENSION_API_BASE_URL=https://seu-dominio</code>. O popup apenas exibe a URL gerada.
               </p>
             </details>
           </div>
@@ -267,10 +272,16 @@ export default function ExtensaoPage() {
           <p className="text-lg text-muted-foreground">
             Baixe a extensão agora e comece a traduzir mangá com facilidade.
           </p>
-          <Link href="/api/download-extension">
+          <Link href="/download-extensao">
             <Button size="lg" className="gap-2 bg-primary hover:bg-primary/90">
               <Download className="w-5 h-5" />
-              Baixar Extensão
+              Baixar para Chrome
+            </Button>
+          </Link>
+          <Link href="/download-extensao?target=firefox">
+            <Button size="lg" variant="outline" className="gap-2">
+              <Smartphone className="w-5 h-5" />
+              Baixar para Firefox Mobile
             </Button>
           </Link>
         </section>

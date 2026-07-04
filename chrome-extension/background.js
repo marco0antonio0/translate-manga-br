@@ -1,4 +1,5 @@
 try {
+  importScripts('extension-compat.js')
   importScripts('config.js')
 } catch {
 }
