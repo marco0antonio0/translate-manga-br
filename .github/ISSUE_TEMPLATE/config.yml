@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 🔐 Vulnerabilidade de segurança
+    url: https://github.com/marco0antonio0/translate-manga-br/security/advisories/new
+    about: Reporte vulnerabilidades de forma privada — nunca em issue pública.
+  - name: 💬 Dúvidas e discussões
+    url: https://github.com/marco0antonio0/translate-manga-br/discussions
+    about: Para perguntas gerais, ideias e conversas com a comunidade.
