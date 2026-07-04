@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1680" viewBox="0 0 1100 1680" role="img" aria-labelledby="title desc">
+  <title id="title">Fluxograma do processamento de traducao de manga</title>
+  <desc id="desc">Fluxograma vertical sem setas sobrepostas, com cada operacao marcada como frontend, backend Next.js, persistencia local, backend Python ou servico externo.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <style>
+      .title { font: 700 30px Arial, sans-serif; fill: #0f172a; }
+      .subtitle { font: 14px Arial, sans-serif; fill: #475569; }
+      .label { font: 700 13px Arial, sans-serif; fill: #ffffff; letter-spacing: .4px; }
+      .box-title { font: 700 18px Arial, sans-serif; fill: #0f172a; }
+      .box-text { font: 14px Arial, sans-serif; fill: #334155; }
+      .legend-title { font: 700 15px Arial, sans-serif; fill: #0f172a; }
+      .legend-text { font: 13px Arial, sans-serif; fill: #334155; }
+      .arrow { stroke: #334155; stroke-width: 2.4; fill: none; marker-end: url(#arrow); }
+      .front { fill: #ecfeff; stroke: #0891b2; }
+      .front-label { fill: #0891b2; }
+      .next { fill: #f0fdf4; stroke: #16a34a; }
+      .next-label { fill: #16a34a; }
+      .storage { fill: #fffbeb; stroke: #d97706; }
+      .storage-label { fill: #d97706; }
+      .python { fill: #eff6ff; stroke: #2563eb; }
+      .python-label { fill: #2563eb; }
+      .external { fill: #fdf2f8; stroke: #db2777; }
+      .external-label { fill: #db2777; }
+      .box { stroke-width: 2; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1100" height="1680" fill="#ffffff"/>
+  <text x="70" y="58" class="title">Fluxo atual de processamento</text>
+  <text x="70" y="86" class="subtitle">Layout vertical para evitar sobreposicao: cada seta liga apenas uma etapa a proxima.</text>
+
+  <rect x="70" y="115" width="960" height="78" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="92" y="143" class="legend-title">Legenda</text>
+  <rect x="92" y="156" width="18" height="18" rx="4" class="front-label"/>
+  <text x="118" y="170" class="legend-text">Frontend</text>
+  <rect x="220" y="156" width="18" height="18" rx="4" class="next-label"/>
+  <text x="246" y="170" class="legend-text">Backend Next.js/BFF</text>
+  <rect x="420" y="156" width="18" height="18" rx="4" class="storage-label"/>
+  <text x="446" y="170" class="legend-text">Persistencia local</text>
+  <rect x="610" y="156" width="18" height="18" rx="4" class="python-label"/>
+  <text x="636" y="170" class="legend-text">Backend Python/FastAPI</text>
+  <rect x="830" y="156" width="18" height="18" rx="4" class="external-label"/>
+  <text x="856" y="170" class="legend-text">Servico externo</text>
+
+  <!-- Step 1 -->
+  <rect x="220" y="240" width="660" height="88" rx="12" class="box front"/>
+  <rect x="244" y="262" width="104" height="28" rx="6" class="front-label"/>
+  <text x="263" y="281" class="label">FRONT</text>
+  <text x="376" y="276" class="box-title">Usuario acessa setup ou login</text>
+  <text x="376" y="302" class="box-text">Rotas /setup e /login iniciam o uso da aplicacao.</text>
+
+  <path class="arrow" d="M550 328 V376"/>
+
+  <!-- Step 2 -->
+  <rect x="220" y="376" width="660" height="88" rx="12" class="box front"/>
+  <rect x="244" y="398" width="104" height="28" rx="6" class="front-label"/>
+  <text x="263" y="417" class="label">FRONT</text>
+  <text x="376" y="412" class="box-title">Painel autenticado</text>
+  <text x="376" y="438" class="box-text">Usuario navega em /inicio.</text>
+
+  <path class="arrow" d="M550 464 V512"/>
+
+  <!-- Step 3 -->
+  <rect x="220" y="512" width="660" height="88" rx="12" class="box front"/>
+  <rect x="244" y="534" width="104" height="28" rx="6" class="front-label"/>
+  <text x="263" y="553" class="label">FRONT</text>
+  <text x="376" y="548" class="box-title">Criacao de secao</text>
+  <text x="376" y="574" class="box-text">Upload de paginas em /inicio/secoes/nova.</text>
+
+  <path class="arrow" d="M550 600 V648"/>
+
+  <!-- Step 4 -->
+  <rect x="220" y="648" width="660" height="88" rx="12" class="box next"/>
+  <rect x="244" y="670" width="104" height="28" rx="6" class="next-label"/>
+  <text x="267" y="689" class="label">BACK</text>
+  <text x="376" y="684" class="box-title">Next API recebe o FormData</text>
+  <text x="376" y="710" class="box-text">POST /api/sections recebe imagens e configuracoes.</text>
+
+  <path class="arrow" d="M550 736 V784"/>
+
+  <!-- Step 5 -->
+  <rect x="220" y="784" width="660" height="88" rx="12" class="box next"/>
+  <rect x="244" y="806" width="104" height="28" rx="6" class="next-label"/>
+  <text x="267" y="825" class="label">BACK</text>
+  <text x="376" y="820" class="box-title">Valida sessao, usuario e dados</text>
+  <text x="376" y="846" class="box-text">Backend local prepara a secao para processamento.</text>
+
+  <path class="arrow" d="M550 872 V920"/>
+
+  <!-- Step 6 -->
+  <rect x="220" y="920" width="660" height="88" rx="12" class="box storage"/>
+  <rect x="244" y="942" width="104" height="28" rx="6" class="storage-label"/>
+  <text x="258" y="961" class="label">LOCAL</text>
+  <text x="376" y="956" class="box-title">Grava SQLite e arquivos locais</text>
+  <text x="376" y="982" class="box-text">Metadados em storage/local.sqlite e imagens em storage/sections.</text>
+
+  <path class="arrow" d="M550 1008 V1056"/>
+
+  <!-- Step 7 -->
+  <rect x="220" y="1056" width="660" height="88" rx="12" class="box next"/>
+  <rect x="244" y="1078" width="104" height="28" rx="6" class="next-label"/>
+  <text x="267" y="1097" class="label">BACK</text>
+  <text x="376" y="1092" class="box-title">Chama a API Python</text>
+  <text x="376" y="1118" class="box-text">lib/model-gateway.ts envia a imagem para a FastAPI.</text>
+
+  <path class="arrow" d="M550 1144 V1192"/>
+
+  <!-- Step 8 -->
+  <rect x="220" y="1192" width="660" height="88" rx="12" class="box python"/>
+  <rect x="244" y="1214" width="104" height="28" rx="6" class="python-label"/>
+  <text x="258" y="1233" class="label">PYTHON</text>
+  <text x="376" y="1228" class="box-title">Detecta boxes e extrai OCR</text>
+  <text x="376" y="1254" class="box-text">YOLO ONNX localiza boxes; PaddleOCR ONNX extrai texto.</text>
+
+  <path class="arrow" d="M550 1280 V1328"/>
+
+  <!-- Step 9 -->
+  <rect x="220" y="1328" width="660" height="88" rx="12" class="box external"/>
+  <rect x="244" y="1350" width="104" height="28" rx="6" class="external-label"/>
+  <text x="257" y="1369" class="label">EXTERNO</text>
+  <text x="376" y="1364" class="box-title">Traduz o texto extraido</text>
+  <text x="376" y="1390" class="box-text">Google Translate ou OpenRouter, conforme provider selecionado.</text>
+
+  <path class="arrow" d="M550 1416 V1464"/>
+
+  <!-- Step 10 -->
+  <rect x="220" y="1464" width="660" height="76" rx="12" class="box next"/>
+  <rect x="244" y="1478" width="104" height="28" rx="6" class="next-label"/>
+  <text x="267" y="1497" class="label">BACK</text>
+  <text x="376" y="1492" class="box-title">Salva OCR, traducao e status no SQLite</text>
+  <text x="376" y="1518" class="box-text">Dados ficam prontos para consulta pelo leitor.</text>
+
+  <path class="arrow" d="M550 1540 V1588"/>
+
+  <!-- Step 11 -->
+  <rect x="220" y="1588" width="660" height="76" rx="12" class="box front"/>
+  <rect x="244" y="1602" width="104" height="28" rx="6" class="front-label"/>
+  <text x="263" y="1621" class="label">FRONT</text>
+  <text x="376" y="1616" class="box-title">Renderiza caixas editaveis para o cliente</text>
+  <text x="376" y="1642" class="box-text">Leitor carrega imagem original, textos traduzidos e caixas de dialogo editaveis.</text>
+</svg>

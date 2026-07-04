@@ -1,0 +1,29 @@
+name: ✨ Feature request
+description: Sugira uma melhoria ou nova funcionalidade
+title: "[feat]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivação
+      description: Qual problema esta funcionalidade resolve? Por que ela é útil?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solução proposta
+      description: Descreva como você imagina que isso funcionaria.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas consideradas
+      description: Outras abordagens que você avaliou, se houver.
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impacto esperado
+      description: Quem se beneficia? Afeta a proposta local-first do projeto?

@@ -1,0 +1,55 @@
+name: 🐛 Bug report
+description: Reporte um problema para nos ajudar a melhorar
+title: "[bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por reportar! Preencha os campos abaixo para acelerar a análise.
+        ⚠️ **Vulnerabilidades de segurança NÃO devem ser reportadas aqui** — veja [SECURITY.md](../../SECURITY.md).
+  - type: textarea
+    id: description
+    attributes:
+      label: Descrição do problema
+      description: O que aconteceu? O que você esperava que acontecesse?
+      placeholder: Ao criar uma seção sem imagens, o polling entra em loop...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      placeholder: |
+        1. Acesse '/inicio/secoes/nova'
+        2. Clique em '...'
+        3. Observe o erro
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Ambiente
+      description: OS, Node, Python, Docker (versões)
+      placeholder: |
+        - OS: Ubuntu 24.04
+        - Node: 22.x
+        - Python: 3.11
+        - Docker: 27.x (ou "execução local")
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs relevantes
+      description: Cole logs, stack traces ou prints. Será formatado como código automaticamente.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Verificações
+      options:
+        - label: Procurei issues existentes e não encontrei duplicata
+          required: true
+        - label: Removi dados sensíveis (chaves, senhas) dos logs
+          required: true
