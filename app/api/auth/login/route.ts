@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { authController } from '@/lib/backend/auth/auth.module'
 import { consumeRateLimit } from '@/lib/security/rate-limit'
 import { parseJsonBody } from '@/app/api/_shared/validation'
+import { isExtensionOrigin } from '@/lib/security/request-guards'
 
 const AUTH_TOKEN_COOKIE = 'manga-access-token'
 const loginBodySchema = z.object({
@@ -56,11 +57,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email ou senha incorretos' }, { status: 401 })
     }
 
+    // Login vindo da extensão (chrome-extension://) é cross-site em relação ao
+    // site: o cookie precisa ser SameSite=None; Secure para ser enviado nas
+    // requisições subsequentes (criar seção, /me etc). Para o app web, mantém Lax.
+    const fromExtension = isExtensionOrigin(request)
     const cookieStore = await cookies()
     cookieStore.set(AUTH_TOKEN_COOKIE, login.token, {
       httpOnly: true,
-      secure: shouldUseSecureCookie(request),
-      sameSite: 'lax',
+      secure: fromExtension ? true : shouldUseSecureCookie(request),
+      sameSite: fromExtension ? 'none' : 'lax',
       maxAge: 60 * 60 * 24,
       path: '/',
     })

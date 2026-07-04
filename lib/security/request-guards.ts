@@ -53,3 +53,19 @@ export function isTrustedOriginOrExtension(request: Request) {
 
   return getAllowedExtensionOrigins().includes(origin)
 }
+
+/**
+ * True quando a requisição vem de uma extensão de navegador
+ * (chrome-extension:// ou moz-extension://), ou de uma origem explicitamente
+ * listada em EXTENSION_ALLOWED_ORIGINS. Usado no login para emitir o cookie de
+ * sessão com SameSite=None; Secure — sem isso o cookie Lax não é enviado nas
+ * requisições cross-site que a extensão faz ao site.
+ */
+export function isExtensionOrigin(request: Request) {
+  const origin = firstHeaderValue(request.headers.get('origin'))
+  if (!origin) return false
+  if (origin.startsWith('chrome-extension://') || origin.startsWith('moz-extension://')) {
+    return true
+  }
+  return getAllowedExtensionOrigins().includes(origin)
+}
