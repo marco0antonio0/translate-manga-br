@@ -9,32 +9,10 @@ services:
     ports:
       - "3080:3080"
     environment:
-      MODEL_API_BASE_URL: "http://python-api:8023"
       NODE_ENV: "production"
       ALLOW_REMOTE_SETUP: "1"
-      SECTION_IMAGE_PROCESSING_CONCURRENCY: "10"
-      # Necessário em runtime: o prestart (generate-extension-config) regenera o
-      # config.js ao subir o container. Sem esta env, ele cairia no fallback
-      # localhost e a extensão baixada apontaria para http://localhost:3080.
+      SECTION_IMAGE_PROCESSING_CONCURRENCY: "2"
       CHROME_EXTENSION_API_BASE_URL: "https://open-manga.agevon.com"
-    depends_on:
-      python-api:
-        condition: service_healthy
     volumes:
       - ./storage:/app/storage
-    restart: unless-stopped
-
-  python-api:
-    build:
-      context: ./python-api
-      dockerfile: Dockerfile
-    container_name: manga-python-api
-    expose:
-      - "8023"
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8023/health').read()"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-      start_period: 30s
     restart: unless-stopped

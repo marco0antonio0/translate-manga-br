@@ -9,7 +9,7 @@ Guia para estudantes e novos contribuidores que querem aprender full stack, IA a
 O **Manga Translator Local** é uma plataforma local-first para tradução de mangás:
 
 - **Frontend** em Next.js 16 + React 19
-- **Backend de OCR/tradução** em Python + FastAPI
+- **Backend de OCR/tradução** em Next.js Route Handlers
 - **Persistência local** com SQLite
 
 Prioridades técnicas do projeto:
@@ -29,7 +29,7 @@ Prioridades técnicas do projeto:
 | Tecnologia | Pontos de estudo |
 | --- | --- |
 | **Next.js 16 + React 19 + TypeScript** | App Router, componentes de UI, integração com APIs internas |
-| **FastAPI (Python)** | Endpoints de OCR/tradução, organização por serviços |
+| **Next.js Route Handlers** | Endpoints de OCR/tradução, organização por domínio |
 | **SQLite** | Modelagem simples, consultas, evolução de schema com migrações |
 | **Docker Compose** | Ambiente reprodutível para desenvolvimento e teste |
 | **ONNX Runtime** | Inferência de modelos (YOLO + PaddleOCR) em CPU |
@@ -41,7 +41,8 @@ Prioridades técnicas do projeto:
 | `app/api/*` | Backend local (BFF + regras de domínio) |
 | `components/*` | UI e fluxo de usuário |
 | `lib/backend/*` | Regras de negócio e repositórios |
-| `python-api/*` | Pipeline de OCR/tradução |
+| `models/*` | Modelos ONNX locais usados pelo OCR/detector |
+| `lib/server/*` | Runtime de inferência local em Node.js |
 | `storage/*` | Banco local e artefatos processados |
 
 ### Fluxo técnico atual
@@ -50,8 +51,8 @@ Prioridades técnicas do projeto:
 2. A rota `app/api/sections/route.ts` recebe o `FormData`.
 3. O backend local grava metadados no SQLite e arquivos em `storage/sections`.
 4. `lib/backend/sections/sections.repository.ts` inicia o processamento em segundo plano.
-5. `lib/model-gateway.ts` chama a FastAPI em `python-api/`.
-6. A API Python detecta boxes com YOLO ONNX e extrai texto com PaddleOCR ONNX.
+5. `lib/server/manga-ocr-node.ts` executa YOLO ONNX e PaddleOCR ONNX localmente.
+6. O backend Next.js recebe os boxes e textos extraídos.
 7. O texto extraído é traduzido pelo provider selecionado (Google ou OpenRouter).
 8. O resultado volta para o SQLite e o leitor exibe a imagem original com overlay editável.
 
@@ -61,7 +62,7 @@ Prioridades técnicas do projeto:
 - [ ] **2.** Navegue pelo fluxo completo: setup → login → criação de seção → leitura
 - [ ] **3.** Leia as rotas de seção em `app/api/sections/*`
 - [ ] **4.** Entenda o repositório principal em `lib/backend/sections/sections.repository.ts`
-- [ ] **5.** Explore o pipeline Python em `python-api/app/services/*`
+- [ ] **5.** Explore o runtime ONNX em `lib/server/manga-ocr-node.ts`
 - [ ] **6.** Faça uma melhoria pequena e abra um PR com evidência de teste
 
 ## 🤝 Como contribuir (passo a passo)

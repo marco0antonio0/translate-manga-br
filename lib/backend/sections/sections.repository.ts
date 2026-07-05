@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { db } from '@/lib/backend/shared/database.module'
-import { buildModelApiUrl, modelApiHeaders } from '@/lib/model-gateway'
 import { decryptSecret } from '@/lib/security/secrets'
+import { extractTextBoxesNode } from '@/lib/server/manga-ocr-node'
 import type { ImageKind, ResolvedImageFile } from './sections.types'
 
 const sectionsRoot = path.resolve(process.cwd(), 'storage', 'sections')
@@ -355,24 +355,7 @@ export class SectionsRepository {
         throw new Error('Arquivo original não encontrado.')
       }
       const buffer = fs.readFileSync(image.original_path)
-      const blob = new Blob([buffer], { type: image.mime || 'application/octet-stream' })
-
-      const upstream = new FormData()
-      upstream.append('file', blob, path.basename(image.original_path))
-
-      const url = buildModelApiUrl('/api/v1/extract-text-boxes')
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: modelApiHeaders(),
-        body: upstream,
-      })
-
-      if (!response.ok) {
-        const text = await response.text().catch(() => '')
-        throw new Error(`Python API ${response.status}: ${text.slice(0, 200)}`)
-      }
-
-      const data = await response.json() as {
+      const data = await extractTextBoxesNode(buffer) as {
         detections?: Array<{
           det_id?: number
           cls_name?: string

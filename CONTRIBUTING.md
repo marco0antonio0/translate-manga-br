@@ -37,7 +37,6 @@ Novo em open source? O [LEARN.md](LEARN.md) tem uma trilha de aprendizado e idei
 ### Pré-requisitos
 
 - Node.js 20+ (`.nvmrc` aponta 22 para desenvolvimento local; Docker usa Node 20)
-- Python 3.11+
 - Docker (opcional, recomendado para validação de ambiente)
 
 ### Instalação
@@ -116,7 +115,8 @@ Observações conhecidas:
 | `app/api/*` | Rotas e regras no backend local |
 | `components/*` | Interface |
 | `lib/backend/*` | Domínio e persistência |
-| `python-api/*` | OCR/tradução |
+| `lib/server/*` | OCR/detecção local com ONNX Runtime |
+| `models/*` | Modelos ONNX e dicionários |
 | `storage/*` | Dados locais (**não versionar** conteúdo gerado) |
 
 ### Diretrizes de código
@@ -130,7 +130,7 @@ Observações conhecidas:
 
 Ao abrir uma issue, inclua:
 
-- **Ambiente** — OS, Node, Python, Docker
+- **Ambiente** — OS, Node, Docker
 - **Passos para reproduzir**
 - **Comportamento esperado vs atual**
 - **Logs relevantes**

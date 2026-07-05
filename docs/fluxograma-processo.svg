@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1680" viewBox="0 0 1100 1680" role="img" aria-labelledby="title desc">
   <title id="title">Fluxograma do processamento de traducao de manga</title>
-  <desc id="desc">Fluxograma vertical sem setas sobrepostas, com cada operacao marcada como frontend, backend Next.js, persistencia local, backend Python ou servico externo.</desc>
+  <desc id="desc">Fluxograma vertical sem setas sobrepostas, com cada operacao marcada como frontend, backend Next.js, persistencia local, runtime ONNX ou servico externo.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
@@ -20,8 +20,8 @@
       .next-label { fill: #16a34a; }
       .storage { fill: #fffbeb; stroke: #d97706; }
       .storage-label { fill: #d97706; }
-      .python { fill: #eff6ff; stroke: #2563eb; }
-      .python-label { fill: #2563eb; }
+      .onnx { fill: #eff6ff; stroke: #2563eb; }
+      .onnx-label { fill: #2563eb; }
       .external { fill: #fdf2f8; stroke: #db2777; }
       .external-label { fill: #db2777; }
       .box { stroke-width: 2; }
@@ -40,8 +40,8 @@
   <text x="246" y="170" class="legend-text">Backend Next.js/BFF</text>
   <rect x="420" y="156" width="18" height="18" rx="4" class="storage-label"/>
   <text x="446" y="170" class="legend-text">Persistencia local</text>
-  <rect x="610" y="156" width="18" height="18" rx="4" class="python-label"/>
-  <text x="636" y="170" class="legend-text">Backend Python/FastAPI</text>
+  <rect x="610" y="156" width="18" height="18" rx="4" class="onnx-label"/>
+  <text x="636" y="170" class="legend-text">Runtime ONNX local</text>
   <rect x="830" y="156" width="18" height="18" rx="4" class="external-label"/>
   <text x="856" y="170" class="legend-text">Servico externo</text>
 
@@ -103,15 +103,15 @@
   <rect x="220" y="1056" width="660" height="88" rx="12" class="box next"/>
   <rect x="244" y="1078" width="104" height="28" rx="6" class="next-label"/>
   <text x="267" y="1097" class="label">BACK</text>
-  <text x="376" y="1092" class="box-title">Chama a API Python</text>
-  <text x="376" y="1118" class="box-text">lib/model-gateway.ts envia a imagem para a FastAPI.</text>
+  <text x="376" y="1092" class="box-title">Executa OCR local</text>
+  <text x="376" y="1118" class="box-text">lib/server/manga-ocr-node.ts processa a imagem.</text>
 
   <path class="arrow" d="M550 1144 V1192"/>
 
   <!-- Step 8 -->
-  <rect x="220" y="1192" width="660" height="88" rx="12" class="box python"/>
-  <rect x="244" y="1214" width="104" height="28" rx="6" class="python-label"/>
-  <text x="258" y="1233" class="label">PYTHON</text>
+  <rect x="220" y="1192" width="660" height="88" rx="12" class="box onnx"/>
+  <rect x="244" y="1214" width="104" height="28" rx="6" class="onnx-label"/>
+  <text x="258" y="1233" class="label">ONNX</text>
   <text x="376" y="1228" class="box-title">Detecta boxes e extrai OCR</text>
   <text x="376" y="1254" class="box-text">YOLO ONNX localiza boxes; PaddleOCR ONNX extrai texto.</text>
 

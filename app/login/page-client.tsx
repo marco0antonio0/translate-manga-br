@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
 import { LoginForm } from '@/components/login-form'
 import {
   Dialog,
@@ -17,8 +16,6 @@ import { Button } from '@/components/ui/button'
 export default function LoginPageClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [isCheckingSession, setIsCheckingSession] = useState(true)
-  const [authCheckReason, setAuthCheckReason] = useState('')
   const [showExpiredModal, setShowExpiredModal] = useState(false)
 
   const sessionExpired = searchParams.get('expired') === '1'
@@ -48,17 +45,10 @@ export default function LoginPageClient() {
           return
         }
 
-        if ((response.status === 401 || response.status === 403) && typeof data?.reason === 'string') {
-          setAuthCheckReason(data.reason)
-        } else {
-          setAuthCheckReason('')
-        }
-
       } catch {
-        setAuthCheckReason('')
+        // A tela de login nao deve ficar bloqueada se a checagem de sessao falhar.
       } finally {
         window.clearTimeout(timeoutId)
-        setIsCheckingSession(false)
       }
     }
 
@@ -66,21 +56,10 @@ export default function LoginPageClient() {
   }, [loginRedirectTarget, router])
 
   useEffect(() => {
-    if (!isCheckingSession && sessionExpired) {
+    if (sessionExpired) {
       setShowExpiredModal(true)
     }
-  }, [isCheckingSession, sessionExpired])
-
-  if (isCheckingSession) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="text-muted-foreground">Verificando sessão...</span>
-        </div>
-      </div>
-    )
-  }
+  }, [sessionExpired])
 
   return (
     <>

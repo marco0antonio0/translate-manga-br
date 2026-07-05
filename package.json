@@ -8,7 +8,7 @@
   },
   "scripts": {
     "predev": "node scripts/generate-extension-config.mjs",
-    "dev": "bash ./scripts/dev-with-python.sh",
+    "dev": "bash ./scripts/dev-next.sh",
     "predev:web": "node scripts/generate-extension-config.mjs",
     "dev:web": "next dev -p 3080",
     "dev:local": "npm run dev",
@@ -64,6 +64,7 @@
     "lucide-react": "^0.564.0",
     "next": "16.2.7",
     "next-themes": "^0.4.6",
+    "onnxruntime-node": "^1.27.0",
     "pdfjs-dist": "^4.10.38",
     "react": "19.2.4",
     "react-day-picker": "9.13.2",
@@ -72,6 +73,7 @@
     "react-paginate": "^8.3.0",
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.0",
+    "sharp": "^0.35.3",
     "socket.io-client": "^4.8.3",
     "sonner": "^1.7.1",
     "tailwind-merge": "^3.3.1",
@@ -96,6 +98,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.0",
+    "@types/adm-zip": "^0.5.8",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22",
     "@types/react": "19.2.14",

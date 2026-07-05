@@ -1,20 +1,16 @@
 #!/usr/bin/env node
 
-import { existsSync, mkdirSync, writeFileSync } from "node:fs"
+import { mkdirSync, writeFileSync } from "node:fs"
 import { spawnSync } from "node:child_process"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const rootDir = resolve(__dirname, "..")
-const pythonApiDir = resolve(rootDir, "python-api")
-const pythonRequirements = resolve(pythonApiDir, "requirements.txt")
-const pythonVenv = resolve(pythonApiDir, ".venv", "bin", "python")
 const reportDir = resolve(rootDir, "storage", "security")
 const reportJsonPath = resolve(reportDir, "dependency-risk-report.json")
 const reportMdPath = resolve(reportDir, "dependency-risk-report.md")
 const timeoutMs = Number.parseInt(process.env.SECURITY_AUDIT_TIMEOUT_MS ?? "180000", 10)
-const enablePipAudit = process.env.SECURITY_ENABLE_PIP_AUDIT === "1"
 const failSeverities = new Set(["high", "critical"])
 const watchedPackages = new Set([
   "next",
@@ -22,10 +18,8 @@ const watchedPackages = new Set([
   "firebase",
   "pdfjs-dist",
   "socket.io-client",
-  "torch",
-  "torchvision",
-  "ultralytics",
-  "onnxruntime",
+  "onnxruntime-node",
+  "sharp",
 ])
 const compromiseKeywords = [
   "malware",
@@ -48,7 +42,6 @@ function runCommand(command, args, cwd = rootDir) {
     env: {
       ...process.env,
       npm_config_loglevel: "error",
-      PIP_DISABLE_PIP_VERSION_CHECK: "1",
     },
   })
 
@@ -78,27 +71,6 @@ function pickMessage(...values) {
   return "Erro desconhecido."
 }
 
-function resolvePythonBin() {
-  const candidates = existsSync(pythonVenv) ? [pythonVenv, "python3"] : ["python3"]
-
-  for (const candidate of candidates) {
-    const result = runCommand(candidate, ["-m", "pip_audit", "--version"])
-    if (result.ok) {
-      return {
-        bin: candidate,
-        available: true,
-        checked: candidates,
-      }
-    }
-  }
-
-  return {
-    bin: null,
-    available: false,
-    checked: candidates,
-  }
-}
-
 function normalizeNpmAudit(audit) {
   if (!audit?.vulnerabilities) {
     return []
@@ -123,29 +95,6 @@ function normalizeNpmAudit(audit) {
       fixAvailable: item.fixAvailable ?? false,
     }
   })
-}
-
-function normalizePipAudit(audit) {
-  const dependencies = Array.isArray(audit) ? audit : audit?.dependencies
-  if (!Array.isArray(dependencies)) {
-    return []
-  }
-
-  return dependencies
-    .filter((dependency) => Array.isArray(dependency.vulns) && dependency.vulns.length > 0)
-    .map((dependency) => ({
-      source: "pip-audit",
-      ecosystem: "pip",
-      package: dependency.name,
-      severity: "unknown",
-      direct: true,
-      advisories: dependency.vulns.map((entry) => ({
-        title: entry.id ?? "Python advisory",
-        url: entry.aliases?.[0] ?? null,
-        severity: "unknown",
-      })),
-      fixAvailable: dependency.vulns.some((entry) => Array.isArray(entry.fix_versions) && entry.fix_versions.length > 0),
-    }))
 }
 
 function normalizeNpmSignatures(audit) {
@@ -259,7 +208,6 @@ function renderMarkdown(report) {
     "",
     "- `npm audit` para vulnerabilidades conhecidas no ecossistema npm.",
     "- `npm audit signatures` para validar assinatura e proveniencia no registro npm.",
-    "- `pip-audit` opcional, desativado por padrao neste projeto.",
     "- Lista de pacotes observados para elevar sensibilidade em componentes criticos.",
     ""
   )
@@ -272,7 +220,6 @@ mkdirSync(reportDir, { recursive: true })
 const findings = []
 const executionErrors = []
 const generatedAt = new Date().toISOString()
-const pipAuditRuntime = resolvePythonBin()
 
 const npmAuditResult = runCommand("npm", ["audit", "--json"])
 const npmAudit = parseJson(npmAuditResult.stdout)
@@ -294,27 +241,6 @@ if (npmSignatures) {
     tool: "npm audit signatures",
     message: pickMessage(npmSignaturesResult.error, npmSignaturesResult.stderr, npmSignaturesResult.stdout),
   })
-}
-
-if (enablePipAudit && !pipAuditRuntime.available) {
-  console.warn(`pip-audit indisponivel; checagem Python ignorada. Interpretadores verificados: ${pipAuditRuntime.checked.join(", ")}`)
-} else if (enablePipAudit) {
-  const pipAuditResult = runCommand(pipAuditRuntime.bin, [
-    "-m",
-    "pip_audit",
-    "-r",
-    pythonRequirements,
-    "-f",
-    "json",
-    "--timeout",
-    "120",
-  ])
-  const pipAudit = parseJson(pipAuditResult.stdout)
-  if (pipAudit) {
-    findings.push(...normalizePipAudit(pipAudit))
-  } else {
-    console.warn(`pip-audit falhou e sera ignorado: ${pickMessage(pipAuditResult.error, pipAuditResult.stderr, pipAuditResult.stdout)}`)
-  }
 }
 
 const counts = countSeverities(findings)

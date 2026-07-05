@@ -214,7 +214,7 @@ export default function ExtensaoPage() {
                 <span className="group-open:rotate-180 transition">▼</span>
               </summary>
               <p className="text-muted-foreground mt-3">
-                Sim. A extensão conecta ao servidor Next.js/Python em http://localhost:3080 para fazer OCR, tradução e verificar sessão. A URL é gerada pelo build/dev a partir das variáveis de ambiente.
+                Sim. A extensão conecta ao servidor Next.js em http://localhost:3080 para fazer OCR, tradução e verificar sessão. A URL é gerada pelo build/dev a partir das variáveis de ambiente.
               </p>
             </details>
 

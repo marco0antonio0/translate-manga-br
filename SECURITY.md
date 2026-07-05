@@ -35,11 +35,11 @@ Especialmente relevantes para este projeto:
 - Acesso indevido ao setup inicial (`ALLOW_REMOTE_SETUP`)
 - Vazamento de chaves criptografadas em repouso (`lib/security/secrets.ts`)
 - Path traversal / acesso indevido a arquivos em `storage/`
-- Injeção via uploads de imagem processados pelo pipeline Python
+- Injeção via uploads de imagem processados pelo pipeline ONNX local
 
 ## Práticas do projeto
 
-- Dependabot semanal para npm, pip e GitHub Actions
-- Auditoria local: `npm run security:deps` (com `pip-audit` opcional)
+- Dependabot semanal para npm e GitHub Actions
+- Auditoria local: `npm run security:deps`
 - Chaves sensíveis criptografadas em repouso
 - Relatórios locais em `storage/security/`

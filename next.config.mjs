@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  outputFileTracingIncludes: {
+    '/api/translate/extract': ['./models/**/*'],
+    '/api/ocr-image/queue': ['./models/**/*'],
+    '/api/sections/**/*': ['./models/**/*'],
+  },
   experimental: {
     proxyClientMaxBodySize: '100mb',
   },

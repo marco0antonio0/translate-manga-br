@@ -49,33 +49,11 @@ storage/*
 # Caches gerais
 .cache/
 
-# Python API embedded
-python-api/.venv/
-python-api/__pycache__/
-python-api/**/__pycache__/
-python-api/**/*.pyc
-python-api/**/*.pyo
-python-api/models/.hf-cache/
-python-api/models/*.onnx
-!python-api/models/yolo.onnx
-!python-api/models/paddleocr_det.onnx
-!python-api/models/paddleocr_rec.onnx
-!python-api/models/paddleocr_v5_det.onnx
-!python-api/models/paddleocr_v5_rec.onnx
-!python-api/models/paddleocr_v5_latin_rec.onnx
-python-api/processing_logs/
-python-api/.pytest_cache/
-python-api/.ruff_cache/
-python-api/.mypy_cache/
-
 # Memória de agentes locais
 .claude/memory/
-python-api/.claude/memory/
 
 # Arquivos/config locais de agentes (Claude/Codex)
 .claude/
 .codex
-python-api/.claude/
-python-api/.codex
 
 security/
