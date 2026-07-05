@@ -10,7 +10,6 @@
       "48": "logo.png",
       "128": "logo.png"
     },
-    "default_popup": "popup.html",
     "default_title": "Manga Translator Local"
   },
   "icons": {
@@ -29,6 +28,6 @@
       "run_at": "document_idle"
     }
   ],
-  "permissions": ["activeTab", "contextMenus", "storage", "tabs"],
+  "permissions": ["activeTab", "contextMenus", "scripting", "storage", "tabs"],
   "host_permissions": ["<all_urls>"]
 }

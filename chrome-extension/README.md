@@ -4,7 +4,7 @@ Esta extensão abre um modo leitura em qualquer página com imagens grandes de m
 
 Endpoints consumidos:
 
-- `/api/auth/login`, `/api/auth/logout`, `/api/auth/me` — sessão da extensão (login obrigatório no popup).
+- `/api/auth/login`, `/api/auth/logout`, `/api/auth/me` — sessão da extensão (login obrigatório no modal de auth do leitor).
 - `/api/sections` — cria a seção no site com as imagens coletadas da página.
 - `/api/sections/{id}` — polling do progresso e leitura dos boxes OCR/tradução já processados.
 - `/api/sections/{id}/reprocess` — reprocessa a seção quando o usuário pede "Reprocessar".
@@ -29,8 +29,8 @@ Existem dois manifests:
 3. Ative o modo desenvolvedor.
 4. Clique em "Carregar sem compactação".
 5. Selecione a pasta `chrome-extension` deste repositório.
-6. Clique no ícone da extensão e **faça login** com um usuário do sistema.
-7. Abra uma página de mangá e use "Abrir leitor nesta aba".
+6. Abra uma página de mangá e clique no ícone da extensão: o leitor abre na hora, com um modal de login por cima.
+7. **Faça login** com um usuário do sistema e confirme a tela de configurações (idiomas/provider) para liberar o leitor.
 
 Também é possível baixar o pacote pronto pelo próprio site em `/extensao` (ou direto em `/download-extensao`).
 
@@ -39,15 +39,17 @@ Também é possível baixar o pacote pronto pelo próprio site em `/extensao` (o
 1. Baixe `/download-extensao?target=firefox`.
 2. Use o fluxo de extensão temporária/debug do Firefox para Android.
 3. Instale o ZIP gerado para Firefox. Dentro dele, `manifest.firefox.json` é entregue como `manifest.json`.
-4. Faça login no popup e use "Abrir leitor nesta aba" em uma página de mangá.
+4. Clique no ícone da extensão numa página de mangá, faça login no modal e confirme a tela de configurações.
 
 ## Autenticação
 
-O popup possui fluxo de sessão completo (verificação, login e logout) usando os cookies do backend com `credentials: 'include'`. Em produção (HTTPS), o backend emite o cookie de sessão com `SameSite=None; Secure` quando o login vem de uma origem de extensão — sem isso o cookie não seria enviado nas requisições cross-site. Se você atualizou o servidor, **refaça o login** na extensão para renovar o cookie.
+Não há mais popup separado: clicar no ícone da extensão abre o leitor imediatamente na aba atual, com um modal sobreposto que guia o acesso — primeiro a tela de login, depois a tela de configurações (sistema, idiomas, provider). Só ao confirmar essa segunda tela ("Iniciar leitor") o modal fecha e o leitor (já aberto por baixo) fica utilizável. Reabrir o ícone (ou o botão de conta no topo do leitor) com o leitor já aberto reexibe o mesmo modal, útil para logout ou trocar idiomas/provider sem perder o progresso da leitura.
+
+Esse modal usa os cookies do backend com `credentials: 'include'`. Em produção (HTTPS), o backend emite o cookie de sessão com `SameSite=None; Secure` quando o login vem de uma origem de extensão — sem isso o cookie não seria enviado nas requisições cross-site. Se você atualizou o servidor, **refaça o login** na extensão para renovar o cookie.
 
 ## URL do backend
 
-Por padrão, a extensão aponta para `http://localhost:3080` no desenvolvimento local. No Docker Compose, o build usa `https://open-manga.agevon.com` como URL padrão. A URL não é editável no popup: ela é gerada em `chrome-extension/config.js` quando você roda `npm run dev`, `npm run build` ou `npm run start`.
+Por padrão, a extensão aponta para `http://localhost:3080` no desenvolvimento local. No Docker Compose, o build usa `https://open-manga.agevon.com` como URL padrão. A URL não é editável no modal: ela é gerada em `chrome-extension/config.js` quando você roda `npm run dev`, `npm run build` ou `npm run start`.
 
 Para apontar a extensão para outro host, defina uma destas variáveis antes do comando:
 

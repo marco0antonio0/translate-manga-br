@@ -182,12 +182,12 @@ export default function ExtensaoPage() {
 
           <div className="grid md:grid-cols-2 gap-6">
             <Card className="p-6 border border-border/50 space-y-3">
-              <h3 className="font-semibold text-lg">Na página da extensão</h3>
+              <h3 className="font-semibold text-lg">Ao clicar no ícone</h3>
               <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                <li>Entre com seu email e senha</li>
-                <li>Configure a URL do servidor e idiomas</li>
-                <li>Clique em "Abrir leitor nesta aba"</li>
-                <li>O modo leitor abrirá com as imagens da página</li>
+                <li>O modo leitor já abre na hora, com as imagens da página</li>
+                <li>Um modal aparece por cima: entre com seu email e senha</li>
+                <li>Configure idiomas e provider na tela seguinte</li>
+                <li>Clique em "Iniciar leitor" para liberar o modal</li>
               </ol>
             </Card>
 
@@ -197,7 +197,7 @@ export default function ExtensaoPage() {
                 <li>Clique em "Traduzir" para processar todas as páginas</li>
                 <li>Use zoom com os botões +/-</li>
                 <li>Edite o overlay com duplo clique nos balões</li>
-                <li>Alterne entre paginado e scroll contínuo</li>
+                <li>O ícone de conta no topo reabre o modal (logout/idiomas)</li>
               </ol>
             </Card>
           </div>
@@ -224,7 +224,7 @@ export default function ExtensaoPage() {
                 <span className="group-open:rotate-180 transition">▼</span>
               </summary>
               <p className="text-muted-foreground mt-3">
-                A extensão exige autenticação. Ao abrir o popup, faça login com seu email e senha. Se não tiver conta, você pode criar uma na página de setup do servidor.
+                A extensão exige autenticação. Clique no ícone da extensão numa página de mangá: o leitor abre na hora com um modal por cima — faça login com seu email e senha. Se não tiver conta, você pode criar uma na página de setup do servidor.
               </p>
             </details>
 
@@ -260,7 +260,7 @@ export default function ExtensaoPage() {
                 <span className="group-open:rotate-180 transition">▼</span>
               </summary>
               <p className="text-muted-foreground mt-3">
-                Defina a URL via ambiente antes de rodar dev/build, por exemplo <code className="bg-muted px-2 py-1 rounded text-sm">CHROME_EXTENSION_API_BASE_URL=https://seu-dominio</code>. O popup apenas exibe a URL gerada.
+                Defina a URL via ambiente antes de rodar dev/build, por exemplo <code className="bg-muted px-2 py-1 rounded text-sm">CHROME_EXTENSION_API_BASE_URL=https://seu-dominio</code>. O modal do leitor apenas exibe a URL gerada.
               </p>
             </details>
           </div>

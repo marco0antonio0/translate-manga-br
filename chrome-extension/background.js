@@ -41,11 +41,49 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId !== 'mtl-open-reader' || !tab?.id) return
-  chrome.tabs.sendMessage(tab.id, {
-    type: 'MTL_OPEN_READER',
-    imageUrl: info.srcUrl || '',
-  })
+  void openReaderInTab(tab, info.srcUrl || '')
 })
+
+// Sem popup: o clique no ícone abre o leitor direto na aba ativa (com o
+// modal de login/config por cima). Funciona tanto no Chrome (chrome.action)
+// quanto no Firefox MV2 (browser.browserAction, exposto como chrome.browserAction
+// pelo extension-compat.js).
+const mtlActionApi = chrome.action || chrome.browserAction
+if (mtlActionApi?.onClicked) {
+  mtlActionApi.onClicked.addListener((tab) => {
+    void openReaderInTab(tab, '')
+  })
+}
+
+async function openReaderInTab(tab, imageUrl) {
+  if (!tab?.id) return
+  const payload = { type: 'MTL_OPEN_READER', imageUrl: imageUrl || '' }
+
+  try {
+    await chrome.tabs.sendMessage(tab.id, payload)
+    return
+  } catch {
+    // Provavelmente o content script ainda não foi injetado nesta aba
+    // (aberta antes da instalação/atualização da extensão). Injeta e tenta de novo.
+  }
+
+  try {
+    if (chrome.scripting?.executeScript) {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['extension-compat.js', 'content-script.js'],
+      })
+    } else if (chrome.tabs?.executeScript) {
+      await chrome.tabs.executeScript(tab.id, { file: 'extension-compat.js' })
+      await chrome.tabs.executeScript(tab.id, { file: 'content-script.js' })
+    } else {
+      return
+    }
+    await chrome.tabs.sendMessage(tab.id, payload)
+  } catch (error) {
+    console.error('MTL: não foi possível abrir o leitor nesta aba.', error)
+  }
+}
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || typeof message !== 'object') return false
@@ -87,15 +125,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === 'MTL_REPROCESS_SECTION') {
     reprocessSection(message.payload).then(sendResponse)
-    return true
-  }
-
-  if (message.type === 'MTL_OPEN_READER_FROM_POPUP' && sender.tab?.id) {
-    chrome.tabs.sendMessage(sender.tab.id, { type: 'MTL_OPEN_READER' }).then(() => {
-      sendResponse({ ok: true })
-    }).catch((error) => {
-      sendResponse({ ok: false, error: toErrorMessage(error, 'Não foi possível abrir o leitor nesta aba.') })
-    })
     return true
   }
 

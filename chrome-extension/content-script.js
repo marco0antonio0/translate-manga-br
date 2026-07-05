@@ -42,6 +42,38 @@ const OCR_OVERLAY_FONT_FAMILIES = {
 }
 const OCR_OVERLAY_FONT_FAMILY_DEFAULT = 'sans'
 
+// Portão de autenticação/config sobre o leitor (substitui o antigo popup).
+const MTL_LANGUAGE_OPTIONS = [
+  { code: 'auto', name: 'Detectar automaticamente' },
+  { code: 'en', name: 'Inglês' },
+  { code: 'pt-BR', name: 'Português (Brasil)' },
+  { code: 'es', name: 'Espanhol' },
+  { code: 'fr', name: 'Francês' },
+  { code: 'de', name: 'Alemão' },
+  { code: 'it', name: 'Italiano' },
+  { code: 'ja', name: 'Japonês' },
+  { code: 'ko', name: 'Coreano' },
+  { code: 'zh-cn', name: 'Chinês Simplificado' },
+  { code: 'zh-tw', name: 'Chinês Tradicional' },
+  { code: 'ru', name: 'Russo' },
+  { code: 'ar', name: 'Árabe' },
+  { code: 'hi', name: 'Hindi' },
+  { code: 'tr', name: 'Turco' },
+  { code: 'nl', name: 'Holandês' },
+  { code: 'pl', name: 'Polonês' },
+  { code: 'uk', name: 'Ucraniano' },
+  { code: 'vi', name: 'Vietnamita' },
+  { code: 'id', name: 'Indonésio' },
+  { code: 'th', name: 'Tailandês' },
+]
+const MTL_TARGET_LANGUAGE_OPTIONS = MTL_LANGUAGE_OPTIONS.filter((language) => language.code !== 'auto')
+const MTL_GOOGLE_PROVIDER = { value: 'google', label: 'Google Translate' }
+
+// Referências do leitor atualmente aberto na página, usadas para reabrir o
+// modal de auth (ícone da extensão / botão de conta) sem recriar o leitor.
+let activeReaderShadow = null
+let activeReaderState = null
+
 function getCachedSectionIdForPage(pageUrl) {
   try {
     const key = `${PAGE_SECTION_CACHE_PREFIX}${pageUrl}`
@@ -65,12 +97,392 @@ function setCachedSectionIdForPage(pageUrl, sectionId) {
   }
 }
 
+// --- Portão de autenticação/config sobre o leitor -------------------------
+// Substitui o antigo popup: o leitor já abre por baixo, e este modal (login
+// e depois config) fica por cima até o usuário confirmar.
+
+function buildAuthOverlayMarkup() {
+  return `
+    <div class="mtl-auth-overlay" hidden>
+      <div class="mtl-auth-backdrop"></div>
+      <div class="mtl-auth-modal" role="dialog" aria-modal="true" aria-label="Manga Translator Local">
+        <div class="mtl-auth-brand">
+          <div class="mtl-auth-brand-mark">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </div>
+          <div>
+            <strong>Manga Translator Local</strong>
+            <span>Leitor do navegador</span>
+          </div>
+        </div>
+
+        <div class="mtl-auth-screen" data-screen="loading">
+          <p class="mtl-auth-hint">Verificando sessão...</p>
+        </div>
+
+        <div class="mtl-auth-screen" data-screen="login" hidden>
+          <div class="mtl-auth-system-line">
+            <span>Sistema</span>
+            <strong data-role="login-system-url">—</strong>
+          </div>
+          <form class="mtl-auth-form" data-role="login-form">
+            <div class="mtl-auth-panel" data-role="login-panel">
+              <label>
+                Email
+                <input data-role="login-email" type="email" placeholder="voce@exemplo.com" autocomplete="username">
+              </label>
+              <label>
+                Senha
+                <input data-role="login-password" type="password" placeholder="••••••••" autocomplete="current-password">
+              </label>
+            </div>
+            <button type="submit" class="mtl-primary mtl-auth-submit" data-role="login-submit">Entrar</button>
+          </form>
+          <div class="mtl-auth-error" data-role="login-error" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>
+            <span data-role="login-error-text"></span>
+          </div>
+        </div>
+
+        <div class="mtl-auth-screen" data-screen="main" hidden>
+          <div class="mtl-auth-user-card">
+            <div class="mtl-auth-user-row">
+              <div class="mtl-auth-avatar" aria-hidden="true" data-role="avatar">U</div>
+              <div class="mtl-auth-user-info">
+                <span>Conectado</span>
+                <strong data-role="user-name">—</strong>
+                <small data-role="user-email">—</small>
+              </div>
+            </div>
+            <button type="button" class="mtl-auth-danger" data-role="logout-button">Sair da conta</button>
+          </div>
+
+          <div class="mtl-auth-system-line">
+            <span>Sistema</span>
+            <strong data-role="system-url">—</strong>
+          </div>
+
+          <div class="mtl-auth-panel">
+            <div class="mtl-auth-grid">
+              <label>
+                Origem
+                <select data-role="source-lang"></select>
+              </label>
+              <label>
+                Destino
+                <select data-role="target-lang"></select>
+              </label>
+            </div>
+            <label>
+              Provider
+              <select data-role="provider-lang">
+                <option value="google">Google Translate</option>
+              </select>
+            </label>
+          </div>
+
+          <button type="button" class="mtl-primary mtl-auth-continue" data-role="continue-button">Iniciar leitor</button>
+        </div>
+
+        <p class="mtl-auth-status" data-role="status"></p>
+      </div>
+    </div>
+  `
+}
+
+function mountAuthOverlay(shadow) {
+  let overlay = shadow.querySelector('.mtl-auth-overlay')
+  if (overlay) return overlay
+
+  const wrapper = document.createElement('div')
+  wrapper.innerHTML = buildAuthOverlayMarkup().trim()
+  overlay = wrapper.firstElementChild
+  shadow.querySelector('.mtl-reader').appendChild(overlay)
+  bindAuthOverlay(overlay)
+  return overlay
+}
+
+function bindAuthOverlay(overlay) {
+  const els = {
+    loginForm: overlay.querySelector('[data-role="login-form"]'),
+    loginEmail: overlay.querySelector('[data-role="login-email"]'),
+    loginPassword: overlay.querySelector('[data-role="login-password"]'),
+    loginPanel: overlay.querySelector('[data-role="login-panel"]'),
+    loginSystemUrl: overlay.querySelector('[data-role="login-system-url"]'),
+    loginError: overlay.querySelector('[data-role="login-error"]'),
+    loginErrorText: overlay.querySelector('[data-role="login-error-text"]'),
+    loginSubmit: overlay.querySelector('[data-role="login-submit"]'),
+    sourceLang: overlay.querySelector('[data-role="source-lang"]'),
+    targetLang: overlay.querySelector('[data-role="target-lang"]'),
+    providerLang: overlay.querySelector('[data-role="provider-lang"]'),
+    systemUrl: overlay.querySelector('[data-role="system-url"]'),
+    avatar: overlay.querySelector('[data-role="avatar"]'),
+    userName: overlay.querySelector('[data-role="user-name"]'),
+    userEmail: overlay.querySelector('[data-role="user-email"]'),
+    logoutButton: overlay.querySelector('[data-role="logout-button"]'),
+    continueButton: overlay.querySelector('[data-role="continue-button"]'),
+    status: overlay.querySelector('[data-role="status"]'),
+  }
+  overlay._mtlEls = els
+
+  mtlPopulateLanguageSelect(els.sourceLang, MTL_LANGUAGE_OPTIONS)
+  mtlPopulateLanguageSelect(els.targetLang, MTL_TARGET_LANGUAGE_OPTIONS)
+
+  els.loginForm.addEventListener('submit', async (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    mtlClearLoginError(els)
+    const email = els.loginEmail.value.trim()
+    const password = els.loginPassword.value
+    if (!email || !password) {
+      mtlShowLoginError(els, 'Informe email e senha.')
+      return
+    }
+
+    mtlSetAuthBusy(els, true)
+    try {
+      const currentSettings = await chrome.runtime.sendMessage({ type: 'MTL_GET_SETTINGS' })
+      await chrome.runtime.sendMessage({ type: 'MTL_SAVE_SETTINGS', settings: currentSettings })
+
+      const response = await chrome.runtime.sendMessage({
+        type: 'MTL_LOGIN',
+        payload: { email, password, settings: currentSettings },
+      })
+
+      if (!response?.ok || !response.authenticated) {
+        mtlShowLoginError(els, response?.error || 'Não foi possível entrar.')
+        return
+      }
+
+      els.loginPassword.value = ''
+      const settings = await chrome.runtime.sendMessage({ type: 'MTL_GET_SETTINGS' })
+      await mtlPopulateProviderSelect(els, settings)
+      mtlFillFormFromSettings(els, settings)
+      mtlFillUserInfo(els, response.user)
+      mtlShowAuthScreen(overlay, 'main')
+    } finally {
+      mtlSetAuthBusy(els, false)
+    }
+  })
+
+  els.logoutButton.addEventListener('click', async () => {
+    mtlSetAuthBusy(els, true)
+    try {
+      const settings = await chrome.runtime.sendMessage({ type: 'MTL_GET_SETTINGS' })
+      const response = await chrome.runtime.sendMessage({ type: 'MTL_LOGOUT', payload: { settings } })
+      if (!response?.ok) {
+        mtlShowAuthStatus(els, response?.error || 'Não foi possível sair.')
+        return
+      }
+      mtlShowAuthScreen(overlay, 'login')
+    } finally {
+      mtlSetAuthBusy(els, false)
+    }
+  })
+
+  els.continueButton.addEventListener('click', async () => {
+    mtlSetAuthBusy(els, true)
+    try {
+      const settings = mtlReadSettingsFromForm(els)
+      const response = await chrome.runtime.sendMessage({ type: 'MTL_SAVE_SETTINGS', settings })
+      if (!response?.ok) {
+        mtlShowAuthStatus(els, 'Não foi possível salvar as configurações.')
+        return
+      }
+      overlay.hidden = true
+    } finally {
+      mtlSetAuthBusy(els, false)
+    }
+  })
+
+  for (const select of [els.sourceLang, els.targetLang, els.providerLang]) {
+    select.addEventListener('change', () => {
+      void chrome.runtime.sendMessage({ type: 'MTL_SAVE_SETTINGS', settings: mtlReadSettingsFromForm(els) })
+    })
+  }
+
+  els.loginEmail.addEventListener('input', () => mtlClearLoginError(els))
+  els.loginPassword.addEventListener('input', () => mtlClearLoginError(els))
+
+  // Nunca deixa clique/scroll vazar para o leitor por baixo enquanto o portão está aberto.
+  overlay.addEventListener('pointerdown', (event) => event.stopPropagation())
+  overlay.addEventListener('click', (event) => event.stopPropagation())
+}
+
+function mtlShowAuthScreen(overlay, name) {
+  overlay.querySelectorAll('.mtl-auth-screen').forEach((el) => {
+    el.hidden = el.getAttribute('data-screen') !== name
+  })
+}
+
+function mtlPopulateLanguageSelect(select, options) {
+  select.replaceChildren(...options.map((language) => {
+    const option = document.createElement('option')
+    option.value = language.code
+    option.textContent = language.name
+    return option
+  }))
+}
+
+async function mtlPopulateProviderSelect(els, settings) {
+  const options = [MTL_GOOGLE_PROVIDER]
+  const status = await chrome.runtime.sendMessage({
+    type: 'MTL_GET_OPENROUTER_STATUS',
+    payload: { settings },
+  }).catch((error) => ({ ok: false, error: error?.message }))
+
+  if (status?.ok && status.available) {
+    const selectedModel = status.selectedModel || status.availableModels?.[0]
+    if (selectedModel) {
+      options.push({
+        value: `openrouter:${selectedModel}`,
+        label: `OpenRouter · ${selectedModel}`,
+      })
+    }
+  }
+
+  const currentValue = els.providerLang.value || settings?.providerLang || MTL_GOOGLE_PROVIDER.value
+  els.providerLang.replaceChildren(...options.map((provider) => {
+    const option = document.createElement('option')
+    option.value = provider.value
+    option.textContent = provider.label
+    return option
+  }))
+  mtlSetSelectValue(els.providerLang, currentValue, MTL_GOOGLE_PROVIDER.value)
+}
+
+function mtlSetSelectValue(select, value, fallback) {
+  const normalized = String(value || '').trim()
+  const hasOption = Array.from(select.options).some((option) => option.value === normalized)
+  select.value = hasOption ? normalized : fallback
+}
+
+function mtlFillFormFromSettings(els, settings) {
+  els.loginSystemUrl.textContent = settings.apiBaseUrl
+  els.systemUrl.textContent = settings.apiBaseUrl
+  mtlSetSelectValue(els.sourceLang, settings.sourceLang, 'auto')
+  mtlSetSelectValue(els.targetLang, settings.targetLang, 'pt-BR')
+  mtlSetSelectValue(els.providerLang, settings.providerLang, MTL_GOOGLE_PROVIDER.value)
+}
+
+function mtlFillUserInfo(els, user) {
+  const name = user?.name || user?.email || 'Usuário'
+  els.userName.textContent = name
+  els.userEmail.textContent = user?.email || ''
+  els.avatar.textContent = mtlGetInitials(name)
+}
+
+function mtlGetInitials(value) {
+  const normalized = String(value || '').trim()
+  if (!normalized) return 'U'
+  const parts = normalized.split(/\s+/).filter(Boolean)
+  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+  return normalized.slice(0, 2).toUpperCase()
+}
+
+function mtlReadSettingsFromForm(els) {
+  return {
+    sourceLang: els.sourceLang.value,
+    targetLang: els.targetLang.value,
+    providerLang: els.providerLang.value,
+  }
+}
+
+function mtlSetAuthBusy(els, isBusy) {
+  els.continueButton.disabled = isBusy
+  els.loginSubmit.disabled = isBusy
+  els.logoutButton.disabled = isBusy
+  els.continueButton.classList.toggle('is-busy', isBusy)
+  els.loginSubmit.classList.toggle('is-busy', isBusy)
+  els.logoutButton.classList.toggle('is-busy', isBusy)
+}
+
+function mtlShowLoginError(els, message) {
+  els.loginErrorText.textContent = message
+  els.loginError.hidden = false
+  els.loginPanel.classList.add('has-error')
+  els.loginEmail.setAttribute('aria-invalid', 'true')
+  els.loginPassword.setAttribute('aria-invalid', 'true')
+}
+
+function mtlClearLoginError(els) {
+  els.loginErrorText.textContent = ''
+  els.loginError.hidden = true
+  els.loginPanel.classList.remove('has-error')
+  els.loginEmail.removeAttribute('aria-invalid')
+  els.loginPassword.removeAttribute('aria-invalid')
+}
+
+function mtlShowAuthStatus(els, message) {
+  els.status.textContent = message
+  window.setTimeout(() => {
+    if (els.status.textContent === message) els.status.textContent = ''
+  }, 2500)
+}
+
+async function runAuthGate(shadow, state) {
+  const overlay = mountAuthOverlay(shadow)
+  const els = overlay._mtlEls
+  overlay.hidden = false
+  mtlShowAuthScreen(overlay, 'loading')
+  mtlClearLoginError(els)
+
+  try {
+    const settings = await chrome.runtime.sendMessage({ type: 'MTL_GET_SETTINGS' })
+    state.settings = settings
+    await mtlPopulateProviderSelect(els, settings)
+    mtlFillFormFromSettings(els, settings)
+
+    const session = await chrome.runtime.sendMessage({ type: 'MTL_CHECK_SESSION', payload: { settings } })
+    if (session?.ok && session.authenticated) {
+      mtlFillUserInfo(els, session.user)
+      mtlShowAuthScreen(overlay, 'main')
+      return
+    }
+
+    if (!session?.ok && session?.error) mtlShowLoginError(els, session.error)
+    mtlShowAuthScreen(overlay, 'login')
+  } catch {
+    mtlShowLoginError(els, 'Não foi possível verificar o sistema.')
+    mtlShowAuthScreen(overlay, 'login')
+  }
+}
+
 chrome.runtime.onMessage.addListener((message) => {
   if (!message || typeof message !== 'object') return
   if (message.type === 'MTL_OPEN_READER') {
+    const existingHost = document.getElementById(READER_HOST_ID)
+    // Reader já aberto e nenhuma imagem específica pedida (ex.: clicou no
+    // ícone de novo): não recria tudo, só reabre o portão de auth/config.
+    if (existingHost && activeReaderShadow && activeReaderState && !message.imageUrl) {
+      void runAuthGate(activeReaderShadow, activeReaderState)
+      return
+    }
     openReader(message.imageUrl || '')
   }
 })
+
+// Muitos sites de leitura têm atalhos de teclado globais (ex.: "m" para
+// menu, setas para navegar) registrados em document/window que chamam
+// preventDefault() no keydown — isso cancela a digitação mesmo com um input
+// da extensão focado dentro do Shadow DOM, já que o evento ainda bubbla até
+// lá. Barra a propagação de eventos de teclado que saem do nosso host antes
+// que cheguem à página, sem afetar atalhos do site quando o foco está fora.
+function stopKeyEventPropagation(event) {
+  event.stopPropagation()
+}
+
+function attachKeyEventGuards(host) {
+  const types = ['keydown', 'keyup', 'keypress', 'beforeinput', 'input']
+  types.forEach((type) => {
+    host.addEventListener(type, stopKeyEventPropagation, true)
+  })
+  return () => {
+    types.forEach((type) => {
+      host.removeEventListener(type, stopKeyEventPropagation, true)
+    })
+  }
+}
 
 function openReader(preferredImageUrl = '') {
   const pages = collectReadableImages(preferredImageUrl)
@@ -85,6 +497,7 @@ function openReader(preferredImageUrl = '') {
   const host = document.createElement('div')
   host.id = READER_HOST_ID
   document.documentElement.append(host)
+  const removeKeyEventGuards = attachKeyEventGuards(host)
 
   const shadow = host.attachShadow({ mode: 'open' })
   const state = {
@@ -123,11 +536,18 @@ function openReader(preferredImageUrl = '') {
     sectionOrderUrls: null,
   }
   if (state.pageIndex < 0) state.pageIndex = 0
+  state.cleanupFns.push(removeKeyEventGuards)
+
+  activeReaderShadow = shadow
+  activeReaderState = state
 
   shadow.innerHTML = buildReaderMarkup(state)
   bindReader(shadow, host, state)
   renderReader(shadow, state)
   void loadSettings(state, shadow)
+  // O leitor já fica visível (imagens, controles) por baixo; o portão de
+  // auth/config sobe por cima e só libera o uso após login + confirmação.
+  void runAuthGate(shadow, state)
 }
 
 function collectReadableImages(preferredImageUrl) {
@@ -244,6 +664,14 @@ function bindReader(shadow, host, state) {
       state.cleanupFns.forEach((cleanup) => cleanup())
       state.cleanupFns = []
       host.remove()
+      if (activeReaderState === state) {
+        activeReaderShadow = null
+        activeReaderState = null
+      }
+      return
+    }
+    if (action === 'open-account') {
+      void runAuthGate(shadow, state)
       return
     }
     if (action === 'prev') {
@@ -1468,6 +1896,9 @@ function buildReaderMarkup() {
           <span class="mtl-badge mtl-page-counter">1 / 1</span>
         </div>
         <div class="mtl-actions">
+          <button class="mtl-icon-button" type="button" data-action="open-account" title="Conta e configurações" aria-label="Conta e configurações">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+          </button>
           <button class="mtl-icon-button" type="button" data-action="zoom-out" title="Diminuir zoom" aria-label="Diminuir zoom">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="8" x2="14" y1="11" y2="11"/></svg>
           </button>
@@ -1838,6 +2269,17 @@ function readerCss() {
       .mtl-image-stage {
         padding: 8px;
       }
+      .mtl-auth-overlay {
+        padding: 10px;
+      }
+      .mtl-auth-modal {
+        max-width: 100%;
+        padding: 16px;
+        gap: 12px;
+      }
+      .mtl-auth-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     /* Painel "Aa" (config. global do overlay) */
@@ -2137,6 +2579,222 @@ function readerCss() {
       min-height: 24px;
       padding: 0 8px;
       font-size: 11px;
+    }
+
+    /* Portão de autenticação/config sobre o leitor (substitui o antigo popup) */
+    .mtl-auth-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .mtl-auth-overlay[hidden] { display: none; }
+    .mtl-auth-backdrop {
+      position: absolute;
+      inset: 0;
+      background: color-mix(in oklch, var(--background) 82%, transparent);
+      backdrop-filter: blur(6px);
+    }
+    .mtl-auth-modal {
+      position: relative;
+      width: 100%;
+      max-width: 340px;
+      max-height: calc(100% - 32px);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      color: var(--card-foreground);
+      padding: 20px;
+      box-shadow: 0 24px 60px rgb(0 0 0 / 45%);
+      animation: mtl-auth-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes mtl-auth-pop {
+      0% { opacity: 0; transform: translateY(8px) scale(0.98); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .mtl-auth-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .mtl-auth-brand-mark {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: var(--primary-foreground);
+      flex: none;
+    }
+    .mtl-auth-brand-mark svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .mtl-auth-brand strong { display: block; font-size: 14px; }
+    .mtl-auth-brand span { display: block; color: var(--muted-foreground); font-size: 12px; }
+
+    .mtl-auth-screen { display: flex; flex-direction: column; gap: 14px; }
+    .mtl-auth-screen[hidden] { display: none; }
+    .mtl-auth-hint { color: var(--muted-foreground); font-size: 13px; text-align: center; padding: 12px 0; }
+
+    .mtl-auth-system-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted-foreground);
+    }
+    .mtl-auth-system-line span { flex: none; }
+    .mtl-auth-system-line strong {
+      flex: 1;
+      min-width: 0;
+      color: var(--foreground);
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    .mtl-auth-panel { display: flex; flex-direction: column; gap: 10px; }
+    .mtl-auth-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+    }
+    .mtl-auth-form { display: flex; flex-direction: column; gap: 12px; }
+    .mtl-auth-form label,
+    .mtl-auth-panel label,
+    .mtl-auth-grid label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+      font-size: 12px;
+      color: var(--muted-foreground);
+    }
+    .mtl-auth-form input,
+    .mtl-auth-panel select {
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      box-sizing: border-box;
+      min-height: 36px;
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) - 2px);
+      background: var(--input);
+      color: var(--foreground);
+      padding: 0 10px;
+      font: inherit;
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .mtl-auth-form input[aria-invalid="true"] { border-color: var(--destructive); }
+
+    .mtl-auth-submit, .mtl-auth-continue {
+      width: 100%;
+      min-height: 38px;
+      font-weight: 600;
+    }
+    .mtl-auth-submit.is-busy, .mtl-auth-continue.is-busy, .mtl-auth-danger.is-busy {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .mtl-auth-error {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid color-mix(in oklch, var(--destructive) 45%, var(--border));
+      border-radius: calc(var(--radius) - 2px);
+      background: color-mix(in oklch, var(--destructive) 14%, transparent);
+      color: var(--destructive);
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+    .mtl-auth-error svg {
+      width: 16px;
+      height: 16px;
+      flex: none;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+    .mtl-auth-error[hidden] { display: none; }
+
+    .mtl-auth-user-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) - 2px);
+      background: color-mix(in oklch, var(--primary) 8%, var(--card));
+      padding: 12px;
+    }
+    .mtl-auth-user-row { display: flex; align-items: center; gap: 10px; }
+    .mtl-auth-avatar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: var(--primary-foreground);
+      font-weight: 700;
+      font-size: 13px;
+      flex: none;
+    }
+    .mtl-auth-user-info { display: flex; flex-direction: column; min-width: 0; }
+    .mtl-auth-user-info span { color: var(--muted-foreground); font-size: 11px; }
+    .mtl-auth-user-info strong {
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .mtl-auth-user-info small {
+      color: var(--muted-foreground);
+      font-size: 11px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mtl-auth-danger {
+      min-height: 32px;
+      border: 1px solid color-mix(in oklch, var(--destructive) 45%, var(--border));
+      border-radius: calc(var(--radius) - 2px);
+      background: color-mix(in oklch, var(--destructive) 14%, transparent);
+      color: var(--destructive);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .mtl-auth-status {
+      min-height: 14px;
+      margin: 0;
+      color: var(--muted-foreground);
+      font-size: 11px;
+      text-align: center;
     }
   `
 }
