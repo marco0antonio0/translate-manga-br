@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { db } from '@/lib/local-backend/db'
+import { db } from '@/lib/backend/shared/database.module'
 
 const DEFAULT_LOCAL_TTL_SECONDS = 300
 

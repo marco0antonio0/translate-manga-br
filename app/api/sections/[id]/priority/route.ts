@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { getUserFromToken } from '@/lib/local-backend/auth'
-import { updateSectionPriority } from '@/lib/local-backend/sections'
+import { authController } from '@/lib/backend/auth/auth.module'
+import { sectionsController } from '@/lib/backend/sections/sections.module'
 
 const AUTH_TOKEN_COOKIE = 'manga-access-token'
 
@@ -16,7 +16,7 @@ function unauthorized() {
 
 export async function PATCH(request: Request, { params }: RouteParams) {
   const cookieStore = await cookies()
-  const user = getUserFromToken(cookieStore.get(AUTH_TOKEN_COOKIE)?.value)
+  const user = authController.getUserFromToken(cookieStore.get(AUTH_TOKEN_COOKIE)?.value)
   if (!user) return unauthorized()
 
   const { id } = await params
@@ -37,7 +37,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     return NextResponse.json({ message: 'Prioridade inválida.' }, { status: 400 })
   }
 
-  const ok = updateSectionPriority(sectionId, user.id, priority)
+  const ok = sectionsController.updateSectionPriority(sectionId, user.id, priority)
   if (!ok) return NextResponse.json({ message: 'Seção não encontrada.' }, { status: 404 })
 
   return NextResponse.json({ id: sectionId, priority })

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireUser, unauthorizedResponse } from '@/app/api/_shared/proxy'
-import { reprocessSection } from '@/lib/local-backend/sections'
+import { sectionsController } from '@/lib/backend/sections/sections.module'
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -14,7 +14,7 @@ export async function POST(_: Request, { params }: RouteParams) {
     return NextResponse.json({ message: 'ID inválido.' }, { status: 400 })
   }
 
-  const ok = reprocessSection(sectionId, user.id)
+  const ok = sectionsController.reprocessSection(sectionId, user.id)
   if (!ok) return NextResponse.json({ message: 'Seção não encontrada.' }, { status: 404 })
 
   return NextResponse.json({ id: sectionId, status: 'processing' })

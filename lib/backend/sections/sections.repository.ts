@@ -1,17 +1,18 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { db } from '@/lib/backend/shared/database.module'
-import { decryptSecret } from '@/lib/security/secrets'
-import { extractTextBoxesNode } from '@/lib/server/manga-ocr-node'
-import type { ImageKind, ResolvedImageFile } from './sections.types'
+import type {
+  CreateSectionData,
+  ImageKind,
+  OcrDetection,
+  PendingSectionImage,
+  ResolvedImageFile,
+  SectionImageFileInput,
+  SectionLangs,
+} from './sections.types'
 
 const sectionsRoot = path.resolve(process.cwd(), 'storage', 'sections')
 if (!fs.existsSync(sectionsRoot)) fs.mkdirSync(sectionsRoot, { recursive: true })
-
-const SECTION_IMAGE_PROCESSING_CONCURRENCY = Math.max(
-  1,
-  Math.floor(Number(process.env.SECTION_IMAGE_PROCESSING_CONCURRENCY ?? 10) || 10)
-)
 
 function extFromName(name: string) {
   const ext = path.extname(name || '').trim().toLowerCase()
@@ -19,156 +20,10 @@ function extFromName(name: string) {
   return ext
 }
 
-function parseGoogleTranslation(payload: unknown) {
-  if (!Array.isArray(payload) || !Array.isArray(payload[0])) return null
-  const fragments = payload[0]
-    .map((entry: unknown) => {
-      if (!Array.isArray(entry)) return ''
-      const part = entry[0]
-      return typeof part === 'string' ? part : ''
-    })
-    .filter(Boolean)
-  if (fragments.length === 0) return null
-  return fragments.join('')
-}
-
-async function translateOneViaGoogle(text: string, sourceLang: string, targetLang: string) {
-  const query = new URLSearchParams({
-    client: 'gtx',
-    sl: sourceLang,
-    tl: targetLang,
-    dt: 't',
-    q: text,
-  })
-  const response = await fetch(
-    `https://translate.googleapis.com/translate_a/single?${query.toString()}`,
-    { method: 'GET', cache: 'no-store', headers: { accept: 'application/json, text/plain, */*' } }
-  )
-  if (!response.ok) throw new Error(`Google Translate HTTP ${response.status}`)
-  const raw = await response.text()
-  const parsed = JSON.parse(raw) as unknown
-  const translated = parseGoogleTranslation(parsed)
-  if (!translated) throw new Error('Resposta de tradução inválida')
-  return translated
-}
-
-async function translateBatchViaGoogle(texts: string[], sourceLang: string, targetLang: string) {
-  const out = new Array<string>(texts.length).fill('')
-  const concurrency = Math.max(1, Math.min(4, texts.length))
-  let cursor = 0
-  await Promise.all(
-    Array.from({ length: concurrency }, async () => {
-      while (true) {
-        const i = cursor++
-        if (i >= texts.length) return
-        try {
-          out[i] = await translateOneViaGoogle(texts[i], sourceLang, targetLang)
-        } catch {
-          out[i] = texts[i]
-        }
-      }
-    })
-  )
-  return out
-}
-
-function parseProvider(providerLang: string) {
-  const normalized = (providerLang || '').trim()
-  if (normalized.toLowerCase().startsWith('openrouter:')) {
-    const model = normalized.slice('openrouter:'.length).trim()
-    return { provider: 'openrouter' as const, model: model || 'google/gemma-4-31b-it' }
-  }
-  return { provider: 'google' as const, model: '' }
-}
-
-function getOpenRouterApiKeyFromDb() {
-  const row = db.prepare('SELECT value FROM kv_store WHERE key = ? LIMIT 1')
-    .get('manga:openrouter:api_key') as { value?: string } | undefined
-  const raw = row?.value ? String(row.value) : ''
-  if (!raw) return ''
-  const decrypted = decryptSecret(raw)
-  return (decrypted || raw || '').trim()
-}
-
-function parseOpenRouterMessageContent(content: unknown) {
-  if (typeof content === 'string') return content.trim()
-  if (Array.isArray(content)) {
-    const joined = content
-      .map((part) => {
-        if (!part || typeof part !== 'object') return ''
-        const rec = part as Record<string, unknown>
-        const text = rec.text
-        return typeof text === 'string' ? text : ''
-      })
-      .filter(Boolean)
-      .join('\n')
-    return joined.trim()
-  }
-  return ''
-}
-
-async function translateOneViaOpenRouter(
-  text: string,
-  sourceLang: string,
-  targetLang: string,
-  model: string,
-  apiKey: string
-) {
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-    cache: 'no-store',
-    body: JSON.stringify({
-      model,
-      temperature: 0,
-      messages: [
-        {
-          role: 'system',
-          content: `Translate from ${sourceLang} to ${targetLang}. Return only the translated text.`,
-        },
-        { role: 'user', content: text },
-      ],
-    }),
-  })
-  if (!response.ok) throw new Error(`OpenRouter HTTP ${response.status}`)
-  const payload = await response.json() as {
-    choices?: Array<{ message?: { content?: unknown } }>
-  }
-  const content = parseOpenRouterMessageContent(payload?.choices?.[0]?.message?.content)
-  if (!content) throw new Error('Resposta de tradução OpenRouter inválida')
-  return content
-}
-
-async function translateBatchViaOpenRouter(
-  texts: string[],
-  sourceLang: string,
-  targetLang: string,
-  model: string,
-  apiKey: string
-) {
-  const out = new Array<string>(texts.length).fill('')
-  const concurrency = Math.max(1, Math.min(3, texts.length))
-  let cursor = 0
-  await Promise.all(
-    Array.from({ length: concurrency }, async () => {
-      while (true) {
-        const i = cursor++
-        if (i >= texts.length) return
-        try {
-          out[i] = await translateOneViaOpenRouter(texts[i], sourceLang, targetLang, model, apiKey)
-        } catch {
-          out[i] = texts[i]
-        }
-      }
-    })
-  )
-  return out
-}
-
+/**
+ * Acesso a dados de seções: SQLite + arquivos em storage/sections.
+ * Orquestração de OCR/tradução vive em sections.processing.service.ts.
+ */
 export class SectionsRepository {
   listSections(userId: number) {
     const sectionRows = db.prepare(`
@@ -211,51 +66,41 @@ export class SectionsRepository {
       const coverImage = firstImageBySectionId.get(sectionId)
 
       return {
-      id: sectionId,
-      name: String(row.name),
-      priority: Number(row.priority ?? 10),
-      status: String(row.status ?? 'completed'),
-      internal_status: String(row.internal_status ?? 'idle'),
-      source_lang: String(row.source_lang ?? 'auto'),
-      target_lang: String(row.target_lang ?? 'pt-BR'),
-      include_logs: Boolean(row.include_logs),
-      provider_lang: String(row.provider_lang ?? 'google'),
-      images_count: Number(row.images_count ?? 0),
-      selected_images_count: Number(row.selected_images_count ?? 0),
-      queued_images_count: Number(row.queued_images_count ?? 0),
-      processing_images_count: Number(row.processing_images_count ?? 0),
-      cover: coverImage
-        ? {
-            image_id: coverImage.imageId,
-            mime: coverImage.mime,
-            view_url: `/api/sections/${sectionId}/images/${coverImage.imageId}/original/view`,
-            download_url: `/api/sections/${sectionId}/images/${coverImage.imageId}/original/view`,
-          }
-        : null,
-      public_access: null,
-      created_at: String(row.created_at),
-      updated_at: String(row.updated_at),
+        id: sectionId,
+        name: String(row.name),
+        priority: Number(row.priority ?? 10),
+        status: String(row.status ?? 'completed'),
+        internal_status: String(row.internal_status ?? 'idle'),
+        source_lang: String(row.source_lang ?? 'auto'),
+        target_lang: String(row.target_lang ?? 'pt-BR'),
+        include_logs: Boolean(row.include_logs),
+        provider_lang: String(row.provider_lang ?? 'google'),
+        images_count: Number(row.images_count ?? 0),
+        selected_images_count: Number(row.selected_images_count ?? 0),
+        queued_images_count: Number(row.queued_images_count ?? 0),
+        processing_images_count: Number(row.processing_images_count ?? 0),
+        cover: coverImage
+          ? {
+              image_id: coverImage.imageId,
+              mime: coverImage.mime,
+              view_url: `/api/sections/${sectionId}/images/${coverImage.imageId}/original/view`,
+              download_url: `/api/sections/${sectionId}/images/${coverImage.imageId}/original/view`,
+            }
+          : null,
+        public_access: null,
+        created_at: String(row.created_at),
+        updated_at: String(row.updated_at),
       }
     })
   }
 
-  async createSectionFromFormData(userId: number, formData: FormData) {
-    const nameRaw = String(formData.get('name') ?? '').trim()
-    const name = nameRaw || `Secao ${new Date().toLocaleString('pt-BR')}`
-    const sourceLang = String(formData.get('source_lang') ?? 'auto').trim() || 'auto'
-    const targetLang = String(formData.get('target_lang') ?? 'pt-BR').trim() || 'pt-BR'
-    const providerLang = String(formData.get('provider_lang') ?? 'google').trim() || 'google'
-
-    const files = formData.getAll('files').filter((x): x is File => x instanceof File)
-    if (files.length === 0) {
-      throw new Error('Envie ao menos um arquivo de imagem.')
-    }
-
+  /** Insere a seção e grava as imagens em disco. Não dispara processamento. */
+  createSectionWithImages(userId: number, data: CreateSectionData, files: SectionImageFileInput[]) {
     const now = new Date().toISOString()
     const sectionInsert = db.prepare(`
       INSERT INTO sections (user_id, name, priority, status, internal_status, source_lang, target_lang, provider_lang, include_logs, created_at, updated_at)
       VALUES (?, ?, 10, 'processing', 'queued', ?, ?, ?, 0, ?, ?)
-    `).run(userId, name, sourceLang, targetLang, providerLang, now, now)
+    `).run(userId, data.name, data.sourceLang, data.targetLang, data.providerLang, now, now)
     const sectionId = Number(sectionInsert.lastInsertRowid)
 
     const sectionDir = path.join(sectionsRoot, String(sectionId), 'images')
@@ -268,176 +113,165 @@ export class SectionsRepository {
       ) VALUES (?, ?, ?, ?, ?, ?, NULL, 'queued', 'pending', 1, ?, ?, ?, ?)
     `)
 
-    for (let index = 0; index < files.length; index += 1) {
-      const file = files[index]
-      const ext = extFromName(file.name)
-      const fileName = `${String(index + 1).padStart(4, '0')}${ext}`
+    files.forEach((file, index) => {
+      const fileName = `${String(index + 1).padStart(4, '0')}${extFromName(file.name)}`
       const localPath = path.join(sectionDir, fileName)
-      const buffer = Buffer.from(await file.arrayBuffer())
-      fs.writeFileSync(localPath, buffer)
+      fs.writeFileSync(localPath, file.buffer)
 
       insertImage.run(
         sectionId,
         index,
         file.name || fileName,
         file.type || 'application/octet-stream',
-        buffer.byteLength,
+        file.buffer.byteLength,
         localPath,
-        sourceLang,
-        targetLang,
+        data.sourceLang,
+        data.targetLang,
         now,
         now
       )
-    }
-
-    void this.processSectionTranslations(sectionId, sourceLang, targetLang, providerLang)
+    })
 
     return sectionId
   }
 
-  private async processSectionTranslations(
-    sectionId: number,
-    sourceLang: string,
-    targetLang: string,
-    providerLang: string
-  ) {
-    try {
-      db.prepare('UPDATE sections SET internal_status = ?, updated_at = ? WHERE id = ?')
-        .run('processing', new Date().toISOString(), sectionId)
-
-      const images = db.prepare(`
-        SELECT id, order_index, original_path, mime
-        FROM section_images
-        WHERE section_id = ? AND translation_status = 'pending'
-        ORDER BY order_index ASC
-      `).all(sectionId) as any[]
-
-      const concurrency = Math.max(1, Math.min(SECTION_IMAGE_PROCESSING_CONCURRENCY, images.length))
-      let cursor = 0
-      await Promise.all(
-        Array.from({ length: concurrency }, async () => {
-          while (true) {
-            const image = images[cursor++]
-            if (!image) return
-            await this.translateImage(sectionId, image, sourceLang, targetLang, providerLang)
-          }
-        })
-      )
-
-      const remaining = db.prepare(`
-        SELECT COUNT(*) as count FROM section_images
-        WHERE section_id = ? AND translation_status NOT IN ('translated','extracted','failed')
-      `).get(sectionId) as any
-
-      const finalStatus = Number(remaining?.count ?? 0) === 0 ? 'completed' : 'partial'
-      db.prepare('UPDATE sections SET status = ?, internal_status = ?, updated_at = ? WHERE id = ?')
-        .run(finalStatus, 'idle', new Date().toISOString(), sectionId)
-    } catch (error) {
-      console.error('[sections] processSectionTranslations error:', error)
-      db.prepare('UPDATE sections SET internal_status = ?, updated_at = ? WHERE id = ?')
-        .run('idle', new Date().toISOString(), sectionId)
+  getSectionLangs(sectionId: number, userId: number): SectionLangs | null {
+    const section = db.prepare(
+      'SELECT id, source_lang, target_lang, provider_lang FROM sections WHERE id = ? AND user_id = ?'
+    ).get(sectionId, userId) as any
+    if (!section) return null
+    return {
+      sourceLang: String(section.source_lang || 'auto'),
+      targetLang: String(section.target_lang || 'pt-BR'),
+      providerLang: String(section.provider_lang || 'google'),
     }
   }
 
-  private async translateImage(
-    sectionId: number,
-    image: { id: number; order_index: number; original_path: string; mime: string },
-    sourceLang: string,
-    targetLang: string,
-    providerLang: string
-  ) {
+  getPendingImages(sectionId: number): PendingSectionImage[] {
+    return db.prepare(`
+      SELECT id, order_index, original_path, mime
+      FROM section_images
+      WHERE section_id = ? AND translation_status = 'pending'
+      ORDER BY order_index ASC
+    `).all(sectionId) as PendingSectionImage[]
+  }
+
+  setSectionStatus(sectionId: number, patch: { status?: string; internalStatus?: string }) {
     const now = new Date().toISOString()
-    db.prepare(`UPDATE section_images SET status = 'processing', translation_status = 'translating', updated_at = ? WHERE id = ?`)
-      .run(now, image.id)
-
-    try {
-      if (!fs.existsSync(image.original_path)) {
-        throw new Error('Arquivo original não encontrado.')
-      }
-      const buffer = fs.readFileSync(image.original_path)
-      const data = await extractTextBoxesNode(buffer) as {
-        detections?: Array<{
-          det_id?: number
-          cls_name?: string
-          conf?: number
-          box?: [number, number, number, number]
-          ocr_text?: string
-          ocr_error?: string
-        }>
-      }
-
-      const detections = Array.isArray(data.detections) ? data.detections : []
-      const textsToTranslate: { detIdx: number; text: string }[] = []
-      detections.forEach((det, idx) => {
-        const text = typeof det?.ocr_text === 'string' ? det.ocr_text.trim() : ''
-        if (text) textsToTranslate.push({ detIdx: idx, text })
-      })
-
-      const provider = parseProvider(providerLang)
-      let translations: string[] = []
-
-      if (provider.provider === 'openrouter') {
-        const apiKey = getOpenRouterApiKeyFromDb()
-        if (!apiKey) {
-          throw new Error('OpenRouter selecionado, mas nenhuma API key válida foi encontrada.')
-        }
-        translations = await translateBatchViaOpenRouter(
-          textsToTranslate.map((t) => t.text),
-          sourceLang,
-          targetLang,
-          provider.model,
-          apiKey
-        )
-      } else {
-        translations = await translateBatchViaGoogle(
-          textsToTranslate.map((t) => t.text),
-          sourceLang,
-          targetLang
-        )
-      }
-
-      const translatedByIdx = new Map<number, string>()
-      textsToTranslate.forEach((entry, position) => {
-        translatedByIdx.set(entry.detIdx, translations[position] || entry.text)
-      })
-
-      db.prepare('DELETE FROM section_image_ocr_items WHERE section_image_id = ?').run(image.id)
-
-      const insertItem = db.prepare(`
-        INSERT INTO section_image_ocr_items (
-          section_image_id, det_id, cls_name, conf, x1, y1, x2, y2, ocr_text, translated_text, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `)
-      const insertTx = db.transaction((entries: typeof detections) => {
-        entries.forEach((det, idx) => {
-          const box = Array.isArray(det.box) ? det.box : [0, 0, 0, 0]
-          const [x1, y1, x2, y2] = box.map((n) => Math.floor(Number(n) || 0))
-          const ocrText = typeof det.ocr_text === 'string' ? det.ocr_text : ''
-          const translatedText = translatedByIdx.get(idx) ?? ''
-          insertItem.run(
-            image.id,
-            Number(det.det_id ?? idx + 1),
-            typeof det.cls_name === 'string' ? det.cls_name : null,
-            typeof det.conf === 'number' ? det.conf : null,
-            x1, y1, x2, y2,
-            ocrText,
-            translatedText,
-            new Date().toISOString()
-          )
-        })
-      })
-      insertTx(detections)
-
-      db.prepare(`
-        UPDATE section_images
-        SET status = 'completed', translation_status = 'extracted', updated_at = ?
-        WHERE id = ?
-      `).run(new Date().toISOString(), image.id)
-    } catch (error) {
-      console.error(`[sections] translateImage ${sectionId}/${image.id} error:`, error)
-      db.prepare(`UPDATE section_images SET status = 'error', translation_status = 'failed', updated_at = ? WHERE id = ?`)
-        .run(new Date().toISOString(), image.id)
+    if (patch.status !== undefined && patch.internalStatus !== undefined) {
+      db.prepare('UPDATE sections SET status = ?, internal_status = ?, updated_at = ? WHERE id = ?')
+        .run(patch.status, patch.internalStatus, now, sectionId)
+    } else if (patch.internalStatus !== undefined) {
+      db.prepare('UPDATE sections SET internal_status = ?, updated_at = ? WHERE id = ?')
+        .run(patch.internalStatus, now, sectionId)
+    } else if (patch.status !== undefined) {
+      db.prepare('UPDATE sections SET status = ?, updated_at = ? WHERE id = ?')
+        .run(patch.status, now, sectionId)
     }
+  }
+
+  countUnresolvedImages(sectionId: number) {
+    const remaining = db.prepare(`
+      SELECT COUNT(*) as count FROM section_images
+      WHERE section_id = ? AND translation_status NOT IN ('translated','extracted','failed')
+    `).get(sectionId) as any
+    return Number(remaining?.count ?? 0)
+  }
+
+  markImageTranslating(imageId: number) {
+    db.prepare(`UPDATE section_images SET status = 'processing', translation_status = 'translating', updated_at = ? WHERE id = ?`)
+      .run(new Date().toISOString(), imageId)
+  }
+
+  markImageCompleted(imageId: number) {
+    db.prepare(`UPDATE section_images SET status = 'completed', translation_status = 'extracted', updated_at = ? WHERE id = ?`)
+      .run(new Date().toISOString(), imageId)
+  }
+
+  markImageFailed(imageId: number) {
+    db.prepare(`UPDATE section_images SET status = 'error', translation_status = 'failed', updated_at = ? WHERE id = ?`)
+      .run(new Date().toISOString(), imageId)
+  }
+
+  readImageBuffer(originalPath: string): Buffer | null {
+    if (!originalPath || !fs.existsSync(originalPath)) return null
+    return fs.readFileSync(originalPath)
+  }
+
+  replaceImageOcrItems(imageId: number, detections: OcrDetection[], translatedByIdx: Map<number, string>) {
+    db.prepare('DELETE FROM section_image_ocr_items WHERE section_image_id = ?').run(imageId)
+
+    const insertItem = db.prepare(`
+      INSERT INTO section_image_ocr_items (
+        section_image_id, det_id, cls_name, conf, x1, y1, x2, y2, ocr_text, translated_text, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `)
+    const insertTx = db.transaction((entries: OcrDetection[]) => {
+      entries.forEach((det, idx) => {
+        const box = Array.isArray(det.box) ? det.box : [0, 0, 0, 0]
+        const [x1, y1, x2, y2] = box.map((n) => Math.floor(Number(n) || 0))
+        insertItem.run(
+          imageId,
+          Number(det.det_id ?? idx + 1),
+          typeof det.cls_name === 'string' ? det.cls_name : null,
+          typeof det.conf === 'number' ? det.conf : null,
+          x1, y1, x2, y2,
+          typeof det.ocr_text === 'string' ? det.ocr_text : '',
+          translatedByIdx.get(idx) ?? '',
+          new Date().toISOString()
+        )
+      })
+    })
+    insertTx(detections)
+  }
+
+  /** Reseta imagens e status para reprocessamento. Não dispara o pipeline. */
+  resetSectionForReprocess(sectionId: number) {
+    const now = new Date().toISOString()
+    db.prepare(`
+      UPDATE section_images
+      SET translation_status = 'pending', status = 'queued', translated_path = NULL, updated_at = ?
+      WHERE section_id = ?
+    `).run(now, sectionId)
+    db.prepare('UPDATE sections SET status = ?, internal_status = ?, updated_at = ? WHERE id = ?')
+      .run('processing', 'queued', now, sectionId)
+  }
+
+  findSectionProvider(sectionId: number, userId: number): string | null {
+    const section = db.prepare(`
+      SELECT id, provider_lang
+      FROM sections
+      WHERE id = ? AND user_id = ?
+      LIMIT 1
+    `).get(sectionId, userId) as { id?: number; provider_lang?: string | null } | undefined
+    if (!section?.id) return null
+    return String(section.provider_lang ?? 'google')
+  }
+
+  getSectionImageCounts(sectionId: number) {
+    return db.prepare(`
+      SELECT
+        COUNT(*) AS total_pages,
+        SUM(CASE WHEN selected_for_processing = 1 THEN 1 ELSE 0 END) AS selected_pages,
+        SUM(CASE WHEN translation_status IN ('translated','extracted') THEN 1 ELSE 0 END) AS translated_pages,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) AS completed_pages
+      FROM section_images
+      WHERE section_id = ?
+    `).get(sectionId) as Record<string, unknown>
+  }
+
+  getSectionOcrAggregates(sectionId: number) {
+    return db.prepare(`
+      SELECT
+        COUNT(DISTINCT section_image_id) AS ocr_completed_pages,
+        COUNT(*) AS total_detections,
+        COALESCE(SUM(LENGTH(COALESCE(ocr_text, ''))), 0) AS total_input_chars,
+        COALESCE(SUM(LENGTH(COALESCE(translated_text, ''))), 0) AS total_output_chars
+      FROM section_image_ocr_items
+      WHERE section_image_id IN (
+        SELECT id FROM section_images WHERE section_id = ?
+      )
+    `).get(sectionId) as Record<string, unknown>
   }
 
   getSectionDetail(sectionId: number, userId: number) {
@@ -516,26 +350,6 @@ export class SectionsRepository {
     db.prepare('DELETE FROM sections WHERE id = ?').run(sectionId)
     const sectionDir = path.join(sectionsRoot, String(sectionId))
     fs.rmSync(sectionDir, { recursive: true, force: true })
-    return true
-  }
-
-  reprocessSection(sectionId: number, userId: number) {
-    const section = db.prepare('SELECT id, source_lang, target_lang, provider_lang FROM sections WHERE id = ? AND user_id = ?').get(sectionId, userId) as any
-    if (!section) return false
-    const now = new Date().toISOString()
-    db.prepare(`
-      UPDATE section_images
-      SET translation_status = 'pending', status = 'queued', translated_path = NULL, updated_at = ?
-      WHERE section_id = ?
-    `).run(now, sectionId)
-    db.prepare('UPDATE sections SET status = ?, internal_status = ?, updated_at = ? WHERE id = ?')
-      .run('processing', 'queued', now, sectionId)
-    void this.processSectionTranslations(
-      sectionId,
-      String(section.source_lang || 'auto'),
-      String(section.target_lang || 'pt-BR'),
-      String(section.provider_lang || 'google')
-    )
     return true
   }
 

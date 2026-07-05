@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import { cookies } from 'next/headers'
-import { getUserFromToken } from '@/lib/local-backend/auth'
-import { resolveImageFile } from '@/lib/local-backend/sections'
+import { authController } from '@/lib/backend/auth/auth.module'
+import { sectionsController } from '@/lib/backend/sections/sections.module'
 
 const AUTH_TOKEN_COOKIE = 'manga-access-token'
 
@@ -10,7 +10,7 @@ type RouteParams = { params: Promise<{ id: string; imageId: string; kind: string
 export async function GET(_: Request, { params }: RouteParams) {
   const cookieStore = await cookies()
   const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value
-  const user = getUserFromToken(token)
+  const user = authController.getUserFromToken(token)
 
   if (!user) {
     return Response.json(
@@ -36,7 +36,7 @@ export async function GET(_: Request, { params }: RouteParams) {
     )
   }
 
-  const file = resolveImageFile(sectionId, parsedImageId, kind, user.id)
+  const file = sectionsController.resolveImageFile(sectionId, parsedImageId, kind, user.id)
   if (!file) {
     return Response.json(
       { message: 'Imagem não encontrada', error: 'Not Found', statusCode: 404 },

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { z } from 'zod'
-import { getUserFromToken } from '@/lib/local-backend/auth'
-import { deleteSection, getSectionDetail } from '@/lib/local-backend/sections'
 import { parseParams } from '@/app/api/_shared/validation'
+import { authController } from '@/lib/backend/auth/auth.module'
+import { sectionsController } from '@/lib/backend/sections/sections.module'
 
 const AUTH_TOKEN_COOKIE = 'manga-access-token'
 type RouteParams = { params: Promise<{ id: string }> }
@@ -21,14 +21,14 @@ function unauthorized() {
 export async function GET(_: Request, { params }: RouteParams) {
   const cookieStore = await cookies()
   const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value
-  const user = getUserFromToken(token)
+  const user = authController.getUserFromToken(token)
   if (!user) return unauthorized()
 
   const parsedParams = parseParams(await params, sectionParamsSchema)
   if (!parsedParams.success) return parsedParams.response
   const sectionId = parsedParams.data.id
 
-  const section = getSectionDetail(sectionId, user.id)
+  const section = sectionsController.getSectionDetail(sectionId, user.id)
   if (!section) {
     return NextResponse.json({ message: 'Seção não encontrada', error: 'Not Found', statusCode: 404 }, { status: 404 })
   }
@@ -39,14 +39,14 @@ export async function GET(_: Request, { params }: RouteParams) {
 export async function DELETE(_: Request, { params }: RouteParams) {
   const cookieStore = await cookies()
   const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value
-  const user = getUserFromToken(token)
+  const user = authController.getUserFromToken(token)
   if (!user) return unauthorized()
 
   const parsedParams = parseParams(await params, sectionParamsSchema)
   if (!parsedParams.success) return parsedParams.response
   const sectionId = parsedParams.data.id
 
-  const ok = deleteSection(sectionId, user.id)
+  const ok = sectionsController.deleteSection(sectionId, user.id)
   if (!ok) {
     return NextResponse.json({ message: 'Seção não encontrada', error: 'Not Found', statusCode: 404 }, { status: 404 })
   }

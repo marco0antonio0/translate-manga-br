@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireUser, unauthorizedResponse } from '@/app/api/_shared/proxy'
 import { parseParams } from '@/app/api/_shared/validation'
-import { reprocessSection } from '@/lib/local-backend/sections'
+import { sectionsController } from '@/lib/backend/sections/sections.module'
 
 type RouteParams = { params: Promise<{ id: string }> }
 const sectionParamsSchema = z.object({
@@ -17,7 +17,7 @@ export async function POST(_: Request, { params }: RouteParams) {
   if (!parsedParams.success) return parsedParams.response
   const sectionId = parsedParams.data.id
 
-  const ok = reprocessSection(sectionId, user.id)
+  const ok = sectionsController.reprocessSection(sectionId, user.id)
   if (!ok) return NextResponse.json({ message: 'Seção não encontrada.' }, { status: 404 })
 
   return NextResponse.json({ id: sectionId, queued: true, status: 'processing' })

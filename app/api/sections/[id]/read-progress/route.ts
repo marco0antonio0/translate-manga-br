@@ -1,52 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 
-import { redisGetJson, redisSetJson } from '@/lib/redis-cache'
-import { getUserFromToken } from '@/lib/local-backend/auth'
-
-const AUTH_TOKEN_COOKIE = 'manga-access-token'
-const READ_PROGRESS_TTL = 0
-
-interface ReadProgressRecord {
-  done: boolean
-  updated_at: string
-}
+import { requireUser } from '@/app/api/_shared/proxy'
+import { readProgressService } from '@/lib/backend/read-progress/read-progress.module'
 
 type RouteParams = { params: Promise<{ id: string }> }
 
-function buildReadProgressKey(sectionId: string, userId: number) {
-  const userIdentity = `id:${Math.floor(userId)}`
-  return `manga:read-progress:v1:section:${sectionId}:user:${userIdentity}`
-}
-
 export async function GET(_: NextRequest, { params }: RouteParams) {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(AUTH_TOKEN_COOKIE)
+  const user = await requireUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { id } = await params
+  const done = await readProgressService.isDone(id, user.id)
 
-  if (!token?.value) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const user = getUserFromToken(token.value)
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const key = buildReadProgressKey(id, user.id)
-  const data = await redisGetJson<ReadProgressRecord>(key)
-
-  return NextResponse.json({ done: data?.done ?? false })
+  return NextResponse.json({ done })
 }
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(AUTH_TOKEN_COOKIE)
-  const { id } = await params
+  const user = await requireUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!token?.value) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const { id } = await params
 
   let done = false
   try {
@@ -56,15 +29,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: 'Payload inválido.' }, { status: 400 })
   }
 
-  const user = getUserFromToken(token.value)
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  const key = buildReadProgressKey(id, user.id)
-  const record: ReadProgressRecord = { done, updated_at: new Date().toISOString() }
-
-  await redisSetJson(key, record, READ_PROGRESS_TTL)
+  await readProgressService.setDone(id, user.id, done)
 
   return NextResponse.json({ ok: true })
 }

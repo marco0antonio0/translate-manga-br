@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { z } from 'zod'
-import { getUserFromToken } from '@/lib/local-backend/auth'
-import { createSectionFromFormData, listSections } from '@/lib/local-backend/sections'
 import { validationErrorResponse } from '@/app/api/_shared/validation'
+import { authController } from '@/lib/backend/auth/auth.module'
+import { sectionsController } from '@/lib/backend/sections/sections.module'
 
 const AUTH_TOKEN_COOKIE = 'manga-access-token'
 const sectionsQuerySchema = z.object({
@@ -21,7 +21,7 @@ function unauthorized() {
 export async function GET(request: Request) {
   const cookieStore = await cookies()
   const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value
-  const user = getUserFromToken(token)
+  const user = authController.getUserFromToken(token)
   if (!user) return unauthorized()
 
   const { searchParams } = new URL(request.url)
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
   const page = parsedQuery.data.page
   const perPage = parsedQuery.data.per_page
 
-  const allSections = listSections(user.id)
+  const allSections = sectionsController.listSections(user.id)
   const total = allSections.length
   const start = (page - 1) * perPage
   const items = allSections.slice(start, start + perPage)
@@ -61,12 +61,12 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const cookieStore = await cookies()
   const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value
-  const user = getUserFromToken(token)
+  const user = authController.getUserFromToken(token)
   if (!user) return unauthorized()
 
   try {
     const formData = await request.formData()
-    const sectionId = await createSectionFromFormData(user.id, formData)
+    const sectionId = await sectionsController.createSectionFromFormData(user.id, formData)
     return NextResponse.json({
       message: 'Seção criada com sucesso',
       section: { id: sectionId },
