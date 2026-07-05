@@ -106,60 +106,86 @@ function buildAuthOverlayMarkup() {
     <div class="mtl-auth-overlay" hidden>
       <div class="mtl-auth-backdrop"></div>
       <div class="mtl-auth-modal" role="dialog" aria-modal="true" aria-label="Manga Translator Local">
+        <div class="mtl-auth-topstrip" aria-hidden="true"></div>
+        <div class="mtl-auth-glow mtl-auth-glow-a" aria-hidden="true"></div>
+        <div class="mtl-auth-glow mtl-auth-glow-b" aria-hidden="true"></div>
+
         <div class="mtl-auth-brand">
           <div class="mtl-auth-brand-mark">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            <span class="mtl-auth-sparkle" aria-hidden="true">✦</span>
           </div>
-          <div>
-            <strong>Manga Translator Local</strong>
+          <div class="mtl-auth-brand-text">
+            <strong>Manga Translator <em>Local</em></strong>
             <span>Leitor do navegador</span>
           </div>
         </div>
 
         <div class="mtl-auth-screen" data-screen="loading">
-          <p class="mtl-auth-hint">Verificando sessão...</p>
+          <div class="mtl-auth-loading">
+            <span class="mtl-auth-loading-ring" aria-hidden="true"></span>
+            <p class="mtl-auth-hint">Verificando sessão...</p>
+          </div>
         </div>
 
         <div class="mtl-auth-screen" data-screen="login" hidden>
-          <div class="mtl-auth-system-line">
-            <span>Sistema</span>
-            <strong data-role="login-system-url">—</strong>
+          <div class="mtl-auth-welcome">
+            <strong>Bem-vindo de volta!</strong>
+            <span>Entre para começar a traduzir</span>
           </div>
           <form class="mtl-auth-form" data-role="login-form">
             <div class="mtl-auth-panel" data-role="login-panel">
               <label>
                 Email
-                <input data-role="login-email" type="email" placeholder="voce@exemplo.com" autocomplete="username">
+                <div class="mtl-auth-field">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                  <input data-role="login-email" type="email" placeholder="voce@exemplo.com" autocomplete="username">
+                </div>
               </label>
               <label>
                 Senha
-                <input data-role="login-password" type="password" placeholder="••••••••" autocomplete="current-password">
+                <div class="mtl-auth-field">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <input data-role="login-password" type="password" placeholder="••••••••" autocomplete="current-password">
+                </div>
               </label>
             </div>
-            <button type="submit" class="mtl-primary mtl-auth-submit" data-role="login-submit">Entrar</button>
+            <button type="submit" class="mtl-primary mtl-auth-submit" data-role="login-submit">
+              <span>Entrar</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
           </form>
           <div class="mtl-auth-error" data-role="login-error" hidden>
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v5"/><path d="M12 16h.01"/></svg>
             <span data-role="login-error-text"></span>
+          </div>
+          <div class="mtl-auth-system-line">
+            <span>Sistema</span>
+            <strong data-role="login-system-url">—</strong>
           </div>
         </div>
 
         <div class="mtl-auth-screen" data-screen="main" hidden>
           <div class="mtl-auth-user-card">
             <div class="mtl-auth-user-row">
-              <div class="mtl-auth-avatar" aria-hidden="true" data-role="avatar">U</div>
+              <div class="mtl-auth-avatar-wrap">
+                <div class="mtl-auth-avatar" aria-hidden="true" data-role="avatar">U</div>
+                <span class="mtl-auth-online-dot" aria-hidden="true"></span>
+              </div>
               <div class="mtl-auth-user-info">
                 <span>Conectado</span>
                 <strong data-role="user-name">—</strong>
                 <small data-role="user-email">—</small>
               </div>
+              <button type="button" class="mtl-auth-danger" data-role="logout-button" title="Sair da conta">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+                <span>Sair</span>
+              </button>
             </div>
-            <button type="button" class="mtl-auth-danger" data-role="logout-button">Sair da conta</button>
           </div>
 
-          <div class="mtl-auth-system-line">
-            <span>Sistema</span>
-            <strong data-role="system-url">—</strong>
+          <div class="mtl-auth-section-label">
+            <span>Tradução</span>
           </div>
 
           <div class="mtl-auth-panel">
@@ -181,7 +207,15 @@ function buildAuthOverlayMarkup() {
             </label>
           </div>
 
-          <button type="button" class="mtl-primary mtl-auth-continue" data-role="continue-button">Iniciar leitor</button>
+          <button type="button" class="mtl-primary mtl-auth-continue" data-role="continue-button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            <span>Iniciar leitor</span>
+          </button>
+
+          <div class="mtl-auth-system-line">
+            <span>Sistema</span>
+            <strong data-role="system-url">—</strong>
+          </div>
         </div>
 
         <p class="mtl-auth-status" data-role="status"></p>
@@ -515,6 +549,10 @@ function openReader(preferredImageUrl = '') {
     imageNaturalSizeByUrl: new Map(),
     activeStatus: '',
     cleanupFns: [],
+    // Painel de "mais opções" da topbar (zoom/modo/Aa/overlay) — recolhido por
+    // padrão em telas estreitas para dar mais espaço de leitura; sempre
+    // visível em telas largas (ver @media em readerCss).
+    isTopbarMoreOpen: false,
     // Painel "Aa" (config. global do overlay) — mesmos campos de section-reader.tsx.
     isFontPanelOpen: false,
     ocrOverlayFontScale: OCR_OVERLAY_DEFAULT_FONT_SCALE,
@@ -653,6 +691,14 @@ function bindReader(shadow, host, state) {
       state.isFontPanelOpen = false
       renderReader(shadow, state)
     }
+    if (
+      !target.closest('.mtl-actions-secondary')
+      && !target.closest('.mtl-more-toggle')
+      && state.isTopbarMoreOpen
+    ) {
+      state.isTopbarMoreOpen = false
+      renderReader(shadow, state)
+    }
     if (!target.closest('.mtl-quick-editor') && !target.closest('[data-ocr-item-key]') && state.selectedItem) {
       state.selectedItem = null
       renderReader(shadow, state)
@@ -705,6 +751,11 @@ function bindReader(shadow, host, state) {
     }
     if (action === 'toggle-font-panel') {
       state.isFontPanelOpen = !state.isFontPanelOpen
+      renderReader(shadow, state)
+      return
+    }
+    if (action === 'toggle-topbar-more') {
+      state.isTopbarMoreOpen = !state.isTopbarMoreOpen
       renderReader(shadow, state)
       return
     }
@@ -1595,6 +1646,14 @@ function renderReader(shadow, state) {
   const fontPanel = shadow.querySelector('.mtl-font-panel')
   if (fontTrigger) fontTrigger.classList.toggle('mtl-font-trigger-open', state.isFontPanelOpen)
   if (fontPanel) fontPanel.hidden = !state.isFontPanelOpen
+
+  const topbarMoreToggle = shadow.querySelector('.mtl-more-toggle')
+  const topbarSecondary = shadow.querySelector('.mtl-actions-secondary')
+  if (topbarMoreToggle) {
+    topbarMoreToggle.classList.toggle('mtl-icon-button-active', state.isTopbarMoreOpen)
+    topbarMoreToggle.setAttribute('aria-expanded', String(state.isTopbarMoreOpen))
+  }
+  if (topbarSecondary) topbarSecondary.hidden = !state.isTopbarMoreOpen
   const fontScaleLabel = shadow.querySelector('[data-role="font-scale-label"]')
   if (fontScaleLabel) fontScaleLabel.textContent = `${Math.round((state.ocrOverlayFontScale / OCR_OVERLAY_DEFAULT_FONT_SCALE) * 100)}%`
   const densityLabel = shadow.querySelector('[data-role="density-label"]')
@@ -1899,59 +1958,64 @@ function buildReaderMarkup() {
           <button class="mtl-icon-button" type="button" data-action="open-account" title="Conta e configurações" aria-label="Conta e configurações">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
           </button>
-          <button class="mtl-icon-button" type="button" data-action="zoom-out" title="Diminuir zoom" aria-label="Diminuir zoom">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="8" x2="14" y1="11" y2="11"/></svg>
-          </button>
-          <span class="mtl-zoom">100%</span>
-          <button class="mtl-icon-button" type="button" data-action="zoom-in" title="Aumentar zoom" aria-label="Aumentar zoom">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/></svg>
-          </button>
-          <button class="mtl-icon-button" type="button" data-action="toggle-view-mode" title="Alternar modo de leitura" aria-label="Alternar modo de leitura">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M21 9H3"/><path d="M21 15H3"/></svg>
-          </button>
-          <div class="mtl-font-popover-wrap">
-            <button class="mtl-font-trigger" type="button" data-action="toggle-font-panel" aria-label="Abrir ajuste de fonte do overlay OCR">
-              <span class="mtl-font-trigger-label">Aa</span>
-              <svg viewBox="0 0 24 24" aria-hidden="true" class="mtl-chevron"><path d="m6 9 6 6 6-6"/></svg>
+          <div class="mtl-actions-secondary" hidden>
+            <button class="mtl-icon-button" type="button" data-action="zoom-out" title="Diminuir zoom" aria-label="Diminuir zoom">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="8" x2="14" y1="11" y2="11"/></svg>
             </button>
-            <div class="mtl-font-panel" hidden>
-              <p class="mtl-panel-label">Tamanho da fonte</p>
-              <div class="mtl-panel-row">
-                <button type="button" class="mtl-panel-step" data-action="font-scale-dec" aria-label="Diminuir fonte do overlay OCR">-</button>
-                <span class="mtl-panel-value" data-role="font-scale-label">100%</span>
-                <button type="button" class="mtl-panel-step" data-action="font-scale-inc" aria-label="Aumentar fonte do overlay OCR">+</button>
+            <span class="mtl-zoom">100%</span>
+            <button class="mtl-icon-button" type="button" data-action="zoom-in" title="Aumentar zoom" aria-label="Aumentar zoom">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/></svg>
+            </button>
+            <button class="mtl-icon-button" type="button" data-action="toggle-view-mode" title="Alternar modo de leitura" aria-label="Alternar modo de leitura">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M21 9H3"/><path d="M21 15H3"/></svg>
+            </button>
+            <div class="mtl-font-popover-wrap">
+              <button class="mtl-font-trigger" type="button" data-action="toggle-font-panel" aria-label="Abrir ajuste de fonte do overlay OCR">
+                <span class="mtl-font-trigger-label">Aa</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true" class="mtl-chevron"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              <div class="mtl-font-panel" hidden>
+                <p class="mtl-panel-label">Tamanho da fonte</p>
+                <div class="mtl-panel-row">
+                  <button type="button" class="mtl-panel-step" data-action="font-scale-dec" aria-label="Diminuir fonte do overlay OCR">-</button>
+                  <span class="mtl-panel-value" data-role="font-scale-label">100%</span>
+                  <button type="button" class="mtl-panel-step" data-action="font-scale-inc" aria-label="Aumentar fonte do overlay OCR">+</button>
+                </div>
+                <p class="mtl-panel-label">Tipo de fonte</p>
+                <select class="mtl-panel-select" data-role="font-family"></select>
+                <p class="mtl-panel-label">Texto exibido</p>
+                <div class="mtl-panel-grid2">
+                  <button type="button" class="mtl-panel-choice" data-action="text-mode-translated">Traduzido</button>
+                  <button type="button" class="mtl-panel-choice" data-action="text-mode-original">Original</button>
+                </div>
+                <p class="mtl-panel-label">Densidade</p>
+                <div class="mtl-panel-row">
+                  <button type="button" class="mtl-panel-step" data-action="density-dec" aria-label="Diminuir densidade do overlay OCR">-</button>
+                  <span class="mtl-panel-value" data-role="density-label">2.0</span>
+                  <button type="button" class="mtl-panel-step" data-action="density-inc" aria-label="Aumentar densidade do overlay OCR">+</button>
+                </div>
+                <p class="mtl-panel-label">Opacidade</p>
+                <div class="mtl-panel-row">
+                  <button type="button" class="mtl-panel-step" data-action="opacity-dec" aria-label="Diminuir opacidade do overlay OCR">-</button>
+                  <span class="mtl-panel-value" data-role="opacity-label">100%</span>
+                  <button type="button" class="mtl-panel-step" data-action="opacity-inc" aria-label="Aumentar opacidade do overlay OCR">+</button>
+                </div>
+                <p class="mtl-panel-label">Formato global</p>
+                <div class="mtl-panel-grid2">
+                  <button type="button" class="mtl-panel-choice" data-action="global-shape-rect">Retângulo</button>
+                  <button type="button" class="mtl-panel-choice" data-action="global-shape-oval">Oval</button>
+                </div>
+                <p class="mtl-panel-label">Seleção de área</p>
+                <button type="button" class="mtl-panel-choice mtl-panel-choice-full" data-action="toggle-selection-mode">Selecionar área</button>
+                <p class="mtl-panel-hint">Esta opção seleciona a área que deseja traduzir manualmente.</p>
+                <p class="mtl-panel-hint">2x no balão para editar. Ative "Arrastar" no menu para mover.</p>
               </div>
-              <p class="mtl-panel-label">Tipo de fonte</p>
-              <select class="mtl-panel-select" data-role="font-family"></select>
-              <p class="mtl-panel-label">Texto exibido</p>
-              <div class="mtl-panel-grid2">
-                <button type="button" class="mtl-panel-choice" data-action="text-mode-translated">Traduzido</button>
-                <button type="button" class="mtl-panel-choice" data-action="text-mode-original">Original</button>
-              </div>
-              <p class="mtl-panel-label">Densidade</p>
-              <div class="mtl-panel-row">
-                <button type="button" class="mtl-panel-step" data-action="density-dec" aria-label="Diminuir densidade do overlay OCR">-</button>
-                <span class="mtl-panel-value" data-role="density-label">2.0</span>
-                <button type="button" class="mtl-panel-step" data-action="density-inc" aria-label="Aumentar densidade do overlay OCR">+</button>
-              </div>
-              <p class="mtl-panel-label">Opacidade</p>
-              <div class="mtl-panel-row">
-                <button type="button" class="mtl-panel-step" data-action="opacity-dec" aria-label="Diminuir opacidade do overlay OCR">-</button>
-                <span class="mtl-panel-value" data-role="opacity-label">100%</span>
-                <button type="button" class="mtl-panel-step" data-action="opacity-inc" aria-label="Aumentar opacidade do overlay OCR">+</button>
-              </div>
-              <p class="mtl-panel-label">Formato global</p>
-              <div class="mtl-panel-grid2">
-                <button type="button" class="mtl-panel-choice" data-action="global-shape-rect">Retângulo</button>
-                <button type="button" class="mtl-panel-choice" data-action="global-shape-oval">Oval</button>
-              </div>
-              <p class="mtl-panel-label">Seleção de área</p>
-              <button type="button" class="mtl-panel-choice mtl-panel-choice-full" data-action="toggle-selection-mode">Selecionar área</button>
-              <p class="mtl-panel-hint">Esta opção seleciona a área que deseja traduzir manualmente.</p>
-              <p class="mtl-panel-hint">2x no balão para editar. Ative "Arrastar" no menu para mover.</p>
             </div>
+            <button type="button" data-action="toggle-overlay">Overlay OCR</button>
           </div>
-          <button type="button" data-action="toggle-overlay">Overlay OCR</button>
+          <button class="mtl-icon-button mtl-more-toggle" type="button" data-action="toggle-topbar-more" title="Mais opções" aria-label="Mais opções" aria-expanded="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+          </button>
           <button type="button" class="mtl-primary mtl-translate-trigger" data-action="process-all-pages">
             <span class="mtl-translate-spinner" aria-hidden="true"></span>
             <span class="mtl-translate-label">Traduzir</span>
@@ -2106,6 +2170,24 @@ function readerCss() {
       flex-wrap: wrap;
       justify-content: flex-end;
     }
+    .mtl-actions-secondary {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .mtl-actions-secondary[hidden] { display: none; }
+    /* Botão "mais opções": só existe em telas estreitas (ver @media abaixo);
+       em telas largas a barra secundária já fica sempre visível ao lado. */
+    .mtl-more-toggle { display: none; }
+    /* Em telas largas o recolhimento é só um detalhe de mobile: força a barra
+       secundária visível mesmo com [hidden] (o estado isTopbarMoreOpen começa
+       fechado e não há botão "⋮" aqui para reabri-la). */
+    @media (min-width: 721px) {
+      .mtl-actions-secondary[hidden] {
+        display: flex !important;
+      }
+    }
     .mtl-badges {
       display: flex;
       align-items: center;
@@ -2250,20 +2332,59 @@ function readerCss() {
       width: min(260px, 42vw);
       padding: 0 10px;
     }
+    /* Telas estreitas (celular): a topbar precisa ficar baixa para não tomar
+       espaço de leitura, mas configurações/ações continuam a um toque via o
+       botão "mais opções" (⋮), que só existe nesta faixa de largura. */
     @media (max-width: 720px) {
       .mtl-topbar {
         align-items: stretch;
         flex-wrap: wrap;
+        padding: 8px 10px;
+        gap: 6px;
       }
       .mtl-title {
         min-width: 0;
         flex: 1;
       }
+      /* No mobile o nome do app some da topbar (o usuário já sabe o que abriu);
+         fica só o status, então a linha do título encolhe bastante. */
+      .mtl-title strong {
+        display: none;
+      }
+      .mtl-badges {
+        gap: 4px;
+      }
+      .mtl-badge {
+        min-height: 20px;
+        padding: 0 6px;
+        font-size: 11px;
+      }
       .mtl-actions {
         width: 100%;
-        justify-content: stretch;
+        justify-content: flex-start;
+        gap: 8px;
       }
-      .mtl-actions button {
+      /* Linha principal compacta: só ícone de conta, "mais opções" e o botão
+         de traduzir (que ocupa o espaço restante). Zoom/modo/Aa/overlay ficam
+         escondidos em .mtl-actions-secondary até o usuário pedir. */
+      .mtl-actions > .mtl-icon-button {
+        flex: none;
+      }
+      .mtl-more-toggle {
+        display: inline-flex;
+      }
+      .mtl-translate-trigger {
+        flex: 1 1 auto;
+      }
+      .mtl-actions-secondary {
+        flex-basis: 100%;
+        order: 5;
+        justify-content: center;
+        margin-top: 4px;
+        padding-top: 8px;
+        border-top: 1px dashed var(--border);
+      }
+      .mtl-actions-secondary > * {
         flex: 1 1 auto;
       }
       .mtl-image-stage {
@@ -2601,65 +2722,156 @@ function readerCss() {
     .mtl-auth-modal {
       position: relative;
       width: 100%;
-      max-width: 340px;
+      max-width: 350px;
       max-height: calc(100% - 32px);
       overflow-y: auto;
+      overflow-x: hidden;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--card);
+      gap: 16px;
+      border: 1px solid color-mix(in oklch, var(--primary) 28%, var(--border));
+      border-radius: calc(var(--radius) + 4px);
+      background:
+        radial-gradient(120% 60% at 100% 0%, color-mix(in oklch, var(--accent) 10%, transparent), transparent 60%),
+        var(--card);
       color: var(--card-foreground);
-      padding: 20px;
-      box-shadow: 0 24px 60px rgb(0 0 0 / 45%);
-      animation: mtl-auth-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 22px 20px 16px;
+      box-shadow:
+        0 24px 60px rgb(0 0 0 / 50%),
+        0 0 40px -12px color-mix(in oklch, var(--primary) 45%, transparent);
+      animation: mtl-auth-pop 0.24s cubic-bezier(0.16, 1, 0.3, 1);
     }
     @keyframes mtl-auth-pop {
-      0% { opacity: 0; transform: translateY(8px) scale(0.98); }
+      0% { opacity: 0; transform: translateY(10px) scale(0.97); }
       100% { opacity: 1; transform: translateY(0) scale(1); }
     }
+    /* Faixa gradiente no topo, igual aos cards do site */
+    .mtl-auth-topstrip {
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--accent), var(--primary));
+    }
+    /* Brilhos decorativos suaves nos cantos */
+    .mtl-auth-glow {
+      position: absolute;
+      width: 140px;
+      height: 140px;
+      border-radius: 999px;
+      filter: blur(46px);
+      pointer-events: none;
+    }
+    .mtl-auth-glow-a {
+      top: -60px;
+      right: -50px;
+      background: color-mix(in oklch, var(--primary) 26%, transparent);
+    }
+    .mtl-auth-glow-b {
+      bottom: -70px;
+      left: -60px;
+      background: color-mix(in oklch, var(--accent) 22%, transparent);
+    }
+
     .mtl-auth-brand {
+      position: relative;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 11px;
     }
     .mtl-auth-brand-mark {
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
       background: linear-gradient(135deg, var(--primary), var(--accent));
       color: var(--primary-foreground);
       flex: none;
+      box-shadow: 0 0 18px -4px color-mix(in oklch, var(--primary) 70%, transparent);
     }
     .mtl-auth-brand-mark svg {
-      width: 20px;
-      height: 20px;
+      width: 21px;
+      height: 21px;
       fill: none;
       stroke: currentColor;
       stroke-width: 2;
       stroke-linecap: round;
       stroke-linejoin: round;
     }
-    .mtl-auth-brand strong { display: block; font-size: 14px; }
-    .mtl-auth-brand span { display: block; color: var(--muted-foreground); font-size: 12px; }
+    .mtl-auth-sparkle {
+      position: absolute;
+      top: -7px;
+      right: -7px;
+      font-size: 12px;
+      color: var(--accent);
+      text-shadow: 0 0 8px color-mix(in oklch, var(--accent) 80%, transparent);
+      animation: mtl-auth-twinkle 2.4s ease-in-out infinite;
+    }
+    @keyframes mtl-auth-twinkle {
+      0%, 100% { transform: scale(0.7) rotate(0deg); opacity: 0.45; }
+      50% { transform: scale(1.1) rotate(30deg); opacity: 1; }
+    }
+    .mtl-auth-brand-text strong {
+      display: block;
+      font-size: 14.5px;
+      letter-spacing: 0.01em;
+    }
+    .mtl-auth-brand-text strong em {
+      font-style: normal;
+      background: linear-gradient(100deg, color-mix(in oklch, var(--primary) 75%, white 25%), color-mix(in oklch, var(--accent) 60%, white 40%));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .mtl-auth-brand-text span { display: block; color: var(--muted-foreground); font-size: 11.5px; margin-top: 1px; }
 
-    .mtl-auth-screen { display: flex; flex-direction: column; gap: 14px; }
+    .mtl-auth-screen { position: relative; display: flex; flex-direction: column; gap: 14px; }
     .mtl-auth-screen[hidden] { display: none; }
-    .mtl-auth-hint { color: var(--muted-foreground); font-size: 13px; text-align: center; padding: 12px 0; }
 
+    /* Loading */
+    .mtl-auth-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 0 12px;
+    }
+    .mtl-auth-loading-ring {
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      border: 3px solid color-mix(in oklch, var(--primary) 25%, transparent);
+      border-top-color: var(--primary);
+      animation: mtl-spin 0.8s linear infinite;
+    }
+    .mtl-auth-hint { margin: 0; color: var(--muted-foreground); font-size: 13px; text-align: center; }
+
+    /* Boas-vindas (tela de login) */
+    .mtl-auth-welcome {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding-top: 2px;
+    }
+    .mtl-auth-welcome strong { font-size: 17px; }
+    .mtl-auth-welcome span { color: var(--muted-foreground); font-size: 12.5px; }
+
+    /* Linha "Sistema" como pílula discreta no rodapé da tela */
     .mtl-auth-system-line {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      font-size: 12px;
+      border: 1px solid color-mix(in oklch, var(--border) 70%, transparent);
+      border-radius: 999px;
+      background: color-mix(in oklch, var(--muted) 40%, transparent);
+      padding: 5px 12px;
+      font-size: 11px;
       color: var(--muted-foreground);
     }
-    .mtl-auth-system-line span { flex: none; }
+    .mtl-auth-system-line span { flex: none; text-transform: uppercase; letter-spacing: 0.06em; font-size: 9.5px; }
     .mtl-auth-system-line strong {
       flex: 1;
       min-width: 0;
@@ -2671,30 +2883,73 @@ function readerCss() {
       text-align: right;
     }
 
+    /* Divisor de seção ("Tradução") */
+    .mtl-auth-section-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted-foreground);
+      font-size: 10.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .mtl-auth-section-label::before,
+    .mtl-auth-section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, color-mix(in oklch, var(--primary) 35%, var(--border)), transparent);
+    }
+
     .mtl-auth-panel { display: flex; flex-direction: column; gap: 10px; }
     .mtl-auth-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
       gap: 8px;
     }
-    .mtl-auth-form { display: flex; flex-direction: column; gap: 12px; }
+    .mtl-auth-form { display: flex; flex-direction: column; gap: 14px; }
     .mtl-auth-form label,
     .mtl-auth-panel label,
     .mtl-auth-grid label {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 5px;
       min-width: 0;
-      font-size: 12px;
+      font-size: 11.5px;
+      font-weight: 500;
       color: var(--muted-foreground);
     }
+
+    /* Campo com ícone à esquerda (login) */
+    .mtl-auth-field {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .mtl-auth-field svg {
+      position: absolute;
+      left: 11px;
+      width: 15px;
+      height: 15px;
+      fill: none;
+      stroke: var(--muted-foreground);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      pointer-events: none;
+      transition: stroke 0.15s ease;
+    }
+    .mtl-auth-field:focus-within svg { stroke: var(--primary); }
+    .mtl-auth-field input { padding-left: 34px !important; }
+
     .mtl-auth-form input,
     .mtl-auth-panel select {
       width: 100%;
       min-width: 0;
       max-width: 100%;
       box-sizing: border-box;
-      min-height: 36px;
+      min-height: 38px;
       border: 1px solid var(--border);
       border-radius: calc(var(--radius) - 2px);
       background: var(--input);
@@ -2705,14 +2960,65 @@ function readerCss() {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
-    .mtl-auth-form input[aria-invalid="true"] { border-color: var(--destructive); }
+    .mtl-auth-form input::placeholder { color: color-mix(in oklch, var(--muted-foreground) 65%, transparent); }
+    .mtl-auth-form input:focus,
+    .mtl-auth-panel select:focus {
+      outline: none;
+      border-color: color-mix(in oklch, var(--primary) 65%, var(--border));
+      box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 22%, transparent);
+    }
+    .mtl-auth-form input[aria-invalid="true"] {
+      border-color: var(--destructive);
+      box-shadow: 0 0 0 3px color-mix(in oklch, var(--destructive) 18%, transparent);
+    }
 
-    .mtl-auth-submit, .mtl-auth-continue {
-      width: 100%;
-      min-height: 38px;
-      font-weight: 600;
+    /* Selects com chevron customizado */
+    .mtl-auth-panel select {
+      appearance: none;
+      -webkit-appearance: none;
+      padding-right: 30px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a887c2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 9px center;
+      cursor: pointer;
     }
+
+    /* Botões principais (Entrar / Iniciar leitor) */
+    .mtl-auth-submit, .mtl-auth-continue {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      min-height: 42px;
+      font-weight: 700;
+      font-size: 13.5px;
+      letter-spacing: 0.01em;
+      border: none;
+      border-radius: calc(var(--radius) - 2px);
+      background: linear-gradient(120deg, var(--primary), color-mix(in oklch, var(--primary) 65%, var(--accent)));
+      color: var(--primary-foreground);
+      box-shadow: 0 8px 22px -8px color-mix(in oklch, var(--primary) 75%, transparent);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+    .mtl-auth-submit svg, .mtl-auth-continue svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 0.2s ease;
+    }
+    .mtl-auth-submit:hover, .mtl-auth-continue:hover {
+      filter: brightness(1.08);
+      box-shadow: 0 10px 26px -8px color-mix(in oklch, var(--primary) 90%, transparent);
+    }
+    .mtl-auth-submit:hover svg { transform: translateX(3px); }
+    .mtl-auth-submit:active, .mtl-auth-continue:active { transform: translateY(1px) scale(0.99); }
     .mtl-auth-submit.is-busy, .mtl-auth-continue.is-busy, .mtl-auth-danger.is-busy {
       opacity: 0.7;
       pointer-events: none;
@@ -2739,33 +3045,55 @@ function readerCss() {
     }
     .mtl-auth-error[hidden] { display: none; }
 
+    /* Cartão do usuário conectado */
     .mtl-auth-user-card {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid color-mix(in oklch, var(--primary) 30%, var(--border));
       border-radius: calc(var(--radius) - 2px);
-      background: color-mix(in oklch, var(--primary) 8%, var(--card));
+      background:
+        radial-gradient(130% 120% at 0% 0%, color-mix(in oklch, var(--primary) 13%, transparent), transparent 55%),
+        color-mix(in oklch, var(--primary) 5%, var(--card));
       padding: 12px;
     }
-    .mtl-auth-user-row { display: flex; align-items: center; gap: 10px; }
+    .mtl-auth-user-row { display: flex; align-items: center; gap: 11px; }
+    .mtl-auth-avatar-wrap { position: relative; flex: none; }
     .mtl-auth-avatar {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 36px;
-      height: 36px;
+      width: 40px;
+      height: 40px;
       border-radius: 999px;
       background: linear-gradient(135deg, var(--primary), var(--accent));
       color: var(--primary-foreground);
       font-weight: 700;
       font-size: 13px;
-      flex: none;
+      box-shadow:
+        0 0 0 2px var(--card),
+        0 0 0 3.5px color-mix(in oklch, var(--primary) 55%, transparent);
     }
-    .mtl-auth-user-info { display: flex; flex-direction: column; min-width: 0; }
-    .mtl-auth-user-info span { color: var(--muted-foreground); font-size: 11px; }
+    .mtl-auth-online-dot {
+      position: absolute;
+      right: -1px;
+      bottom: -1px;
+      width: 11px;
+      height: 11px;
+      border-radius: 999px;
+      background: #4ade80;
+      border: 2px solid var(--card);
+      box-shadow: 0 0 6px rgb(74 222 128 / 60%);
+    }
+    .mtl-auth-user-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+    .mtl-auth-user-info span {
+      color: color-mix(in oklch, var(--primary) 80%, white 20%);
+      font-size: 9.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
     .mtl-auth-user-info strong {
-      font-size: 13px;
+      font-size: 13.5px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -2778,15 +3106,35 @@ function readerCss() {
       white-space: nowrap;
     }
 
+    /* "Sair" compacto ao lado do usuário */
     .mtl-auth-danger {
-      min-height: 32px;
-      border: 1px solid color-mix(in oklch, var(--destructive) 45%, var(--border));
-      border-radius: calc(var(--radius) - 2px);
-      background: color-mix(in oklch, var(--destructive) 14%, transparent);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      flex: none;
+      min-height: 28px;
+      border: 1px solid color-mix(in oklch, var(--destructive) 40%, var(--border));
+      border-radius: 999px;
+      background: color-mix(in oklch, var(--destructive) 12%, transparent);
       color: var(--destructive);
-      font-size: 12px;
+      padding: 0 11px;
+      font-size: 11.5px;
       font-weight: 600;
       cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .mtl-auth-danger:hover {
+      background: color-mix(in oklch, var(--destructive) 22%, transparent);
+      border-color: color-mix(in oklch, var(--destructive) 60%, var(--border));
+    }
+    .mtl-auth-danger svg {
+      width: 13px;
+      height: 13px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
 
     .mtl-auth-status {

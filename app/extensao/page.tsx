@@ -2,11 +2,92 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Chrome, Download, BookOpen, Zap, Shield, Smartphone } from 'lucide-react'
+import {
+  BookOpen,
+  Chrome,
+  Download,
+  Monitor,
+  Shield,
+  Smartphone,
+  Sparkles,
+  Zap,
+} from 'lucide-react'
 
 export const metadata: Metadata = {
   title: 'Extensão para navegador',
-  description: 'Baixe e instale a extensão Manga Translator Local para Chrome e Firefox Mobile. Traduza mangá diretamente do navegador com IA.',
+  description: 'Baixe e instale a extensão Manga Translator Local para Chrome no desktop e Kiwi Browser no Android. Traduza mangá diretamente do navegador com IA.',
+}
+
+const KIWI_APK_URL = 'https://pub-f819838a77944f35a4edc23737502f27.r2.dev/kiwi-browser/com.kiwibrowser.browser-arm64-14310011181-github.apk'
+
+function StepCard({ step, title, children }: { step: string; title: string; children: React.ReactNode }) {
+  return (
+    <Card className="p-5 sm:p-6 border border-border/50 hover:border-primary/40 transition">
+      <div className="flex gap-4">
+        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-linear-to-br from-primary/30 to-accent/20 ring-1 ring-primary/30 font-bold text-primary shrink-0">
+          {step}
+        </div>
+        <div className="space-y-1.5 min-w-0">
+          <h3 className="font-semibold text-base sm:text-lg">{title}</h3>
+          <div className="text-sm text-muted-foreground leading-relaxed">{children}</div>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+function SectionHeading({ icon, badge, title, subtitle }: { icon: React.ReactNode; badge: string; title: string; subtitle?: string }) {
+  return (
+    <div className="space-y-3 text-center">
+      <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+        {icon}
+        {badge}
+      </div>
+      <h2 className="text-2xl sm:text-3xl font-bold">{title}</h2>
+      {subtitle && <p className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-base">{subtitle}</p>}
+    </div>
+  )
+}
+
+/* Ilustração (em CSS) da tela chrome://extensions do Kiwi Browser,
+   destacando o botão "+ (from .zip)" usado na instalação. */
+function KiwiExtensionsMock() {
+  return (
+    <div className="rounded-xl border border-border bg-background overflow-hidden shadow-lg max-w-md mx-auto text-left">
+      <div className="flex items-center gap-2 bg-muted/60 px-4 py-2.5 border-b border-border">
+        <span className="h-2.5 w-2.5 rounded-full bg-border" aria-hidden />
+        <span className="flex-1 rounded-full bg-background/80 border border-border px-3 py-1 text-[11px] text-muted-foreground font-mono">
+          chrome://extensions
+        </span>
+      </div>
+      <div className="p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-base font-bold">Extensões</span>
+          <span className="text-[11px] text-muted-foreground">Modo do desenvolvedor</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-[12px]">
+          <span className="rounded-md border border-border px-2.5 py-2 text-center text-muted-foreground">
+            + (from store)
+          </span>
+          <span className="relative rounded-md border-2 border-primary bg-primary/10 px-2.5 py-2 text-center font-semibold text-primary shadow-[0_0_16px_-4px_color-mix(in_oklch,var(--primary)_60%,transparent)]">
+            + (from .zip/.crx)
+            <span className="absolute -top-2.5 -right-2 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold text-primary-foreground rotate-6">
+              toque aqui
+            </span>
+          </span>
+          <span className="rounded-md border border-border px-2.5 py-2 text-center text-muted-foreground">
+            Compactar extensão
+          </span>
+          <span className="rounded-md border border-border px-2.5 py-2 text-center text-muted-foreground">
+            Atualizar
+          </span>
+        </div>
+        <p className="pt-1 text-center text-[11px] text-muted-foreground">
+          Tela ilustrativa do Kiwi Browser
+        </p>
+      </div>
+    </div>
+  )
 }
 
 export default function ExtensaoPage() {
@@ -25,162 +106,190 @@ export default function ExtensaoPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-16 space-y-16">
-        {/* Hero Section */}
-        <section className="text-center space-y-6 max-w-2xl mx-auto">
-          <div className="flex justify-center">
-            <div className="p-4 rounded-full bg-primary/20 border border-primary/30">
+      <main className="container mx-auto px-4 py-14 sm:py-16 space-y-20">
+        {/* Hero */}
+        <section className="relative text-center space-y-6 max-w-2xl mx-auto">
+          <div className="pointer-events-none absolute -top-10 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" aria-hidden />
+          <div className="relative flex justify-center">
+            <div className="relative p-4 rounded-2xl bg-linear-to-br from-primary/25 to-accent/15 border border-primary/30 shadow-[0_0_30px_-8px_color-mix(in_oklch,var(--primary)_60%,transparent)]">
               <Chrome className="w-12 h-12 text-primary" />
+              <Sparkles className="absolute -right-2 -top-2 h-5 w-5 text-accent" />
             </div>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold">
-            Tradutor de Manga no Navegador
+          <h1 className="relative text-4xl md:text-5xl font-bold tracking-tight">
+            Tradutor de Manga no{' '}
+            <span className="bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">Navegador</span>
           </h1>
-          <p className="text-lg text-muted-foreground">
-            Instale nossa extensão para Chrome ou Firefox Mobile e traduza mangá direto do navegador. Acesso rápido, modo leitor integrado e controle total sobre o OCR.
+          <p className="relative text-lg text-muted-foreground">
+            Instale a extensão e traduza mangá direto de qualquer site. Leitor integrado,
+            OCR com IA e overlay editável — no desktop e no celular.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+          <div className="relative flex flex-col sm:flex-row gap-3 justify-center pt-2">
             <Link href="/download-extensao">
-              <Button size="lg" className="gap-2 bg-primary hover:bg-primary/90">
+              <Button size="lg" className="w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90 shadow-[0_8px_24px_-8px_color-mix(in_oklch,var(--primary)_80%,transparent)]">
                 <Download className="w-5 h-5" />
-                Baixar para Chrome
+                Baixar extensão (.zip)
               </Button>
             </Link>
-            <Link href="/download-extensao?target=firefox">
-              <Button size="lg" variant="outline" className="gap-2">
+            <Link href="#tutorial-desktop">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2">
+                <Monitor className="w-5 h-5" />
+                Tutorial desktop
+              </Button>
+            </Link>
+            <Link href="#tutorial-android">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2">
                 <Smartphone className="w-5 h-5" />
-                Baixar para Firefox Mobile
-              </Button>
-            </Link>
-            <Link href="#tutorial">
-              <Button size="lg" variant="outline" className="gap-2">
-                <BookOpen className="w-5 h-5" />
-                Ver Tutorial
+                Tutorial Android
               </Button>
             </Link>
           </div>
         </section>
 
         {/* Recursos principais */}
-        <section className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          <Card className="p-6 border border-border/50 hover:border-primary/50 transition space-y-3">
+        <section className="grid sm:grid-cols-3 gap-5 max-w-5xl mx-auto">
+          <Card className="p-6 border border-border/50 hover:border-primary/50 hover:shadow-[0_0_24px_-10px_color-mix(in_oklch,var(--primary)_50%,transparent)] transition space-y-3">
             <div className="p-2 w-fit rounded-lg bg-primary/20">
               <Zap className="w-6 h-6 text-primary" />
             </div>
             <h3 className="font-semibold text-lg">Leitor Integrado</h3>
             <p className="text-sm text-muted-foreground">
-              Leia mangá com o modo leitor completo direto do navegador. Zoom, navegação e overlay OCR.
+              Um clique no ícone abre o modo leitor sobre a própria página, com zoom, navegação e overlay OCR.
             </p>
           </Card>
 
-          <Card className="p-6 border border-border/50 hover:border-primary/50 transition space-y-3">
+          <Card className="p-6 border border-border/50 hover:border-primary/50 hover:shadow-[0_0_24px_-10px_color-mix(in_oklch,var(--primary)_50%,transparent)] transition space-y-3">
             <div className="p-2 w-fit rounded-lg bg-primary/20">
               <Shield className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="font-semibold text-lg">Totalmente Local</h3>
+            <h3 className="font-semibold text-lg">Seu Servidor</h3>
             <p className="text-sm text-muted-foreground">
-              Processa tudo localmente. Nenhum dado enviado para servidores terceirizados, apenas tradução segura.
+              O processamento roda no seu próprio servidor. Suas leituras ficam na sua biblioteca, sob seu controle.
             </p>
           </Card>
 
-          <Card className="p-6 border border-border/50 hover:border-primary/50 transition space-y-3">
+          <Card className="p-6 border border-border/50 hover:border-primary/50 hover:shadow-[0_0_24px_-10px_color-mix(in_oklch,var(--primary)_50%,transparent)] transition space-y-3">
             <div className="p-2 w-fit rounded-lg bg-primary/20">
               <BookOpen className="w-6 h-6 text-primary" />
             </div>
             <h3 className="font-semibold text-lg">OCR Avançado</h3>
             <p className="text-sm text-muted-foreground">
-              Suporte para Inglês, Português e Japonês com IA de última geração. Detecção precisa de balões.
+              Detecção precisa de balões com suporte a Inglês, Português e Japonês, tradução via Google ou OpenRouter.
             </p>
           </Card>
         </section>
 
-        {/* Tutorial de instalação */}
-        <section id="tutorial" className="max-w-3xl mx-auto space-y-8">
-          <h2 className="text-3xl font-bold">Como Instalar</h2>
+        {/* Tutorial desktop */}
+        <section id="tutorial-desktop" className="max-w-3xl mx-auto space-y-8 scroll-mt-24">
+          <SectionHeading
+            icon={<Monitor className="h-3.5 w-3.5" />}
+            badge="Desktop"
+            title="Instalar no Chrome"
+            subtitle="Funciona no Chrome, Edge, Brave e demais navegadores Chromium."
+          />
 
-          <div className="space-y-6">
-            {/* Passo 1 */}
-            <Card className="p-6 border border-border/50">
-              <div className="flex gap-4">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/20 font-semibold text-primary shrink-0">
-                  1
-                </div>
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-lg">Baixe o pacote do seu navegador</h3>
-                  <p className="text-muted-foreground">
-                    Use "Baixar para Chrome" no desktop ou "Baixar para Firefox Mobile" no Android.
-                  </p>
-                </div>
-              </div>
-            </Card>
+          <div className="space-y-4">
+            <StepCard step="1" title="Baixe e extraia a extensão">
+              Clique em <strong className="text-foreground">"Baixar extensão (.zip)"</strong> acima e extraia o
+              arquivo em uma pasta de sua preferência.
+            </StepCard>
+            <StepCard step="2" title="Abra a tela de extensões">
+              Acesse <code className="bg-muted px-2 py-0.5 rounded text-xs">chrome://extensions</code> e ative o{' '}
+              <strong className="text-foreground">Modo do desenvolvedor</strong> (canto superior direito).
+            </StepCard>
+            <StepCard step="3" title="Carregue a pasta extraída">
+              Clique em <strong className="text-foreground">"Carregar sem compactação"</strong> e selecione a pasta
+              extraída no passo 1.
+            </StepCard>
+            <StepCard step="4" title="Pronto!">
+              Abra uma página de mangá e clique no ícone da extensão: o leitor abre na hora, com o login por cima.
+            </StepCard>
+          </div>
+        </section>
 
-            {/* Passo 2 */}
-            <Card className="p-6 border border-border/50">
-              <div className="flex gap-4">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/20 font-semibold text-primary shrink-0">
-                  2
-                </div>
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-lg">Instale em modo desenvolvedor</h3>
-                  <p className="text-muted-foreground">
-                    No Chrome, use "Carregar sem compactação". No Firefox Mobile, use o fluxo de extensão temporária/debug do Firefox para Android.
-                  </p>
-                </div>
-              </div>
-            </Card>
+        {/* Tutorial Android (Kiwi) */}
+        <section id="tutorial-android" className="max-w-3xl mx-auto space-y-8 scroll-mt-24">
+          <SectionHeading
+            icon={<Smartphone className="h-3.5 w-3.5" />}
+            badge="Android"
+            title="Instalar no celular"
+            subtitle="No Android, use o Kiwi Browser — um navegador baseado no Chrome com suporte completo a extensões."
+          />
 
-            {/* Passo 3 */}
-            <Card className="p-6 border border-border/50">
-              <div className="flex gap-4">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/20 font-semibold text-primary shrink-0">
-                  3
-                </div>
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-lg">Escolha o ZIP gerado</h3>
-                  <p className="text-muted-foreground">
-                    O pacote Chrome usa Manifest V3. O pacote Firefox Mobile usa manifest próprio compatível com background script clássico.
-                  </p>
-                </div>
-              </div>
-            </Card>
+          {/* Aviso: Kiwi é software de terceiros */}
+          <div className="flex gap-3 rounded-lg border border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground">
+            <Shield className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+            <p>
+              O <strong className="text-foreground">Kiwi Browser</strong> é um aplicativo de terceiros, de código
+              aberto (
+              <a
+                href="https://github.com/kiwibrowser/src.next"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-foreground transition"
+              >
+                github.com/kiwibrowser/src.next
+              </a>
+              ), <strong className="text-foreground">sem qualquer afiliação</strong> com o Manga Translator Local.
+              O link abaixo aponta para um espelho do APK publicado no GitHub do projeto; verifique a procedência e
+              instale por sua própria conta e risco. Qualquer navegador Android baseado em Chromium com suporte a
+              extensões também funciona.
+            </p>
+          </div>
 
-            {/* Passo 4 */}
-            <Card className="p-6 border border-border/50">
-              <div className="flex gap-4">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/20 font-semibold text-primary shrink-0">
-                  4
-                </div>
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-lg">Configure as permissões</h3>
-                  <p className="text-muted-foreground">
-                    A extensão pedirá acesso ao seu navegador. Confirme para continuar.
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            {/* Passo 5 */}
-            <Card className="p-6 border border-border/50">
-              <div className="flex gap-4">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/20 font-semibold text-primary shrink-0">
-                  5
-                </div>
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-lg">Pronto!</h3>
-                  <p className="text-muted-foreground">
-                    A extensão está instalada. Clique no ícone da extensão (canto superior direito) para começar a usar.
-                  </p>
-                </div>
-              </div>
-            </Card>
+          <div className="space-y-4">
+            <StepCard step="1" title="Baixe o Kiwi Browser">
+              <p>
+                Instale o navegador pelo APK:
+              </p>
+              <a href={KIWI_APK_URL} rel="noopener noreferrer" className="mt-3 inline-flex">
+                <Button variant="outline" size="sm" className="gap-2 border-primary/40 text-primary hover:bg-primary/10">
+                  <Download className="w-4 h-4" />
+                  Baixar Kiwi Browser (.apk)
+                </Button>
+              </a>
+              <p className="mt-2 text-xs">
+                O Android pode pedir permissão para instalar apps de fontes externas — confirme para prosseguir.
+              </p>
+            </StepCard>
+            <StepCard step="2" title="Baixe a extensão (.zip)">
+              <p>
+                Ainda no celular, baixe o pacote da extensão — não precisa extrair:
+              </p>
+              <Link href="/download-extensao" className="mt-3 inline-flex">
+                <Button variant="outline" size="sm" className="gap-2 border-primary/40 text-primary hover:bg-primary/10">
+                  <Download className="w-4 h-4" />
+                  Baixar extensão (.zip)
+                </Button>
+              </Link>
+            </StepCard>
+            <StepCard step="3" title="Abra a tela de extensões do Kiwi">
+              Digite <code className="bg-muted px-2 py-0.5 rounded text-xs">chrome://extensions</code> na barra de
+              endereço do Kiwi e ative o <strong className="text-foreground">Modo do desenvolvedor</strong>.
+            </StepCard>
+            <StepCard step="4" title={'Toque em "+ (from .zip)"'}>
+              <p className="mb-4">
+                Toque no botão <strong className="text-foreground">"+ (from .zip/.crx/.user.js)"</strong> e selecione o
+                arquivo zip baixado no passo 2:
+              </p>
+              <KiwiExtensionsMock />
+            </StepCard>
+            <StepCard step="5" title="Pronto!">
+              Abra uma página de mangá, toque no menu <strong className="text-foreground">⋮</strong> do Kiwi e selecione{' '}
+              <strong className="text-foreground">Manga Translator Local</strong> na lista de extensões para abrir o leitor.
+            </StepCard>
           </div>
         </section>
 
         {/* Como usar */}
         <section className="max-w-3xl mx-auto space-y-8">
-          <h2 className="text-3xl font-bold">Como Usar</h2>
+          <SectionHeading
+            icon={<BookOpen className="h-3.5 w-3.5" />}
+            badge="Uso"
+            title="Como Usar"
+          />
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 gap-5">
             <Card className="p-6 border border-border/50 space-y-3">
               <h3 className="font-semibold text-lg">Ao clicar no ícone</h3>
               <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
@@ -205,7 +314,11 @@ export default function ExtensaoPage() {
 
         {/* FAQ */}
         <section className="max-w-3xl mx-auto space-y-8">
-          <h2 className="text-3xl font-bold">Perguntas Frequentes</h2>
+          <SectionHeading
+            icon={<Sparkles className="h-3.5 w-3.5" />}
+            badge="Dúvidas"
+            title="Perguntas Frequentes"
+          />
 
           <div className="space-y-4">
             <details className="group border border-border/50 rounded-lg p-4 hover:border-primary/50 transition cursor-pointer">
@@ -243,7 +356,7 @@ export default function ExtensaoPage() {
                 <span>Posso editar o texto antes de traduzir?</span>
                 <span className="group-open:rotate-180 transition">▼</span>
               </summary>
-              <p className="text-muted-foreground mt-3">
+              <div className="text-muted-foreground mt-3">
                 Sim! No modo leitor, você pode:
                 <ul className="list-disc list-inside mt-2 space-y-1">
                   <li>Duplo clique em um balão para editar</li>
@@ -251,7 +364,7 @@ export default function ExtensaoPage() {
                   <li>Ajustar fonte, tamanho e densidade</li>
                   <li>Desenhar seleção manual para novos balões</li>
                 </ul>
-              </p>
+              </div>
             </details>
 
             <details className="group border border-border/50 rounded-lg p-4 hover:border-primary/50 transition cursor-pointer">
@@ -267,23 +380,39 @@ export default function ExtensaoPage() {
         </section>
 
         {/* CTA Final */}
-        <section className="text-center space-y-6 max-w-2xl mx-auto py-8 border-t border-border">
-          <h2 className="text-3xl font-bold">Pronto para começar?</h2>
-          <p className="text-lg text-muted-foreground">
-            Baixe a extensão agora e comece a traduzir mangá com facilidade.
+        <section className="relative text-center space-y-6 max-w-2xl mx-auto py-10 overflow-hidden rounded-2xl border border-primary/20 bg-linear-to-br from-card via-card to-accent/10 px-6">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-linear-to-r from-primary via-accent to-primary" aria-hidden />
+          <div className="pointer-events-none absolute -right-12 -top-14 h-44 w-44 rounded-full bg-primary/20 blur-3xl" aria-hidden />
+          <h2 className="relative text-2xl sm:text-3xl font-bold">Pronto para começar?</h2>
+          <p className="relative text-muted-foreground">
+            Baixe a extensão agora e comece a traduzir mangá com facilidade — no PC ou no celular.
           </p>
-          <Link href="/download-extensao">
-            <Button size="lg" className="gap-2 bg-primary hover:bg-primary/90">
-              <Download className="w-5 h-5" />
-              Baixar para Chrome
-            </Button>
-          </Link>
-          <Link href="/download-extensao?target=firefox">
-            <Button size="lg" variant="outline" className="gap-2">
-              <Smartphone className="w-5 h-5" />
-              Baixar para Firefox Mobile
-            </Button>
-          </Link>
+          <div className="relative flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/download-extensao">
+              <Button size="lg" className="w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90">
+                <Download className="w-5 h-5" />
+                Baixar extensão (.zip)
+              </Button>
+            </Link>
+            <a href={KIWI_APK_URL} rel="noopener noreferrer">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2">
+                <Smartphone className="w-5 h-5" />
+                Kiwi Browser (.apk)
+              </Button>
+            </a>
+          </div>
+          <p className="relative text-xs text-muted-foreground">
+            Kiwi Browser é um{' '}
+            <a
+              href="https://github.com/kiwibrowser/src.next"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-foreground transition"
+            >
+              projeto open source de terceiros
+            </a>
+            , sem afiliação com o Manga Translator Local.
+          </p>
         </section>
       </main>
 
