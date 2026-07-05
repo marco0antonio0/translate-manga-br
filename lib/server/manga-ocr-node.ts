@@ -92,6 +92,9 @@ class NodeOcrRuntime {
       graphOptimizationLevel: 'all',
       intraOpNumThreads: resolveIntraOpThreads(),
       interOpNumThreads: 1,
+      // Silencia os warnings "Removing initializer ..." do carregamento dos
+      // modelos PaddleOCR (initializers não usados no grafo) — só loga erros.
+      logSeverityLevel: 3,
     }
     const yoloSession = await ort.InferenceSession.create(YOLO_MODEL_PATH, sessionOptions)
     const recSession = await ort.InferenceSession.create(OCR_REC_MODEL_PATH, sessionOptions)
