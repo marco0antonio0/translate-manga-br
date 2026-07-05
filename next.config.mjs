@@ -9,6 +9,8 @@ const nextConfig = {
     '/api/translate/extract': ['./models/**/*'],
     '/api/ocr-image/queue': ['./models/**/*'],
     '/api/sections/**/*': ['./models/**/*'],
+    // A rota lê os arquivos da extensão do disco em runtime (readdir).
+    '/download-extensao': ['./chrome-extension/**/*'],
   },
   experimental: {
     proxyClientMaxBodySize: '100mb',

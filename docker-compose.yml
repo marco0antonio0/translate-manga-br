@@ -4,6 +4,9 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
+        # URL gravada em chrome-extension/config.js durante o build.
+        # Com o runner standalone o valor é fixado aqui (não há regeneração
+        # em runtime) — mudou a URL? rode `docker compose up -d --build`.
         CHROME_EXTENSION_API_BASE_URL: "https://open-manga.agevon.com"
     container_name: manga-nextjs
     ports:
@@ -12,7 +15,12 @@ services:
       NODE_ENV: "production"
       ALLOW_REMOTE_SETUP: "1"
       SECTION_IMAGE_PROCESSING_CONCURRENCY: "2"
-      CHROME_EXTENSION_API_BASE_URL: "https://open-manga.agevon.com"
     volumes:
       - ./storage:/app/storage
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3080/api/setup/status').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: unless-stopped

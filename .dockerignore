@@ -1,12 +1,32 @@
+# VCS e artefatos de build
 .git
 .gitignore
+.gitattributes
 .next
 node_modules
-storage
-python-api/.venv
-python-api/__pycache__
-python-api/**/__pycache__
-python-api/.pytest_cache
-python-api/.mypy_cache
-python-api/.ruff_cache
+tsconfig.tsbuildinfo
 *.log
+
+# Dados de runtime (montados como volume)
+storage
+
+# Lockfiles alternativos (o build usa npm + package-lock.json)
+pnpm-lock.yaml
+bun.lock
+
+# Documentação e mídia que não entram no build
+images
+docs
+test
+*.md
+LICENSE.md
+# O README da extensão é distribuído dentro do zip de /download-extensao
+!chrome-extension/README.md
+
+# Configs de agentes/CI que não afetam o build
+.github
+.claude
+.codex
+.agents
+.env
+.env.*
