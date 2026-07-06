@@ -22,7 +22,9 @@ Closes #
 
 ## Checklist
 
-- [ ] `npx tsc --noEmit` passa sem erros
+- [ ] `npm run typecheck` passa sem erros
+- [ ] `npm run lint` passa sem erros
+- [ ] `npm test` passa sem erros
 - [ ] `npm run build` conclui com sucesso
 - [ ] `docker compose up -d --build` validado (se a mudança impacta containers)
 - [ ] Um problema por PR — sem mudanças não relacionadas

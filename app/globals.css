@@ -4,6 +4,21 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --font-geist: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-geist-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  --font-bangers: 'Bangers', 'CC Wild Words', 'Anime Ace 2.0 BB', 'Comic Sans MS', cursive;
+  --font-carter-one: 'Carter One', 'Trebuchet MS', sans-serif;
+  --font-righteous: 'Righteous', 'Trebuchet MS', sans-serif;
+  --font-rubik-mono-one: 'Rubik Mono One', 'Arial Black', sans-serif;
+  --font-audiowide: 'Audiowide', 'Arial Black', sans-serif;
+  --font-permanent-marker: 'Permanent Marker', 'Comic Sans MS', cursive;
+  --font-kalam: 'Kalam', 'Comic Sans MS', cursive;
+  --font-luckiest-guy: 'Luckiest Guy', 'Arial Black', sans-serif;
+  --font-changa-one: 'Changa One', 'Arial Black', sans-serif;
+  --font-bebas-neue: 'Bebas Neue', 'Arial Narrow', Impact, sans-serif;
+  --font-anton: 'Anton', Impact, sans-serif;
+  --font-teko: 'Teko', 'Arial Narrow', Impact, sans-serif;
+  --font-noto-sans-kr: 'Noto Sans KR', 'Nanum Gothic', 'Apple SD Gothic Neo', 'Malgun Gothic', Arial, sans-serif;
   --background: oklch(0.12 0.01 260);
   --foreground: oklch(0.95 0 0);
   --card: oklch(0.16 0.01 260);
@@ -75,8 +90,8 @@
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: var(--font-geist);
+  --font-mono: var(--font-geist-mono);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

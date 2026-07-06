@@ -40,6 +40,6 @@ Especialmente relevantes para este projeto:
 ## Práticas do projeto
 
 - Dependabot semanal para npm e GitHub Actions
-- Auditoria local: `npm run security:deps`
+- Auditoria local: `npm run security:deps` e `npm audit`
 - Chaves sensíveis criptografadas em repouso
 - Relatórios locais em `storage/security/`

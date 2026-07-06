@@ -55,7 +55,7 @@ docker compose up -d --build
 ```
 
 > [!NOTE]
-> O Dockerfile atual usa `npm ci` e `package-lock.json`. Embora o repositório ainda tenha outros lockfiles (`pnpm-lock.yaml`, `bun.lock`), **use `npm`** para reproduzir o fluxo atual de Docker e CI.
+> O projeto usa `npm`, `package-lock.json` e `npm ci` para reproduzir o fluxo atual de Docker e CI.
 
 ## 🔀 Fluxo de contribuição
 
@@ -93,7 +93,9 @@ chore: atualizar dependências do Radix UI
 Execute pelo menos:
 
 ```bash
-npx tsc --noEmit   # o build do Next ignora erros TS — este é o check de verdade
+npm run typecheck  # o build do Next ignora erros TS — este é o check de verdade
+npm run lint
+npm test
 npm run build
 ```
 
@@ -103,10 +105,7 @@ Se a mudança impacta ambiente/container:
 docker compose up -d --build
 ```
 
-Observações conhecidas:
-
-- O script `npm run lint` existe, mas `eslint` ainda não está declarado nas dependências — pode falhar em ambientes novos.
-- Se o build falhar por binding nativo ausente de `better-sqlite3`, rode `npm rebuild better-sqlite3`.
+Se o build falhar por binding nativo ausente de `better-sqlite3`, rode `npm rebuild better-sqlite3`.
 
 ## 📁 Estrutura do projeto
 

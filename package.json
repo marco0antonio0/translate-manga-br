@@ -17,6 +17,9 @@
     "prestart": "node scripts/generate-extension-config.mjs",
     "start": "next start -p 3080",
     "lint": "eslint .",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "ci": "npm run typecheck && npm run lint && npm test && npm run build",
     "security:deps": "node ./scripts/dependency-risk-check.mjs"
   },
   "dependencies": {
@@ -86,27 +89,25 @@
   },
   "overrides": {
     "postcss": "8.5.10",
-    "protobufjs": "7.6.2",
-    "ws": "8.20.1"
-  },
-  "pnpm": {
-    "overrides": {
-      "postcss": "8.5.10",
-      "protobufjs": "7.6.2",
-      "ws": "8.20.1"
-    }
+    "protobufjs": "7.6.5",
+    "ws": "8.21.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@tailwindcss/postcss": "^4.2.0",
     "@types/adm-zip": "^0.5.8",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.10",
     "postcss": "8.5.10",
     "tailwindcss": "^4.2.0",
     "tw-animate-css": "1.3.3",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "typescript-eslint": "^8.62.1",
+    "vitest": "^4.1.10"
   },
-  "packageManager": "pnpm@9.15.4"
+  "packageManager": "npm@10.8.2"
 }

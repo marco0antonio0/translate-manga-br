@@ -1390,11 +1390,6 @@ function OcrTextOverlay({
     topPercent: number
   }) => void
 }) {
-  if (!referenceSize) return null
-  if (items.length === 0 && !selectionModeEnabled && !selectionPreviewBox) return null
-
-  const { width: refWidth, height: refHeight } = referenceSize
-  if (refWidth <= 0 || refHeight <= 0) return null
   const overlayRef = useRef<HTMLDivElement | null>(null)
   const lastTapRef = useRef<{ itemId: number; at: number; x: number; y: number } | null>(null)
   const [overlaySize, setOverlaySize] = useState<ImageNaturalSize | null>(null)
@@ -1427,6 +1422,12 @@ function OcrTextOverlay({
       window.removeEventListener('resize', updateSize)
     }
   }, [])
+
+  if (!referenceSize) return null
+  if (items.length === 0 && !selectionModeEnabled && !selectionPreviewBox) return null
+
+  const { width: refWidth, height: refHeight } = referenceSize
+  if (refWidth <= 0 || refHeight <= 0) return null
 
   const safeFontScale = clampRange(fontScale, OCR_OVERLAY_FONT_SCALE_MIN, OCR_OVERLAY_FONT_SCALE_MAX)
   const safeBoxInsetPercent = clampRange(boxInsetPercent, OCR_OVERLAY_BOX_INSET_MIN, OCR_OVERLAY_BOX_INSET_MAX)

@@ -1,40 +1,7 @@
 import type { Metadata } from 'next'
-import {
-  Anton,
-  Audiowide,
-  Bangers,
-  Bebas_Neue,
-  Carter_One,
-  Changa_One,
-  Geist,
-  Geist_Mono,
-  Kalam,
-  Luckiest_Guy,
-  Noto_Sans_KR,
-  Permanent_Marker,
-  Righteous,
-  Rubik_Mono_One,
-  Teko,
-} from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
-
-const _geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
-const _geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' })
-const _bangers = Bangers({ subsets: ['latin'], weight: '400', variable: '--font-bangers' })
-const _carterOne = Carter_One({ subsets: ['latin'], weight: '400', variable: '--font-carter-one' })
-const _righteous = Righteous({ subsets: ['latin'], weight: '400', variable: '--font-righteous' })
-const _rubikMonoOne = Rubik_Mono_One({ subsets: ['latin'], weight: '400', variable: '--font-rubik-mono-one' })
-const _audiowide = Audiowide({ subsets: ['latin'], weight: '400', variable: '--font-audiowide' })
-const _permanentMarker = Permanent_Marker({ subsets: ['latin'], weight: '400', variable: '--font-permanent-marker' })
-const _kalam = Kalam({ subsets: ['latin'], weight: ['400', '700'], variable: '--font-kalam' })
-const _luckiestGuy = Luckiest_Guy({ subsets: ['latin'], weight: '400', variable: '--font-luckiest-guy' })
-const _changaOne = Changa_One({ subsets: ['latin'], weight: '400', variable: '--font-changa-one' })
-const _bebasNeue = Bebas_Neue({ subsets: ['latin'], weight: '400', variable: '--font-bebas-neue' })
-const _anton = Anton({ subsets: ['latin'], weight: '400', variable: '--font-anton' })
-const _teko = Teko({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-teko' })
-const _notoSansKr = Noto_Sans_KR({ subsets: ['latin'], weight: ['400', '500', '700'], variable: '--font-noto-sans-kr' })
 
 const siteUrl = 'http://localhost:3080/'
 const siteName = 'MangaIOTranslate'
@@ -126,26 +93,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body
-        className={[
-          _geist.variable,
-          _geistMono.variable,
-          _bangers.variable,
-          _carterOne.variable,
-          _righteous.variable,
-          _rubikMonoOne.variable,
-          _audiowide.variable,
-          _permanentMarker.variable,
-          _kalam.variable,
-          _luckiestGuy.variable,
-          _changaOne.variable,
-          _bebasNeue.variable,
-          _anton.variable,
-          _teko.variable,
-          _notoSansKr.variable,
-          'font-sans antialiased',
-        ].join(' ')}
-      >
+      <body className="font-sans antialiased">
         {children}
         <Analytics />
         <Toaster position="bottom-center" richColors />

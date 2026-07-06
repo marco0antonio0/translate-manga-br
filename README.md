@@ -325,7 +325,9 @@ O schema SQLite é versionado em `lib/backend/shared/migrations/`.
 | --- | --- |
 | `npm run dev` | Sobe o Next.js com OCR/ONNX local na porta 3080 |
 | `npm run dev:web` | Sobe apenas o Next.js na porta 3080 |
-| `npx tsc --noEmit` | Valida TypeScript explicitamente |
+| `npm run typecheck` | Valida TypeScript explicitamente |
+| `npm run lint` | Executa ESLint com as regras do Next.js |
+| `npm test` | Executa a suíte automatizada com Vitest |
 | `npm run build` | Build de produção do Next.js |
 | `npm run start` | Inicia build de produção na porta 3080 |
 | `npm run security:deps` | Executa auditoria npm e assinaturas/proveniência |
@@ -384,7 +386,7 @@ NEXT_PORT=3090 npm run dev
 <details>
 <summary><b>TypeScript passa no build, mas falha no <code>tsc</code></b></summary>
 
-O build atual do Next.js ignora erros TypeScript. Use `npx tsc --noEmit` como fonte de verdade para tipos.
+O build atual do Next.js ignora erros TypeScript. Use `npm run typecheck` como fonte de verdade para tipos.
 
 </details>
 
@@ -392,9 +394,10 @@ O build atual do Next.js ignora erros TypeScript. Use `npx tsc --noEmit` como fo
 
 Este projeto está em evolução ativa. Algumas decisões técnicas ainda estão sendo consolidadas:
 
-- [ ] Consolidar o gerenciador de pacotes — o Docker usa `npm ci` + `package-lock.json`, mas `package.json` ainda declara `pnpm@9.15.4` em `packageManager`. Até lá, **use `npm`**.
-- [ ] Remover o bypass de erros TypeScript no build (`next.config.mjs`) — rode `npx tsc --noEmit` separadamente.
-- [ ] Declarar `eslint` nas dependências (o script `lint` existe, mas falha em ambientes novos).
+- [x] Consolidar o gerenciador de pacotes — use `npm`, `package-lock.json` e `npm ci` para reproduzir Docker/CI.
+- [ ] Remover o bypass de erros TypeScript no build (`next.config.mjs`) — rode `npm run typecheck` separadamente.
+- [x] Declarar `eslint` nas dependências e validar o projeto com `npm run lint`.
+- [x] Adicionar uma suíte automatizada inicial com Vitest para guards de origem e criptografia local de segredos.
 - [ ] Evoluir o OCR Node para usar também o detector interno do PaddleOCR em casos de balões pequenos/curvos.
 - [ ] Persistir a imagem traduzida final como arquivo separado — hoje o leitor renderiza a original com overlay editável.
 
@@ -436,7 +439,9 @@ Contribuições são muito bem-vindas! As áreas onde ajuda é mais valiosa:
 Antes de abrir um PR, rode pelo menos:
 
 ```bash
-npx tsc --noEmit
+npm run typecheck
+npm run lint
+npm test
 npm run build
 ```
 
