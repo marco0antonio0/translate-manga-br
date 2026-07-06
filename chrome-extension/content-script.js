@@ -74,6 +74,17 @@ const MTL_GOOGLE_PROVIDER = { value: 'google', label: 'Google Translate' }
 let activeReaderShadow = null
 let activeReaderState = null
 
+// Fecha o leitor por completo (usado pelo X da topbar e pelo X do modal de auth).
+function closeActiveReader() {
+  if (activeReaderState) {
+    activeReaderState.cleanupFns.forEach((cleanup) => cleanup())
+    activeReaderState.cleanupFns = []
+  }
+  document.getElementById(READER_HOST_ID)?.remove()
+  activeReaderShadow = null
+  activeReaderState = null
+}
+
 function getCachedSectionIdForPage(pageUrl) {
   try {
     const key = `${PAGE_SECTION_CACHE_PREFIX}${pageUrl}`
@@ -98,8 +109,28 @@ function setCachedSectionIdForPage(pageUrl, sectionId) {
 }
 
 // --- Portão de autenticação/config sobre o leitor -------------------------
-// Substitui o antigo popup: o leitor já abre por baixo, e este modal (login
-// e depois config) fica por cima até o usuário confirmar.
+// Substitui o antigo popup: o leitor já abre por baixo, e este modal (login,
+// aceite de termos e depois config) fica por cima até o usuário confirmar.
+
+// Mesma chave/versão do site (components/terms-modal.tsx). Bump lá = bump aqui.
+const MTL_TERMS_STORAGE_KEY = 'manga-terms-v2'
+
+async function mtlHasAcceptedTerms() {
+  try {
+    const stored = await chrome.storage.local.get(MTL_TERMS_STORAGE_KEY)
+    return stored[MTL_TERMS_STORAGE_KEY] === 'accepted'
+  } catch {
+    return false
+  }
+}
+
+async function mtlMarkTermsAccepted() {
+  try {
+    await chrome.storage.local.set({ [MTL_TERMS_STORAGE_KEY]: 'accepted' })
+  } catch {
+    // sem storage: o aceite vale só para esta sessão
+  }
+}
 
 function buildAuthOverlayMarkup() {
   return `
@@ -107,8 +138,9 @@ function buildAuthOverlayMarkup() {
       <div class="mtl-auth-backdrop"></div>
       <div class="mtl-auth-modal" role="dialog" aria-modal="true" aria-label="Manga Translator Local">
         <div class="mtl-auth-topstrip" aria-hidden="true"></div>
-        <div class="mtl-auth-glow mtl-auth-glow-a" aria-hidden="true"></div>
-        <div class="mtl-auth-glow mtl-auth-glow-b" aria-hidden="true"></div>
+        <button type="button" class="mtl-auth-close" data-role="auth-close" title="Fechar extensão" aria-label="Fechar extensão">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
 
         <div class="mtl-auth-brand">
           <div class="mtl-auth-brand-mark">
@@ -125,6 +157,24 @@ function buildAuthOverlayMarkup() {
           <div class="mtl-auth-loading">
             <span class="mtl-auth-loading-ring" aria-hidden="true"></span>
             <p class="mtl-auth-hint">Verificando sessão...</p>
+          </div>
+        </div>
+
+        <div class="mtl-auth-screen" data-screen="offline" hidden>
+          <div class="mtl-auth-offline">
+            <div class="mtl-auth-offline-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/></svg>
+            </div>
+            <strong>Servidor fora do alcance</strong>
+            <p>
+              Não conseguimos falar com
+              <span class="mtl-auth-offline-url" data-role="offline-system-url">o sistema</span>.
+              Verifique se ele está no ar e se você tem conexão.
+            </p>
+            <button type="button" class="mtl-primary mtl-auth-retry" data-role="retry-button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+              <span>Tentar novamente</span>
+            </button>
           </div>
         </div>
 
@@ -163,6 +213,46 @@ function buildAuthOverlayMarkup() {
             <span>Sistema</span>
             <strong data-role="login-system-url">—</strong>
           </div>
+        </div>
+
+        <div class="mtl-auth-screen" data-screen="terms" hidden>
+          <div class="mtl-auth-welcome">
+            <strong>Bem-vindo ao MangaIOTranslate!</strong>
+            <span>Projeto open source e gratuito para traduzir mangás com apoio de IA, de forma local.</span>
+          </div>
+
+          <!-- Textos espelhados de lib/legal-content.ts (LEGAL_MODAL_CONTENT) -->
+          <div class="mtl-auth-terms-cards">
+            <div class="mtl-auth-terms-card">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+              <p>Ferramenta de tradução automática para leitura assistida, preservando a estrutura visual original das páginas processadas.</p>
+            </div>
+            <div class="mtl-auth-terms-card">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 12h-5"/><path d="M15 8h-5"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></svg>
+              <p>Dados e traduções ficam armazenados localmente na sua instância. O projeto não opera armazenamento central e não distribui conteúdo de terceiros.</p>
+            </div>
+            <div class="mtl-auth-terms-card">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg>
+              <p>O MangaIOTranslate é gratuito e sem planos pagos. Não há cobrança, créditos, mensalidades ou política de reembolso.</p>
+            </div>
+            <div class="mtl-auth-terms-card mtl-auth-terms-card-warn">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1 1 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+              <p>O usuário é integralmente responsável pelo conteúdo enviado. O processamento ocorre de forma automatizada, sem curadoria editorial humana. O projeto não se responsabiliza por uso de material protegido sem autorização e observa a LGPD no contexto de execução local.</p>
+            </div>
+          </div>
+
+          <label class="mtl-auth-terms-accept" data-role="terms-accept-label">
+            <input type="checkbox" data-role="terms-checkbox">
+            <span>
+              Estou ciente que o uso desta plataforma é de minha responsabilidade e aceito os
+              <a data-role="terms-link" href="#" target="_blank" rel="noopener noreferrer">Termos de Uso</a>.
+            </span>
+          </label>
+          <p class="mtl-auth-terms-error" data-role="terms-error" hidden>Aceite os termos para entrar na plataforma.</p>
+
+          <button type="button" class="mtl-primary mtl-auth-continue" data-role="terms-continue">
+            <span>Entrar na plataforma</span>
+          </button>
         </div>
 
         <div class="mtl-auth-screen" data-screen="main" hidden>
@@ -256,8 +346,48 @@ function bindAuthOverlay(overlay) {
     logoutButton: overlay.querySelector('[data-role="logout-button"]'),
     continueButton: overlay.querySelector('[data-role="continue-button"]'),
     status: overlay.querySelector('[data-role="status"]'),
+    offlineSystemUrl: overlay.querySelector('[data-role="offline-system-url"]'),
+    retryButton: overlay.querySelector('[data-role="retry-button"]'),
+    termsCheckbox: overlay.querySelector('[data-role="terms-checkbox"]'),
+    termsAcceptLabel: overlay.querySelector('[data-role="terms-accept-label"]'),
+    termsError: overlay.querySelector('[data-role="terms-error"]'),
+    termsContinue: overlay.querySelector('[data-role="terms-continue"]'),
+    termsLink: overlay.querySelector('[data-role="terms-link"]'),
   }
   overlay._mtlEls = els
+
+  // Aceite dos termos: obrigatório marcar a caixa; persiste e segue pra config.
+  els.termsContinue.addEventListener('click', async () => {
+    if (!els.termsCheckbox.checked) {
+      els.termsError.hidden = false
+      els.termsAcceptLabel.classList.add('mtl-auth-terms-accept-error')
+      return
+    }
+    await mtlMarkTermsAccepted()
+    mtlShowAuthScreen(overlay, 'main')
+  })
+  els.termsCheckbox.addEventListener('change', () => {
+    if (els.termsCheckbox.checked) {
+      els.termsError.hidden = true
+      els.termsAcceptLabel.classList.remove('mtl-auth-terms-accept-error')
+    }
+  })
+  // Abrir o link dos termos não deve marcar/desmarcar o checkbox do label.
+  els.termsLink.addEventListener('click', (event) => {
+    event.stopPropagation()
+  })
+
+  // X no canto do modal: fecha a extensão inteira (leitor incluso).
+  overlay.querySelector('[data-role="auth-close"]').addEventListener('click', () => {
+    closeActiveReader()
+  })
+
+  // Tela de conexão: tenta o fluxo inteiro de novo.
+  els.retryButton.addEventListener('click', () => {
+    if (activeReaderShadow && activeReaderState) {
+      void runAuthGate(activeReaderShadow, activeReaderState)
+    }
+  })
 
   mtlPopulateLanguageSelect(els.sourceLang, MTL_LANGUAGE_OPTIONS)
   mtlPopulateLanguageSelect(els.targetLang, MTL_TARGET_LANGUAGE_OPTIONS)
@@ -284,6 +414,10 @@ function bindAuthOverlay(overlay) {
       })
 
       if (!response?.ok || !response.authenticated) {
+        if (response?.network) {
+          mtlShowAuthScreen(overlay, 'offline')
+          return
+        }
         mtlShowLoginError(els, response?.error || 'Não foi possível entrar.')
         return
       }
@@ -293,7 +427,8 @@ function bindAuthOverlay(overlay) {
       await mtlPopulateProviderSelect(els, settings)
       mtlFillFormFromSettings(els, settings)
       mtlFillUserInfo(els, response.user)
-      mtlShowAuthScreen(overlay, 'main')
+      // Igual ao site: aceite de termos é obrigatório antes de usar.
+      mtlShowAuthScreen(overlay, (await mtlHasAcceptedTerms()) ? 'main' : 'terms')
     } finally {
       mtlSetAuthBusy(els, false)
     }
@@ -394,6 +529,8 @@ function mtlSetSelectValue(select, value, fallback) {
 function mtlFillFormFromSettings(els, settings) {
   els.loginSystemUrl.textContent = settings.apiBaseUrl
   els.systemUrl.textContent = settings.apiBaseUrl
+  els.offlineSystemUrl.textContent = settings.apiBaseUrl
+  els.termsLink.href = `${String(settings.apiBaseUrl || '').replace(/\/+$/, '')}/termos`
   mtlSetSelectValue(els.sourceLang, settings.sourceLang, 'auto')
   mtlSetSelectValue(els.targetLang, settings.targetLang, 'pt-BR')
   mtlSetSelectValue(els.providerLang, settings.providerLang, MTL_GOOGLE_PROVIDER.value)
@@ -470,7 +607,14 @@ async function runAuthGate(shadow, state) {
     const session = await chrome.runtime.sendMessage({ type: 'MTL_CHECK_SESSION', payload: { settings } })
     if (session?.ok && session.authenticated) {
       mtlFillUserInfo(els, session.user)
-      mtlShowAuthScreen(overlay, 'main')
+      // Igual ao site: aceite de termos é obrigatório antes de usar.
+      mtlShowAuthScreen(overlay, (await mtlHasAcceptedTerms()) ? 'main' : 'terms')
+      return
+    }
+
+    // Servidor inacessível: tela de conexão amigável em vez do erro cru.
+    if (!session?.ok && session?.network) {
+      mtlShowAuthScreen(overlay, 'offline')
       return
     }
 
@@ -496,24 +640,27 @@ chrome.runtime.onMessage.addListener((message) => {
   }
 })
 
-// Muitos sites de leitura têm atalhos de teclado globais (ex.: "m" para
-// menu, setas para navegar) registrados em document/window que chamam
-// preventDefault() no keydown — isso cancela a digitação mesmo com um input
-// da extensão focado dentro do Shadow DOM, já que o evento ainda bubbla até
-// lá. Barra a propagação de eventos de teclado que saem do nosso host antes
-// que cheguem à página, sem afetar atalhos do site quando o foco está fora.
-function stopKeyEventPropagation(event) {
+// Muitos sites de leitura têm handlers globais em document/window que chamam
+// preventDefault() — atalhos de teclado (ex.: "m" cancelava a digitação nos
+// inputs da extensão) e bloqueio de scroll (touchmove/wheel, que congelava a
+// rolagem do modal). Como esses eventos são composed, eles atravessam o
+// Shadow DOM e chegam à página. Barra a propagação na fase de captura do
+// host: as ações padrão (digitar, rolar) não dependem de propagação, então
+// continuam funcionando — só os handlers da página deixam de interferir.
+// Importante: NÃO incluir 'input'/'click' etc. aqui — captura no host impede
+// os listeners internos da extensão de receberem o evento.
+function stopHostEventPropagation(event) {
   event.stopPropagation()
 }
 
-function attachKeyEventGuards(host) {
-  const types = ['keydown', 'keyup', 'keypress', 'beforeinput', 'input']
+function attachHostEventGuards(host) {
+  const types = ['keydown', 'keyup', 'keypress', 'beforeinput', 'wheel', 'touchstart', 'touchmove', 'touchend']
   types.forEach((type) => {
-    host.addEventListener(type, stopKeyEventPropagation, true)
+    host.addEventListener(type, stopHostEventPropagation, true)
   })
   return () => {
     types.forEach((type) => {
-      host.removeEventListener(type, stopKeyEventPropagation, true)
+      host.removeEventListener(type, stopHostEventPropagation, true)
     })
   }
 }
@@ -531,7 +678,7 @@ function openReader(preferredImageUrl = '') {
   const host = document.createElement('div')
   host.id = READER_HOST_ID
   document.documentElement.append(host)
-  const removeKeyEventGuards = attachKeyEventGuards(host)
+  const removeHostEventGuards = attachHostEventGuards(host)
 
   const shadow = host.attachShadow({ mode: 'open' })
   const state = {
@@ -574,7 +721,7 @@ function openReader(preferredImageUrl = '') {
     sectionOrderUrls: null,
   }
   if (state.pageIndex < 0) state.pageIndex = 0
-  state.cleanupFns.push(removeKeyEventGuards)
+  state.cleanupFns.push(removeHostEventGuards)
 
   activeReaderShadow = shadow
   activeReaderState = state
@@ -707,12 +854,12 @@ function bindReader(shadow, host, state) {
     if (!action) return
 
     if (action === 'close') {
-      state.cleanupFns.forEach((cleanup) => cleanup())
-      state.cleanupFns = []
-      host.remove()
       if (activeReaderState === state) {
-        activeReaderShadow = null
-        activeReaderState = null
+        closeActiveReader()
+      } else {
+        state.cleanupFns.forEach((cleanup) => cleanup())
+        state.cleanupFns = []
+        host.remove()
       }
       return
     }
@@ -2726,12 +2873,20 @@ function readerCss() {
       max-height: calc(100% - 32px);
       overflow-y: auto;
       overflow-x: hidden;
+      /* rolagem do modal não vaza pro leitor/página por trás */
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
       display: flex;
       flex-direction: column;
       gap: 16px;
       border: 1px solid color-mix(in oklch, var(--primary) 28%, var(--border));
       border-radius: calc(var(--radius) + 4px);
+      /* Glows decorativos como camadas de background (não como elementos):
+         elementos absolutos com posições negativas estendiam a área rolável
+         e criavam scrollbar mesmo com o conteúdo cabendo no modal. */
       background:
+        radial-gradient(160px 160px at calc(100% + 30px) -40px, color-mix(in oklch, var(--primary) 20%, transparent), transparent 70%),
+        radial-gradient(170px 170px at -40px calc(100% + 40px), color-mix(in oklch, var(--accent) 16%, transparent), transparent 70%),
         radial-gradient(120% 60% at 100% 0%, color-mix(in oklch, var(--accent) 10%, transparent), transparent 60%),
         var(--card);
       color: var(--card-foreground);
@@ -2752,31 +2907,47 @@ function readerCss() {
       height: 3px;
       background: linear-gradient(90deg, var(--primary), var(--accent), var(--primary));
     }
-    /* Brilhos decorativos suaves nos cantos */
-    .mtl-auth-glow {
-      position: absolute;
-      width: 140px;
-      height: 140px;
-      border-radius: 999px;
-      filter: blur(46px);
-      pointer-events: none;
-    }
-    .mtl-auth-glow-a {
-      top: -60px;
-      right: -50px;
-      background: color-mix(in oklch, var(--primary) 26%, transparent);
-    }
-    .mtl-auth-glow-b {
-      bottom: -70px;
-      left: -60px;
-      background: color-mix(in oklch, var(--accent) 22%, transparent);
-    }
 
+    /* X no canto: fecha a extensão inteira */
+    .mtl-auth-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      min-height: 28px;
+      padding: 0;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted-foreground);
+      cursor: pointer;
+      transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+    .mtl-auth-close svg {
+      width: 15px;
+      height: 15px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+    .mtl-auth-close:hover {
+      color: var(--foreground);
+      background: color-mix(in oklch, var(--destructive) 16%, transparent);
+      border-color: color-mix(in oklch, var(--destructive) 40%, var(--border));
+    }
     .mtl-auth-brand {
       position: relative;
       display: flex;
       align-items: center;
       gap: 11px;
+      /* espaço para o X no canto não sobrepor o texto da marca */
+      padding-right: 32px;
     }
     .mtl-auth-brand-mark {
       position: relative;
@@ -2848,6 +3019,86 @@ function readerCss() {
     }
     .mtl-auth-hint { margin: 0; color: var(--muted-foreground); font-size: 13px; text-align: center; }
 
+    /* Servidor fora do alcance */
+    .mtl-auth-offline {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 4px 4px;
+      text-align: center;
+    }
+    .mtl-auth-offline-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 58px;
+      height: 58px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in oklch, var(--destructive) 40%, var(--border));
+      background:
+        radial-gradient(70% 70% at 50% 30%, color-mix(in oklch, var(--destructive) 22%, transparent), transparent),
+        color-mix(in oklch, var(--destructive) 8%, var(--card));
+      color: var(--destructive);
+      box-shadow: 0 0 26px -8px color-mix(in oklch, var(--destructive) 55%, transparent);
+      animation: mtl-auth-offline-pulse 2.4s ease-in-out infinite;
+    }
+    @keyframes mtl-auth-offline-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    .mtl-auth-offline-icon svg {
+      width: 26px;
+      height: 26px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .mtl-auth-offline strong { font-size: 16px; margin-top: 4px; }
+    .mtl-auth-offline p {
+      margin: 0;
+      color: var(--muted-foreground);
+      font-size: 12.5px;
+      line-height: 1.55;
+      max-width: 260px;
+    }
+    .mtl-auth-offline-url {
+      display: inline;
+      color: var(--foreground);
+      font-weight: 600;
+      word-break: break-all;
+    }
+    .mtl-auth-retry {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      min-height: 40px;
+      margin-top: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      border: none;
+      border-radius: calc(var(--radius) - 2px);
+      background: linear-gradient(120deg, var(--primary), color-mix(in oklch, var(--primary) 65%, var(--accent)));
+      color: var(--primary-foreground);
+      box-shadow: 0 8px 22px -8px color-mix(in oklch, var(--primary) 75%, transparent);
+      transition: filter 0.15s ease, transform 0.15s ease;
+    }
+    .mtl-auth-retry:hover { filter: brightness(1.08); }
+    .mtl-auth-retry:active { transform: translateY(1px); }
+    .mtl-auth-retry svg {
+      width: 15px;
+      height: 15px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
     /* Boas-vindas (tela de login) */
     .mtl-auth-welcome {
       display: flex;
@@ -2857,6 +3108,85 @@ function readerCss() {
     }
     .mtl-auth-welcome strong { font-size: 17px; }
     .mtl-auth-welcome span { color: var(--muted-foreground); font-size: 12.5px; }
+
+    /* Aceite de termos (espelha o modal do site) */
+    .mtl-auth-terms-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .mtl-auth-terms-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      border-radius: calc(var(--radius) - 4px);
+      background: color-mix(in oklch, var(--muted) 35%, transparent);
+      padding: 8px 10px;
+    }
+    .mtl-auth-terms-card svg {
+      width: 14px;
+      height: 14px;
+      flex: none;
+      margin-top: 1px;
+      fill: none;
+      stroke: var(--primary);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .mtl-auth-terms-card p {
+      margin: 0;
+      color: var(--muted-foreground);
+      font-size: 10.5px;
+      line-height: 1.5;
+    }
+    .mtl-auth-terms-card-warn {
+      background: rgb(245 158 11 / 10%);
+      border: 1px solid rgb(245 158 11 / 22%);
+    }
+    .mtl-auth-terms-card-warn svg { stroke: #f59e0b; }
+
+    .mtl-auth-terms-accept {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      border-radius: calc(var(--radius) - 4px);
+      padding: 8px;
+      cursor: pointer;
+      transition: background 0.15s ease, box-shadow 0.15s ease;
+    }
+    .mtl-auth-terms-accept:hover { background: color-mix(in oklch, var(--muted) 30%, transparent); }
+    .mtl-auth-terms-accept-error {
+      background: color-mix(in oklch, var(--destructive) 10%, transparent);
+      box-shadow: 0 0 0 1px color-mix(in oklch, var(--destructive) 50%, transparent);
+    }
+    .mtl-auth-terms-accept input[type="checkbox"] {
+      appearance: auto;
+      -webkit-appearance: auto;
+      width: 15px;
+      height: 15px;
+      margin: 2px 0 0;
+      flex: none;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+    .mtl-auth-terms-accept span {
+      color: var(--muted-foreground);
+      font-size: 11.5px;
+      line-height: 1.55;
+    }
+    .mtl-auth-terms-accept a {
+      color: var(--primary);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .mtl-auth-terms-error {
+      margin: -6px 0 0;
+      padding: 0 8px;
+      color: var(--destructive);
+      font-size: 11px;
+    }
+    .mtl-auth-terms-error[hidden] { display: none; }
 
     /* Linha "Sistema" como pílula discreta no rodapé da tela */
     .mtl-auth-system-line {

@@ -127,6 +127,108 @@ export function AnimeMascot({
   )
 }
 
+/**
+ * Chibi neko espiando por cima de um mangá aberto, com mãozinhas na borda.
+ * Arte vetorial original (SVG) — validada por render antes de entrar aqui.
+ * Escala responsiva e usa as cores da marca no cabelo/detalhes.
+ */
+export function AnimeChibiReader({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 220 200"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+      role="presentation"
+    >
+      <defs>
+        <linearGradient id="chibi-hair" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="var(--primary)" />
+          <stop offset="100%" stopColor="var(--accent)" />
+        </linearGradient>
+        <linearGradient id="chibi-iris" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--primary)" />
+          <stop offset="100%" stopColor="var(--accent)" />
+        </linearGradient>
+        <radialGradient id="chibi-glow" cx="50%" cy="45%" r="55%">
+          <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.3" />
+          <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      {/* Brilho de fundo */}
+      <ellipse cx="110" cy="100" rx="104" ry="96" fill="url(#chibi-glow)" />
+
+      {/* Orelhas de gato */}
+      <path d="M76 54 L68 22 L104 40 Z" fill="url(#chibi-hair)" />
+      <path d="M144 54 L152 22 L116 40 Z" fill="url(#chibi-hair)" />
+      <path d="M79 48 L74 29 L95 40 Z" fill="#ffd9e6" />
+      <path d="M141 48 L146 29 L125 40 Z" fill="#ffd9e6" />
+
+      {/* Ahoge */}
+      <path d="M103 33 q9 -19 22 -11 q-12 1 -14 14 Z" fill="url(#chibi-hair)" />
+
+      {/* Cabelo */}
+      <circle cx="110" cy="90" r="52" fill="url(#chibi-hair)" />
+
+      {/* Rosto */}
+      <ellipse cx="110" cy="98" rx="40" ry="36" fill="#ffe7da" />
+
+      {/* Franja arredondada suave */}
+      <path d="M70 94 C70 48 150 48 150 94 Q144 80 133 86 Q127 76 110 84 Q93 76 87 86 Q76 80 70 94 Z" fill="url(#chibi-hair)" />
+      {/* Mechas laterais */}
+      <path d="M70 88 C64 100 65 114 71 122 C68 108 70 97 77 90 Z" fill="url(#chibi-hair)" />
+      <path d="M150 88 C156 100 155 114 149 122 C152 108 150 97 143 90 Z" fill="url(#chibi-hair)" />
+      {/* Brilho do cabelo */}
+      <path d="M82 58 C93 50 122 49 138 56" stroke="#ffffff" strokeOpacity="0.38" strokeWidth="4.5" strokeLinecap="round" />
+
+      {/* Olhos grandes brilhantes */}
+      <ellipse cx="90" cy="104" rx="11.5" ry="14.5" fill="#2a2140" />
+      <ellipse cx="130" cy="104" rx="11.5" ry="14.5" fill="#2a2140" />
+      <ellipse cx="90" cy="106" rx="8.5" ry="11" fill="url(#chibi-iris)" />
+      <ellipse cx="130" cy="106" rx="8.5" ry="11" fill="url(#chibi-iris)" />
+      <circle cx="86" cy="99" r="4" fill="#fff" />
+      <circle cx="126" cy="99" r="4" fill="#fff" />
+      <circle cx="94" cy="111" r="2" fill="#fff" opacity="0.9" />
+      <circle cx="134" cy="111" r="2" fill="#fff" opacity="0.9" />
+
+      {/* Bochechas */}
+      <ellipse cx="73" cy="117" rx="7" ry="4.6" fill="var(--primary)" opacity="0.4" />
+      <ellipse cx="147" cy="117" rx="7" ry="4.6" fill="var(--primary)" opacity="0.4" />
+
+      {/* Boquinha feliz */}
+      <path d="M103 121 q7 7 14 0" stroke="#c46" strokeWidth="2.4" strokeLinecap="round" />
+
+      {/* Mangá aberto (espiando por cima) */}
+      <g>
+        <path d="M110 146 L40 134 C34 133 31 136 31 141 L31 168 C31 173 34 176 40 177 L110 189 L180 177 C186 176 189 173 189 168 L189 141 C189 136 186 133 180 134 Z" fill="#3a2f5c" />
+        <path d="M110 142 L46 131 C41 130 39 132 39 136 L39 162 C39 166 41 168 46 169 L110 180 Z" fill="#fdfdfd" />
+        <path d="M110 142 L174 131 C179 130 181 132 181 136 L181 162 C181 166 179 168 174 169 L110 180 Z" fill="#eef0f7" />
+        <path d="M110 142 L110 180" stroke="var(--accent)" strokeWidth="3" />
+        {/* Painéis de quadrinho nas páginas */}
+        <path d="M48 138 L70 142 L70 154 L48 150 Z" stroke="var(--primary)" strokeWidth="1.6" opacity="0.5" />
+        <path d="M78 147 L100 151 M78 153 L100 157 M78 159 L96 162" stroke="var(--primary)" strokeWidth="1.6" strokeLinecap="round" opacity="0.45" />
+        <path d="M150 142 L172 138 L172 150 L150 154 Z" stroke="var(--accent)" strokeWidth="1.6" opacity="0.5" />
+        <path d="M120 151 L142 147 M120 157 L142 153 M120 163 L138 159" stroke="var(--accent)" strokeWidth="1.6" strokeLinecap="round" opacity="0.45" />
+      </g>
+
+      {/* Mãozinhas por cima da borda do livro */}
+      <g>
+        <path d="M56 141 a9 9 0 0 1 18 0 l0 4 a9 4 0 0 1 -18 0 Z" fill="#ffe7da" />
+        <path d="M146 141 a9 9 0 0 1 18 0 l0 4 a9 4 0 0 1 -18 0 Z" fill="#ffe7da" />
+        <path d="M61 136 v6 M65 135 v7 M69 136 v6" stroke="#e7b9a6" strokeWidth="1.4" strokeLinecap="round" />
+        <path d="M151 136 v6 M155 135 v7 M159 136 v6" stroke="#e7b9a6" strokeWidth="1.4" strokeLinecap="round" />
+      </g>
+
+      {/* Sparkles */}
+      <path d="M34 66 c1.5 5.4 4.3 8.2 9.7 9.7 c-5.4 1.5 -8.2 4.3 -9.7 9.7 c-1.5 -5.4 -4.3 -8.2 -9.7 -9.7 c5.4 -1.5 8.2 -4.3 9.7 -9.7 Z" fill="var(--accent)" opacity="0.85" />
+      <path d="M188 58 c1.2 4.2 3.4 6.4 7.6 7.6 c-4.2 1.2 -6.4 3.4 -7.6 7.6 c-1.2 -4.2 -3.4 -6.4 -7.6 -7.6 c4.2 -1.2 6.4 -3.4 7.6 -7.6 Z" fill="var(--primary)" opacity="0.8" />
+      <circle cx="46" cy="106" r="2.4" fill="var(--primary)" opacity="0.6" />
+      <circle cx="178" cy="102" r="2.6" fill="var(--accent)" opacity="0.6" />
+    </svg>
+  )
+}
+
 function StarEye({ cx, cy }: { cx: number; cy: number }) {
   // Estrela de 5 pontas centrada em (cx, cy)
   const points = Array.from({ length: 5 }, (_, i) => {

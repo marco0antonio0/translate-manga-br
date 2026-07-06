@@ -234,6 +234,24 @@ async function updatePageCache(rawPayload) {
   }
 }
 
+// "Failed to fetch"/"NetworkError" = servidor fora do ar ou URL inacessível.
+// A UI usa a flag `network` para exibir a tela de conexão amigável.
+function isNetworkFetchError(error) {
+  const message = error instanceof Error ? error.message : String(error || '')
+  return /failed to fetch|networkerror|fetch failed|load failed|network request failed/i.test(message)
+}
+
+function networkErrorResult(fallback, error) {
+  if (isNetworkFetchError(error)) {
+    return {
+      ok: false,
+      network: true,
+      error: 'Não foi possível conectar ao servidor.',
+    }
+  }
+  return { ok: false, error: toErrorMessage(error, fallback) }
+}
+
 async function checkSession(rawPayload) {
   try {
     const payload = rawPayload && typeof rawPayload === 'object' ? rawPayload : {}
@@ -248,7 +266,7 @@ async function checkSession(rawPayload) {
     const user = await readJson(response)
     return { ok: true, authenticated: true, user }
   } catch (error) {
-    return { ok: false, error: toErrorMessage(error, 'Não foi possível verificar a sessão.') }
+    return networkErrorResult('Não foi possível verificar a sessão.', error)
   }
 }
 
@@ -278,7 +296,7 @@ async function login(rawPayload) {
 
     return { ok: true, authenticated: true, user: sessionResponse.user || null }
   } catch (error) {
-    return { ok: false, error: toErrorMessage(error, 'Não foi possível entrar.') }
+    return networkErrorResult('Não foi possível entrar.', error)
   }
 }
 
@@ -296,7 +314,7 @@ async function logout(rawPayload) {
     }
     return { ok: true }
   } catch (error) {
-    return { ok: false, error: toErrorMessage(error, 'Não foi possível sair.') }
+    return networkErrorResult('Não foi possível sair.', error)
   }
 }
 

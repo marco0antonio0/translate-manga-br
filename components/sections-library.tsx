@@ -20,7 +20,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useIsMobile } from '@/components/ui/use-mobile'
 import { SpotlightTour, checkTourDone, type TourStep } from '@/components/spotlight-tour'
-import { AnimeMascot, SakuraPetals, KiraSparkle } from '@/components/anime-decorations'
+import { SakuraPetals, KiraSparkle } from '@/components/anime-decorations'
 import { SECTION_READ_LS_PREFIX } from '@/components/section-reader'
 import {
   buildImageViewUrl,
@@ -786,46 +786,52 @@ export function SectionsLibrary() {
         </div>
       </Link>
 
-      {/* Extension Banner */}
+      {/* Extension Banner — wrapper com padding: o space-y-4 do container
+          define margens que conflitam com margin no próprio card, então o
+          respiro extra vem de padding (não colapsa nem disputa cascata). */}
+      <div className="pt-4 pb-2 sm:pt-6 sm:pb-3">
       <Link href="/extensao" className="block">
-        <div className="relative cursor-pointer rounded-xl overflow-hidden border border-primary/40 hover:border-primary/80 transition-all duration-300 group bg-gradient-to-br from-primary/15 via-primary/10 to-accent/8 hover:shadow-[0_0_30px_-6px_color-mix(in_oklch,var(--primary)_50%,transparent)]">
-          {/* Glow background */}
-          <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-          <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-primary/15 blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+        <div className="relative cursor-pointer rounded-xl overflow-hidden border border-primary/30 hover:border-primary/70 transition-all duration-300 group bg-card hover:shadow-[0_0_30px_-6px_color-mix(in_oklch,var(--primary)_45%,transparent)]">
+          {/* Faixa gradiente no topo, como no card de Nova Tradução */}
+          <div className="h-0.75 w-full bg-linear-to-r from-accent via-primary to-accent" />
+          {/* Glow suave no hover */}
+          <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+          <div className="absolute -right-20 -top-20 h-44 w-44 rounded-full bg-primary/15 blur-3xl opacity-60 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
-          <div className="relative px-5 py-4 sm:px-6 sm:py-5 flex items-center gap-4 sm:gap-5">
+          <div className="relative px-5 py-5 sm:px-7 sm:py-6 flex items-center gap-5 sm:gap-6">
             <div className="relative shrink-0">
-              <div className="rounded-2xl bg-linear-to-br from-primary/30 to-accent/20 group-hover:from-primary/45 group-hover:to-accent/35 p-3.5 ring-1 ring-primary/40 group-hover:ring-primary/70 transition-all duration-300 group-hover:shadow-[0_0_20px_-2px_color-mix(in_oklch,var(--primary)_60%,transparent)]">
+              <div className="rounded-2xl bg-linear-to-br from-primary/25 to-accent/20 group-hover:from-primary/40 group-hover:to-accent/30 p-4 ring-1 ring-primary/30 group-hover:ring-primary/60 transition-all duration-300 group-hover:shadow-[0_0_20px_-2px_color-mix(in_oklch,var(--primary)_55%,transparent)]">
                 <Chrome className="h-6 w-6 text-primary group-hover:scale-110 transition-transform duration-300" />
               </div>
               <Sparkles className="anime-twinkle absolute -right-1.5 -top-1.5 h-4 w-4 text-accent drop-shadow-[0_0_6px_color-mix(in_oklch,var(--accent)_70%,transparent)]" />
             </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <span className="text-base font-semibold text-foreground group-hover:text-primary transition-colors duration-200">
-                  Extensão para Chrome
+                  Extensão para o navegador
                 </span>
-                <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-linear-to-r from-primary/40 to-accent/40 px-2 py-0.5 text-[11px] font-semibold text-primary shadow-sm">
+                <span className="inline-flex items-center gap-1 rounded-full bg-linear-to-r from-primary to-accent px-2 py-0.5 text-[11px] font-semibold text-primary-foreground shadow-sm">
                   <Sparkles className="h-3 w-3" />
                   Novo
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground mt-0.5 hidden sm:block">
-                Traduza mangá direto do navegador com nosso leitor integrado. Acesso rápido e controle total.
+              <p className="text-sm leading-relaxed text-muted-foreground hidden sm:block">
+                Traduza mangá direto de qualquer site com o leitor integrado — no PC e no celular.
               </p>
-              <p className="text-xs text-muted-foreground mt-0.5 sm:hidden">
-                Traduza no navegador com a extensão Chrome.
+              <p className="text-xs leading-relaxed text-muted-foreground sm:hidden">
+                Traduza direto do navegador, no PC e no celular.
               </p>
             </div>
 
-            <div className="relative shrink-0 flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/15 px-3.5 py-2 text-sm font-semibold text-primary group-hover:bg-linear-to-r group-hover:from-primary/40 group-hover:to-accent/40 group-hover:text-primary group-hover:border-primary/60 transition-all duration-200">
-              <span className="hidden sm:inline">Ver Mais</span>
+            <div className="relative shrink-0 flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-4 py-2.5 text-sm font-semibold text-primary group-hover:bg-linear-to-r group-hover:from-primary group-hover:to-accent group-hover:text-primary-foreground group-hover:border-transparent transition-all duration-200">
+              <span className="hidden sm:inline">Conhecer</span>
               <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
             </div>
           </div>
         </div>
       </Link>
+      </div>
 
       {hasReachedGenerationLimit && usageSummary && (
         <Card className="relative overflow-hidden border-border bg-card p-4 sm:p-5 shadow-sm">
@@ -856,8 +862,9 @@ export function SectionsLibrary() {
       )}
 
 
-      <section className="relative mt-3 overflow-hidden rounded-xl border border-primary/20 bg-linear-to-br from-card via-card to-accent/10 p-4 sm:p-5 lg:pr-44">
+      <section className="relative mt-3 overflow-hidden rounded-xl border border-primary/20 bg-linear-to-br from-card via-card to-accent/10 p-4 sm:p-5 lg:pr-48">
         {/* Camadas decorativas estilo anime */}
+        <div className="anime-speedlines pointer-events-none absolute -right-24 -top-24 h-80 w-80 opacity-50" />
         <div className="pointer-events-none absolute -right-12 -top-16 h-52 w-52 rounded-full bg-primary/25 blur-3xl" />
         <div className="pointer-events-none absolute -left-10 bottom-0 h-36 w-36 rounded-full bg-accent/20 blur-3xl" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-linear-to-r from-primary via-accent to-primary" />
@@ -868,20 +875,28 @@ export function SectionsLibrary() {
         <KiraSparkle className="anime-twinkle pointer-events-none absolute bottom-12 right-[26%] z-0 h-3 w-3 [animation-delay:0.8s]" />
         <KiraSparkle className="anime-twinkle pointer-events-none absolute bottom-3 right-[44%] z-0 hidden h-5 w-5 sm:block [animation-delay:1.4s]" />
 
-        {/* Mascote anime espiando no canto (telas grandes) */}
-        <div className="anime-bob pointer-events-none absolute bottom-0 right-4 z-0 hidden w-32 lg:block xl:right-8 xl:w-36">
-          <div className="anime-pop-in absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-2xl rounded-bl-sm border border-primary/30 bg-card/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-lg shadow-primary/10 backdrop-blur">
+        {/* Livro animado no canto (telas grandes) */}
+        <div className="anime-bob pointer-events-none absolute bottom-3 right-6 z-0 hidden lg:block xl:right-10">
+          <div className="anime-pop-in absolute -top-3 left-1/2 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-2xl rounded-bl-sm border border-primary/30 bg-card/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-lg shadow-primary/10 backdrop-blur">
             Vamos traduzir? <span className="text-primary">✨</span>
           </div>
-          <AnimeMascot className="w-full drop-shadow-[0_8px_18px_color-mix(in_oklch,var(--primary)_40%,transparent)]" />
+          <span
+            aria-hidden="true"
+            className="block select-none text-6xl xl:text-7xl drop-shadow-[0_8px_18px_color-mix(in_oklch,var(--primary)_50%,transparent)]"
+          >
+            📖
+          </span>
         </div>
 
         <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            {/* Mascote pequeno (telas médias) */}
-            <div className="anime-bob -mt-1 hidden h-16 w-16 shrink-0 sm:block lg:hidden">
-              <AnimeMascot variant="star" className="h-full w-full drop-shadow-[0_4px_10px_color-mix(in_oklch,var(--primary)_35%,transparent)]" />
-            </div>
+            {/* Livro pequeno (telas médias) */}
+            <span
+              aria-hidden="true"
+              className="anime-bob hidden select-none text-4xl drop-shadow-[0_4px_10px_color-mix(in_oklch,var(--primary)_45%,transparent)] sm:block lg:hidden"
+            >
+              📖
+            </span>
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
@@ -1020,21 +1035,41 @@ export function SectionsLibrary() {
             ))}
           </div>
         ) : sections.length === 0 ? (
-          <div className="relative overflow-hidden rounded-xl border border-dashed border-primary/30 bg-muted/10 py-12 text-center">
-            <div className="anime-halftone pointer-events-none absolute inset-0 opacity-[0.05]" />
-            <SakuraPetals className="opacity-70" />
-            <div className="pointer-events-none absolute left-1/2 top-0 h-32 w-32 -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
-            <KiraSparkle className="anime-twinkle pointer-events-none absolute left-[30%] top-6 h-4 w-4" />
-            <KiraSparkle className="anime-twinkle pointer-events-none absolute right-[28%] top-10 h-5 w-5 [animation-delay:1s]" />
-            <div className="relative flex flex-col items-center gap-4">
-              <div className="anime-bob relative w-28">
-                <AnimeMascot variant="star" className="w-full drop-shadow-[0_6px_16px_color-mix(in_oklch,var(--primary)_35%,transparent)]" />
+          <div className="relative overflow-hidden rounded-xl border border-primary/25 bg-linear-to-b from-card via-muted/10 to-accent/10 py-12 text-center sm:py-16">
+            {/* Cena estilo destaque de catálogo: speedlines + halftone + spotlight */}
+            <div className="anime-speedlines pointer-events-none absolute inset-0 opacity-60" />
+            <div className="anime-halftone pointer-events-none absolute inset-x-0 bottom-0 h-24 opacity-[0.07]" />
+            <SakuraPetals className="opacity-80" />
+            <div className="pointer-events-none absolute left-1/2 top-4 h-48 w-48 -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" />
+            <div className="pointer-events-none absolute left-[18%] bottom-6 h-24 w-24 rounded-full bg-accent/15 blur-2xl" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-linear-to-r from-primary via-accent to-primary" />
+            <KiraSparkle className="anime-twinkle pointer-events-none absolute left-[24%] top-8 h-4 w-4" />
+            <KiraSparkle className="anime-twinkle pointer-events-none absolute right-[22%] top-12 h-5 w-5 [animation-delay:1s]" />
+            <KiraSparkle className="anime-twinkle pointer-events-none absolute left-[36%] bottom-10 h-3 w-3 [animation-delay:1.8s]" />
+            <KiraSparkle className="anime-twinkle pointer-events-none absolute right-[34%] bottom-16 hidden h-4 w-4 sm:block [animation-delay:0.5s]" />
+
+            <div className="relative flex flex-col items-center gap-5 px-4">
+              {/* Livro animado com sparkles */}
+              <div className="anime-bob relative select-none">
+                <span
+                  aria-hidden="true"
+                  className="block text-7xl sm:text-8xl drop-shadow-[0_10px_24px_color-mix(in_oklch,var(--primary)_50%,transparent)]"
+                >
+                  📖
+                </span>
+                <span aria-hidden="true" className="anime-twinkle absolute -right-5 -top-3 text-2xl">✨</span>
+                <span aria-hidden="true" className="anime-twinkle absolute -left-6 top-6 text-lg [animation-delay:1.2s]">✨</span>
               </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">Nenhuma seção ainda</p>
-                <p className="mt-1 text-xs text-muted-foreground">Clique em &quot;Nova Tradução&quot; para começar.</p>
+              <div className="space-y-1.5">
+                <p className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
+                  Sua biblioteca está{' '}
+                  <span className="anime-gradient-text">esperando</span>
+                </p>
+                <p className="mx-auto max-w-xs text-xs text-muted-foreground sm:text-sm">
+                  Envie as páginas de um mangá e deixe a IA detectar os balões e traduzir para você.
+                </p>
               </div>
-              <Button asChild size="sm">
+              <Button asChild className="bg-linear-to-r from-primary to-accent text-primary-foreground shadow-[0_8px_24px_-8px_color-mix(in_oklch,var(--primary)_80%,transparent)] hover:brightness-110">
                 <Link href="/inicio/secoes/nova">
                   <PlusSquare className="h-4 w-4" />
                   Nova Tradução
