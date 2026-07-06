@@ -8,7 +8,7 @@ Do not submit yet. The repository now has the core submission scaffolding, but J
 
 ## Completed
 
-- OSI-approved license: `LICENSE.md` uses MIT.
+- OSI-approved license: `LICENSE` uses the standard MIT license text.
 - Public repository metadata: `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, and issue/PR templates.
 - CI: `.github/workflows/ci.yml` runs typecheck, lint, tests, and build.
 - Dependency maintenance: `.github/dependabot.yml` covers npm and GitHub Actions.

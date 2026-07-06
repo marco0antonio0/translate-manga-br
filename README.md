@@ -14,7 +14,7 @@ IA rodando em CPU, seus dados ficam com você.</samp>
 <br>
 <br>
 
-[![GitHub Stars](https://img.shields.io/github/stars/marco0antonio0/translate-manga-br?style=for-the-badge&logo=github&color=FFD700&labelColor=1a1a2e)](https://github.com/marco0antonio0/translate-manga-br/stargazers) [![License](https://img.shields.io/badge/license-MIT-8A2BE2?style=for-the-badge&labelColor=1a1a2e)](LICENSE.md) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-2ea44f?style=for-the-badge&labelColor=1a1a2e)](CONTRIBUTING.md)
+[![GitHub Stars](https://img.shields.io/github/stars/marco0antonio0/translate-manga-br?style=for-the-badge&logo=github&color=FFD700&labelColor=1a1a2e)](https://github.com/marco0antonio0/translate-manga-br/stargazers) [![License](https://img.shields.io/badge/license-MIT-8A2BE2?style=for-the-badge&labelColor=1a1a2e)](LICENSE) [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-2ea44f?style=for-the-badge&labelColor=1a1a2e)](CONTRIBUTING.md)
 
 [![Next.js](https://img.shields.io/badge/Next.js_16-000000?style=flat-square&logo=next.js)](https://nextjs.org) [![React](https://img.shields.io/badge/React_19-149ECA?style=flat-square&logo=react&logoColor=white)](https://react.dev) [![TypeScript](https://img.shields.io/badge/TypeScript_5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org) [![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white)](https://www.sqlite.org) [![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docs.docker.com/compose/) [![ONNX](https://img.shields.io/badge/ONNX_Runtime-5C5C5C?style=flat-square&logo=onnx&logoColor=white)](https://onnxruntime.ai)
 
@@ -446,7 +446,7 @@ Leia o guia completo em [CONTRIBUTING.md](CONTRIBUTING.md). Novo em open source?
 
 Este projeto é open source sob a **licença MIT** — use, modifique, distribua e até venda livremente, contanto que mantenha o aviso de copyright e a licença original.
 
-Leia os termos completos em [LICENSE.md](LICENSE.md).
+Leia os termos completos em [LICENSE](LICENSE).
 
 ## ⭐ Apoie o projeto
 
