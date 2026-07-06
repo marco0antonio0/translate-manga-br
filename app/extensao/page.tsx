@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 }
 
 const KIWI_APK_URL = 'https://pub-f819838a77944f35a4edc23737502f27.r2.dev/kiwi-browser/com.kiwibrowser.browser-arm64-14310011181-github.apk'
+const CHROME_EXTENSION_DOWNLOAD_URL = '/download-extensao?target=chrome'
 
 function StepCard({ step, title, children }: { step: string; title: string; children: React.ReactNode }) {
   return (
@@ -125,12 +126,12 @@ export default function ExtensaoPage() {
             OCR com IA e overlay editável — no desktop e no celular.
           </p>
           <div className="relative flex flex-col sm:flex-row gap-3 justify-center pt-2">
-            <Link href="/download-extensao">
-              <Button size="lg" className="w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90 shadow-[0_8px_24px_-8px_color-mix(in_oklch,var(--primary)_80%,transparent)]">
+            <Button asChild size="lg" className="w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90 shadow-[0_8px_24px_-8px_color-mix(in_oklch,var(--primary)_80%,transparent)]">
+              <a href={CHROME_EXTENSION_DOWNLOAD_URL} download="manga-translator-extension-chrome.zip">
                 <Download className="w-5 h-5" />
                 Baixar extensão (.zip)
-              </Button>
-            </Link>
+              </a>
+            </Button>
             <Link href="#tutorial-desktop">
               <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2">
                 <Monitor className="w-5 h-5" />
@@ -256,12 +257,12 @@ export default function ExtensaoPage() {
               <p>
                 Ainda no celular, baixe o pacote da extensão — não precisa extrair:
               </p>
-              <Link href="/download-extensao" className="mt-3 inline-flex">
-                <Button variant="outline" size="sm" className="gap-2 border-primary/40 text-primary hover:bg-primary/10">
+              <Button asChild variant="outline" size="sm" className="mt-3 gap-2 border-primary/40 text-primary hover:bg-primary/10">
+                <a href={CHROME_EXTENSION_DOWNLOAD_URL} download="manga-translator-extension-chrome.zip">
                   <Download className="w-4 h-4" />
-                  Baixar extensão (.zip)
-                </Button>
-              </Link>
+                  Baixar extensão Kiwi/Chrome (.zip)
+                </a>
+              </Button>
             </StepCard>
             <StepCard step="3" title="Abra a tela de extensões do Kiwi">
               Digite <code className="bg-muted px-2 py-0.5 rounded text-xs">chrome://extensions</code> na barra de
@@ -388,12 +389,12 @@ export default function ExtensaoPage() {
             Baixe a extensão agora e comece a traduzir mangá com facilidade — no PC ou no celular.
           </p>
           <div className="relative flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/download-extensao">
-              <Button size="lg" className="w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90">
+            <Button asChild size="lg" className="w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90">
+              <a href={CHROME_EXTENSION_DOWNLOAD_URL} download="manga-translator-extension-chrome.zip">
                 <Download className="w-5 h-5" />
                 Baixar extensão (.zip)
-              </Button>
-            </Link>
+              </a>
+            </Button>
             <a href={KIWI_APK_URL} rel="noopener noreferrer">
               <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2">
                 <Smartphone className="w-5 h-5" />
