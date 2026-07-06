@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="360" viewBox="0 0 920 360" role="img" aria-labelledby="title desc">
+  <title id="title">Public synthetic CPU benchmark</title>
+  <desc id="desc">Comparison between Google Translate and OpenRouter runs over three synthetic comic pages on a CPU-only deployment.</desc>
+  <defs>
+    <style>
+      .bg { fill: #0f172a; }
+      .panel { fill: #111827; stroke: #243047; stroke-width: 1; }
+      .muted { fill: #94a3b8; font: 14px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .label { fill: #e5e7eb; font: 16px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-weight: 650; }
+      .title { fill: #f8fafc; font: 26px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-weight: 750; }
+      .small { fill: #cbd5e1; font: 13px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .value { fill: #ffffff; font: 18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-weight: 750; }
+      .axis { stroke: #334155; stroke-width: 1; }
+      .bar-google { fill: #22c55e; }
+      .bar-openrouter { fill: #38bdf8; }
+      .bar-secondary { fill: #64748b; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="920" height="360" rx="18"/>
+  <text x="36" y="50" class="title">Benchmark publico sintetico em CPU</text>
+  <text x="36" y="78" class="muted">3 paginas sinteticas redistribuiveis, 6 itens OCR, 100% com texto reconhecido e traducao nos dois provedores.</text>
+
+  <rect x="36" y="104" width="848" height="208" rx="14" class="panel"/>
+  <text x="64" y="142" class="label">Vazao observada</text>
+  <text x="64" y="166" class="muted">Paginas por minuto, usando created_at -> updated_at como proxy de duracao</text>
+
+  <line x1="220" y1="262" x2="760" y2="262" class="axis"/>
+  <line x1="220" y1="190" x2="760" y2="190" class="axis" opacity="0.35"/>
+
+  <text x="64" y="205" class="label">Google Translate</text>
+  <rect x="220" y="180" width="434" height="34" rx="8" class="bar-google"/>
+  <text x="672" y="203" class="value">33.25 pag/min</text>
+  <text x="782" y="203" class="small">1.80 s/pag</text>
+
+  <text x="64" y="254" class="label">OpenRouter Gemma</text>
+  <rect x="220" y="229" width="496" height="34" rx="8" class="bar-openrouter"/>
+  <text x="734" y="252" class="value">37.93 pag/min</text>
+  <text x="782" y="276" class="small">1.58 s/pag</text>
+
+  <rect x="64" y="284" width="196" height="1" class="bar-secondary" opacity="0.55"/>
+  <text x="64" y="303" class="small">Ambiente: Debian, 6 CPUs logicas, 6.78 GiB RAM, ONNX Runtime CPU provider.</text>
+
+  <text x="36" y="340" class="muted">Fonte: benchmarks/public-synthetic-sections-37-38-2026-07-06.json</text>
+</svg>

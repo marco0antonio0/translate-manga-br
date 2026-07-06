@@ -1,0 +1,196 @@
+{
+  "generated_at": "2026-07-06T15:09:50Z",
+  "source": {
+    "host": "private CPU-only deployment",
+    "path": "private/non-redistributable local SQLite database",
+    "analysis_type": "observational_database_export",
+    "privacy_note": "Aggregate metrics only. OCR text, translated text, user names, emails, password hashes, API keys, overlay contents, manga titles, and page images were not exported."
+  },
+  "environment": {
+    "os": "Debian GNU/Linux 13 (trixie)",
+    "kernel": "6.12.94+deb13-amd64",
+    "cpu_model": "Common KVM processor",
+    "logical_cpus": 6,
+    "memory_kib": 7105288,
+    "memory_gib": 6.78,
+    "node_version": "v20.19.2",
+    "python_version": "Python 3.13.5",
+    "onnx_execution_provider": "cpu"
+  },
+  "pipeline": {
+    "local_detection_and_ocr": "YOLO ONNX and PaddleOCR ONNX via onnxruntime-node and sharp",
+    "translation_provider": "openrouter:google/gemma-4-31b-it",
+    "source_language": "auto",
+    "target_language": "pt-BR",
+    "timing_note": "The current schema does not store dedicated processing_start/processing_finish timestamps. Elapsed timing uses created_at to updated_at and should be treated as an observational workflow duration proxy, not a controlled latency measurement. The underlying page images are non-redistributable and are not part of this export."
+  },
+  "counts": {
+    "users": 1,
+    "sections": 8,
+    "section_images": 478,
+    "ocr_items": 2413
+  },
+  "status_counts": {
+    "sections": [
+      {
+        "status": "completed",
+        "internal_status": "idle",
+        "count": 8
+      }
+    ],
+    "images": [
+      {
+        "status": "completed",
+        "translation_status": "extracted",
+        "count": 476
+      },
+      {
+        "status": "error",
+        "translation_status": "failed",
+        "count": 2
+      }
+    ]
+  },
+  "date_ranges": {
+    "sections": {
+      "first_created_at": "2026-07-05T00:00:02.088Z",
+      "last_updated_at": "2026-07-06T01:46:46.434Z"
+    },
+    "images": {
+      "first_created_at": "2026-07-05T00:00:02.088Z",
+      "last_updated_at": "2026-07-06T01:46:46.434Z"
+    }
+  },
+  "derived_elapsed_metrics": {
+    "completed_sections_with_elapsed": 8,
+    "total_pages_in_completed_sections": 478,
+    "total_ocr_items_in_completed_sections": 2413,
+    "median_seconds_per_page_created_to_updated": 6.1167,
+    "mean_seconds_per_page_created_to_updated": 7.5681,
+    "median_pages_per_minute_created_to_updated": 9.8436,
+    "mean_pages_per_minute_created_to_updated": 8.7723
+  },
+  "image_elapsed_created_to_updated": {
+    "min_seconds": 5.445,
+    "median_seconds": 217.0705,
+    "mean_seconds": 229.4631,
+    "max_seconds": 745.054
+  },
+  "ocr_items_per_completed_image": {
+    "min": 0,
+    "median": 5,
+    "mean": 5.0693,
+    "max": 19
+  },
+  "translation_coverage": {
+    "ocr_items_total": 2413,
+    "ocr_items_with_text": 2213,
+    "ocr_items_with_translation": 2213,
+    "ocr_text_coverage_ratio": 0.9171,
+    "translation_coverage_ratio": 0.9171
+  },
+  "file_storage": {
+    "storage_bytes": 413610344,
+    "storage_mib": 394.45,
+    "db_bytes": 954368,
+    "sections_with_image_directories": 8
+  },
+  "sections_anonymized": [
+    {
+      "section_id": 23,
+      "status": "completed",
+      "pages": 52,
+      "input_bytes": 197157772,
+      "ocr_items": 250,
+      "ocr_items_with_text": 241,
+      "ocr_items_with_translation": 241,
+      "elapsed_seconds_created_to_updated": 336.879,
+      "pages_per_minute_created_to_updated": 9.2615,
+      "seconds_per_page_created_to_updated": 6.4784
+    },
+    {
+      "section_id": 24,
+      "status": "completed",
+      "pages": 62,
+      "input_bytes": 214509104,
+      "ocr_items": 283,
+      "ocr_items_with_text": 272,
+      "ocr_items_with_translation": 272,
+      "elapsed_seconds_created_to_updated": 678.173,
+      "pages_per_minute_created_to_updated": 5.4853,
+      "seconds_per_page_created_to_updated": 10.9383
+    },
+    {
+      "section_id": 25,
+      "status": "completed",
+      "pages": 63,
+      "input_bytes": 184395732,
+      "ocr_items": 241,
+      "ocr_items_with_text": 229,
+      "ocr_items_with_translation": 229,
+      "elapsed_seconds_created_to_updated": 531.867,
+      "pages_per_minute_created_to_updated": 7.107,
+      "seconds_per_page_created_to_updated": 8.4423
+    },
+    {
+      "section_id": 26,
+      "status": "completed",
+      "pages": 61,
+      "input_bytes": 206483706,
+      "ocr_items": 277,
+      "ocr_items_with_text": 264,
+      "ocr_items_with_translation": 264,
+      "elapsed_seconds_created_to_updated": 336.297,
+      "pages_per_minute_created_to_updated": 10.8832,
+      "seconds_per_page_created_to_updated": 5.5131
+    },
+    {
+      "section_id": 27,
+      "status": "completed",
+      "pages": 61,
+      "input_bytes": 282241724,
+      "ocr_items": 391,
+      "ocr_items_with_text": 384,
+      "ocr_items_with_translation": 384,
+      "elapsed_seconds_created_to_updated": 318.958,
+      "pages_per_minute_created_to_updated": 11.4749,
+      "seconds_per_page_created_to_updated": 5.2288
+    },
+    {
+      "section_id": 30,
+      "status": "completed",
+      "pages": 57,
+      "input_bytes": 253579578,
+      "ocr_items": 318,
+      "ocr_items_with_text": 246,
+      "ocr_items_with_translation": 246,
+      "elapsed_seconds_created_to_updated": 328.038,
+      "pages_per_minute_created_to_updated": 10.4256,
+      "seconds_per_page_created_to_updated": 5.7551
+    },
+    {
+      "section_id": 32,
+      "status": "completed",
+      "pages": 63,
+      "input_bytes": 482568346,
+      "ocr_items": 394,
+      "ocr_items_with_text": 350,
+      "ocr_items_with_translation": 350,
+      "elapsed_seconds_created_to_updated": 350.342,
+      "pages_per_minute_created_to_updated": 10.7895,
+      "seconds_per_page_created_to_updated": 5.561
+    },
+    {
+      "section_id": 33,
+      "status": "completed",
+      "pages": 59,
+      "input_bytes": 300823262,
+      "ocr_items": 259,
+      "ocr_items_with_text": 227,
+      "ocr_items_with_translation": 227,
+      "elapsed_seconds_created_to_updated": 745.054,
+      "pages_per_minute_created_to_updated": 4.7513,
+      "seconds_per_page_created_to_updated": 12.628
+    }
+  ]
+}

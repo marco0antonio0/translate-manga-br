@@ -20,6 +20,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "ci": "npm run typecheck && npm run lint && npm test && npm run build",
+    "benchmark:db": "node scripts/export-observational-benchmark.mjs",
     "security:deps": "node ./scripts/dependency-risk-check.mjs"
   },
   "dependencies": {

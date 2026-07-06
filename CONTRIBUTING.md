@@ -93,7 +93,7 @@ chore: atualizar dependências do Radix UI
 Execute pelo menos:
 
 ```bash
-npm run typecheck  # o build do Next ignora erros TS — este é o check de verdade
+npm run typecheck
 npm run lint
 npm test
 npm run build

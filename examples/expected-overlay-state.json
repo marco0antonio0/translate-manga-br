@@ -1,0 +1,37 @@
+{
+  "font_family": "condensed",
+  "font_scale": 0.3,
+  "box_inset_percent": 6,
+  "density": 1,
+  "global_shape": "oval",
+  "overrides_by_image_id": {
+    "1": {
+      "1": {
+        "dx": 0,
+        "dy": 0,
+        "shape": "oval",
+        "fontScale": 1,
+        "sizeScale": 1
+      }
+    }
+  },
+  "manual_items_by_image_id": {
+    "1": [
+      {
+        "id": 1,
+        "box": [210, 320, 380, 470],
+        "ocr_text": "HELLO WORLD",
+        "translated_text": "OLA MUNDO"
+      },
+      {
+        "id": 2,
+        "box": [430, 790, 750, 980],
+        "ocr_text": "LOCAL FIRST",
+        "translated_text": "LOCAL PRIMEIRO"
+      }
+    ]
+  },
+  "hidden_item_ids_by_image_id": {
+    "1": []
+  }
+}

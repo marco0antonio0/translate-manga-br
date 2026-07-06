@@ -49,6 +49,10 @@ storage/*
 # Caches gerais
 .cache/
 
+# Rascunho local do paper JOSS
+paper/
+CITATION.cff
+
 # Memória de agentes locais
 .claude/memory/
 

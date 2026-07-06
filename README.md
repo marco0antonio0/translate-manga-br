@@ -20,7 +20,7 @@ IA rodando em CPU, seus dados ficam com você.</samp>
 
 <br>
 
-<kbd><a href="#-quick-start">&nbsp;🚀 Quick Start&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-features">&nbsp;✨ Features&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#%EF%B8%8F-arquitetura">&nbsp;🏗️ Arquitetura&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-documentação">&nbsp;📚 Docs&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-contribuindo">&nbsp;🤝 Contribuir&nbsp;</a></kbd>
+<kbd><a href="#-quick-start">&nbsp;🚀 Quick Start&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-features">&nbsp;✨ Features&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-benchmarks-em-cpu">&nbsp;📊 Benchmarks&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#%EF%B8%8F-arquitetura">&nbsp;🏗️ Arquitetura&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-documentação">&nbsp;📚 Docs&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-contribuindo">&nbsp;🤝 Contribuir&nbsp;</a></kbd>
 
 <br>
 <br>
@@ -46,6 +46,18 @@ IA rodando em CPU, seus dados ficam com você.</samp>
 **Manga Translator Local** é uma aplicação full stack para traduzir páginas de mangá em ambiente local. O projeto combina painel web, detecção de balões de texto com YOLO, OCR com PaddleOCR, tradução e um leitor com overlay editável.
 
 O princípio central é **local-first**: processamento e armazenamento ficam sob controle do usuário (SQLite + arquivos em `storage/`). A única exceção são os provedores externos de tradução — Google Translate ou OpenRouter — quando selecionados.
+
+## 📊 Benchmarks em CPU
+
+Os números abaixo foram coletados em uma implantação CPU-only com Debian, 6 CPUs lógicas, 6.78 GiB de RAM e ONNX Runtime usando o provider `cpu`. Os tempos usam `created_at → updated_at` como proxy observacional de duração; portanto, medem o fluxo persistido da aplicação, não latência pura de OCR.
+
+![Benchmark público sintético em CPU](docs/benchmark-public-synthetic.svg)
+
+O benchmark público usa três páginas sintéticas redistribuíveis em `examples/`, processadas com Google Translate e OpenRouter. O relatório agregado está em [`benchmarks/public-synthetic-sections-37-38-2026-07-06.json`](benchmarks/public-synthetic-sections-37-38-2026-07-06.json).
+
+![Benchmark privado agregado e anônimo](docs/benchmark-private-aggregate.svg)
+
+A carga privada é mantida apenas como evidência operacional agregada/anônima. Imagens, títulos, texto OCR, traduções, usuários, e-mails, hashes, chaves e overlays não foram exportados. Detalhes e limitações estão em [`docs/benchmark.md`](docs/benchmark.md).
 
 ## ✨ Features
 
@@ -383,23 +395,6 @@ NEXT_PORT=3090 npm run dev
 
 </details>
 
-<details>
-<summary><b>TypeScript passa no build, mas falha no <code>tsc</code></b></summary>
-
-O build atual do Next.js ignora erros TypeScript. Use `npm run typecheck` como fonte de verdade para tipos.
-
-</details>
-
-## 🚧 Status do projeto
-
-Este projeto está em evolução ativa. Algumas decisões técnicas ainda estão sendo consolidadas:
-
-- [x] Consolidar o gerenciador de pacotes — use `npm`, `package-lock.json` e `npm ci` para reproduzir Docker/CI.
-- [ ] Remover o bypass de erros TypeScript no build (`next.config.mjs`) — rode `npm run typecheck` separadamente.
-- [x] Declarar `eslint` nas dependências e validar o projeto com `npm run lint`.
-- [x] Adicionar uma suíte automatizada inicial com Vitest para guards de origem e criptografia local de segredos.
-- [ ] Evoluir o OCR Node para usar também o detector interno do PaddleOCR em casos de balões pequenos/curvos.
-- [ ] Persistir a imagem traduzida final como arquivo separado — hoje o leitor renderiza a original com overlay editável.
 
 ## 🔐 Segurança e privacidade
 

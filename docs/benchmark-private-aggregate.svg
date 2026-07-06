@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="560" viewBox="0 0 920 560" role="img" aria-labelledby="title desc">
+  <title id="title">Private aggregate observational benchmark</title>
+  <desc id="desc">Anonymized aggregate benchmark with 478 pages, 2413 OCR items, and CPU-only processing metrics.</desc>
+  <defs>
+    <style>
+      .bg { fill: #101820; }
+      .panel { fill: #13212f; stroke: #274056; stroke-width: 1; }
+      .card { fill: #0f172a; stroke: #334155; stroke-width: 1; }
+      .title { fill: #f8fafc; font: 26px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-weight: 750; }
+      .label { fill: #e5e7eb; font: 15px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-weight: 650; }
+      .muted { fill: #94a3b8; font: 13px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .number { fill: #ffffff; font: 30px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-weight: 800; }
+      .small { fill: #cbd5e1; font: 12px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .axis { stroke: #334155; stroke-width: 1; }
+      .bar { fill: #a78bfa; }
+      .bar2 { fill: #f59e0b; }
+      .ok { fill: #22c55e; }
+      .warn { fill: #f97316; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="920" height="560" rx="18"/>
+  <text x="36" y="50" class="title">Carga privada agregada e anonima</text>
+  <text x="36" y="78" class="muted">Evidencia operacional sem imagens, titulos, texto OCR, traducoes, usuarios, emails, hashes, chaves ou conteudo de overlay.</text>
+
+  <rect x="36" y="104" width="198" height="112" rx="14" class="card"/>
+  <text x="60" y="140" class="muted">Paginas processadas</text>
+  <text x="60" y="180" class="number">478</text>
+  <text x="60" y="202" class="small">476 concluidas, 2 falhas</text>
+
+  <rect x="252" y="104" width="198" height="112" rx="14" class="card"/>
+  <text x="276" y="140" class="muted">Itens OCR detectados</text>
+  <text x="276" y="180" class="number">2.413</text>
+  <text x="276" y="202" class="small">2.213 com texto/traducao</text>
+
+  <rect x="468" y="104" width="198" height="112" rx="14" class="card"/>
+  <text x="492" y="140" class="muted">Cobertura de traducao</text>
+  <text x="492" y="180" class="number">91,71%</text>
+  <text x="492" y="202" class="small">OCR com texto traduzido</text>
+
+  <rect x="684" y="104" width="200" height="112" rx="14" class="card"/>
+  <text x="708" y="140" class="muted">Ambiente CPU-only</text>
+  <text x="708" y="180" class="number">6 vCPU</text>
+  <text x="708" y="202" class="small">6.78 GiB RAM, ONNX CPU</text>
+
+  <rect x="36" y="244" width="848" height="250" rx="14" class="panel"/>
+  <text x="60" y="278" class="label">Distribuicao anonima por lote concluido</text>
+  <text x="60" y="300" class="muted">Paginas por minuto, usando created_at -> updated_at como proxy observacional de duracao.</text>
+  <text x="60" y="322" class="muted">Os rotulos A-H sao anonimos e nao representam nomes, titulos ou identificadores originais.</text>
+
+  <line x1="60" y1="456" x2="742" y2="456" class="axis"/>
+  <line x1="60" y1="386" x2="742" y2="386" class="axis" opacity="0.35"/>
+
+  <rect x="78" y="386" width="42" height="70" rx="6" class="bar"/>
+  <rect x="156" y="415" width="42" height="41" rx="6" class="bar"/>
+  <rect x="234" y="403" width="42" height="53" rx="6" class="bar"/>
+  <rect x="312" y="373" width="42" height="83" rx="6" class="bar"/>
+  <rect x="390" y="368" width="42" height="88" rx="6" class="bar2"/>
+  <rect x="468" y="376" width="42" height="80" rx="6" class="bar"/>
+  <rect x="546" y="374" width="42" height="82" rx="6" class="bar"/>
+  <rect x="624" y="420" width="42" height="36" rx="6" class="bar"/>
+
+  <text x="93" y="478" class="small">A</text>
+  <text x="171" y="478" class="small">B</text>
+  <text x="249" y="478" class="small">C</text>
+  <text x="327" y="478" class="small">D</text>
+  <text x="405" y="478" class="small">E</text>
+  <text x="483" y="478" class="small">F</text>
+  <text x="561" y="478" class="small">G</text>
+  <text x="639" y="478" class="small">H</text>
+
+  <text x="770" y="378" class="label">Media</text>
+  <text x="770" y="406" class="number">8.77</text>
+  <text x="770" y="428" class="small">paginas/minuto</text>
+  <text x="770" y="452" class="small">Mediana: 9.84</text>
+
+  <text x="36" y="538" class="muted">Fonte: benchmarks/private-observational-2026-07-06.json. Nao e benchmark publico reproduzivel; serve como evidencia operacional agregada.</text>
+</svg>
