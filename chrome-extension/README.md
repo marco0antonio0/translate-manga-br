@@ -12,10 +12,7 @@ Endpoints consumidos:
 - `/api/translate/text-batch` — tradução em lote (mesmo cache/backend do app).
 - `/api/translate/extract` — detecção/OCR avulso (caminho legado, ainda disponível).
 
-Existem dois manifests:
-
-- `manifest.json`: Chrome/Chromium, Manifest V3.
-- `manifest.firefox.json`: Firefox Mobile, Manifest V2 com background script clássico.
+A extensão usa `manifest.json` em Manifest V3 para Chrome/Chromium. No Android, o fluxo suportado é pelo Kiwi Browser ou outro navegador Chromium com suporte a extensões.
 
 ## Como instalar
 
@@ -33,13 +30,6 @@ Existem dois manifests:
 7. **Faça login** com um usuário do sistema e confirme a tela de configurações (idiomas/provider) para liberar o leitor.
 
 Também é possível baixar o pacote pronto pelo próprio site em `/extensao` (ou direto em `/download-extensao`).
-
-## Como instalar no Firefox Mobile
-
-1. Baixe `/download-extensao?target=firefox`.
-2. Use o fluxo de extensão temporária/debug do Firefox para Android.
-3. Instale o ZIP gerado para Firefox. Dentro dele, `manifest.firefox.json` é entregue como `manifest.json`.
-4. Clique no ícone da extensão numa página de mangá, faça login no modal e confirme a tela de configurações.
 
 ## Autenticação
 
@@ -92,5 +82,5 @@ Ao reabrir o leitor numa página que já tem seção, a extensão sincroniza aut
 
 - Sites que bloqueiam download de imagens fora do contexto da página podem impedir o envio das imagens para o site.
 - Sites que exigem autenticação/cookies próprios para servir imagens podem impedir o download pelo background da extensão.
-- No Firefox Mobile, a instalação depende do suporte de extensões temporárias/debug do Firefox para Android.
+- No Android, instale pelo Kiwi Browser usando o ZIP baixado em `/download-extensao`.
 - A seleção manual de área não é persistida no servidor — fica no cache local da extensão.

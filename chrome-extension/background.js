@@ -1,5 +1,4 @@
 try {
-  importScripts('extension-compat.js')
   importScripts('config.js')
 } catch {
 }
@@ -45,10 +44,8 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 })
 
 // Sem popup: o clique no ícone abre o leitor direto na aba ativa (com o
-// modal de login/config por cima). Funciona tanto no Chrome (chrome.action)
-// quanto no Firefox MV2 (browser.browserAction, exposto como chrome.browserAction
-// pelo extension-compat.js).
-const mtlActionApi = chrome.action || chrome.browserAction
+// modal de login/config por cima).
+const mtlActionApi = chrome.action
 if (mtlActionApi?.onClicked) {
   mtlActionApi.onClicked.addListener((tab) => {
     void openReaderInTab(tab, '')
@@ -71,10 +68,9 @@ async function openReaderInTab(tab, imageUrl) {
     if (chrome.scripting?.executeScript) {
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
-        files: ['extension-compat.js', 'content-script.js'],
+        files: ['content-script.js'],
       })
     } else if (chrome.tabs?.executeScript) {
-      await chrome.tabs.executeScript(tab.id, { file: 'extension-compat.js' })
       await chrome.tabs.executeScript(tab.id, { file: 'content-script.js' })
     } else {
       return

@@ -118,7 +118,7 @@ Os dados de usuário, banco SQLite, imagens enviadas e artefatos gerados ficam e
 
 ### Extensão do navegador
 
-A extensão fica em `chrome-extension/` (Chrome MV3 + Firefox Mobile MV2) e abre um modo leitura em qualquer página de mangá. Ela exige **login** com um usuário do sistema e usa o site como fonte única de processamento: cria a seção, o backend processa (YOLO + OCR + tradução) e a extensão acompanha o progresso exibindo o overlay traduzido. Detalhes em [chrome-extension/README.md](chrome-extension/README.md).
+A extensão fica em `chrome-extension/` (Chrome/Chromium MV3, incluindo Kiwi Browser no Android) e abre um modo leitura em qualquer página de mangá. Ela exige **login** com um usuário do sistema e usa o site como fonte única de processamento: cria a seção, o backend processa (YOLO + OCR + tradução) e a extensão acompanha o progresso exibindo o overlay traduzido. Detalhes em [chrome-extension/README.md](chrome-extension/README.md).
 
 A URL do backend é gerada em `chrome-extension/config.js`.
 
@@ -176,7 +176,7 @@ O frontend Next.js serve a interface e os route handlers locais. O domínio em `
 
 ```text
 app/              # páginas, layouts e route handlers do Next.js
-chrome-extension/ # extensão Chrome/Firefox para usar OCR/tradução no navegador
+chrome-extension/ # extensão Chrome/Chromium para usar OCR/tradução no navegador
 components/       # componentes de UI e fluxo de usuário
 docs/             # diagramas e documentação auxiliar
 lib/              # backend local, domínio, segurança e integrações
