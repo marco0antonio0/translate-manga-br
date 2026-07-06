@@ -260,7 +260,7 @@ export default function ExtensaoPage() {
               <Button asChild variant="outline" size="sm" className="mt-3 gap-2 border-primary/40 text-primary hover:bg-primary/10">
                 <a href={CHROME_EXTENSION_DOWNLOAD_URL} download="manga-translator-extension-chrome.zip">
                   <Download className="w-4 h-4" />
-                  Baixar extensão Kiwi/Chrome (.zip)
+                  Baixar extensão(.zip)
                 </a>
               </Button>
             </StepCard>
