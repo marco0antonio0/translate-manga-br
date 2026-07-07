@@ -46,7 +46,6 @@ export default function LoginPageClient() {
         }
 
       } catch {
-        // A tela de login nao deve ficar bloqueada se a checagem de sessao falhar.
       } finally {
         window.clearTimeout(timeoutId)
       }

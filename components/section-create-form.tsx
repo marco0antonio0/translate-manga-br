@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
@@ -24,7 +24,7 @@ import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { toErrorMessage } from '@/lib/sections'
-import { Check, ChevronDown, ChevronUp, FileImage, FileText, HelpCircle, Loader2, PlayCircle, Save, Sparkles, X, Zap } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, FileImage, FileText, HelpCircle, Loader2, PlayCircle, Save, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { SpotlightTour, checkTourDone, type TourStep } from '@/components/spotlight-tour'
 
@@ -299,7 +299,6 @@ function canEncodeCanvasWebp() {
   return _canvasWebpSupport
 }
 
-// Cache do pdfjs para evitar reimportar a cada chamada
 let _pdfjsLib: typeof import('pdfjs-dist') | null = null
 
 async function getPdfjsLib() {
@@ -377,7 +376,6 @@ async function extractPdfToImages(
         : (isHugePdf ? 0.72 : isLargePdf ? 0.76 : 0.8)
     )
 
-  // Mais slots para máquinas mais fortes; limitamos para evitar estouro de memória.
   const highEndDesktop = !mobile && !lowMemoryDevice && hardwareConcurrency >= 8
   const concurrencyCap = mobile ? 4 : (highEndDesktop ? 12 : (lowMemoryDevice ? 6 : 9))
   const baseConcurrency = Math.max(2, Math.floor(hardwareConcurrency / (mobile ? 2 : 1.5)))
@@ -630,10 +628,6 @@ export function SectionCreateForm() {
     uploadItemsRef.current = uploadItems
   }, [uploadItems])
   const hasLoadedPdf = uploadItems.length > 0
-  const sourcePdfCount = useMemo(
-    () => uploadItems.length,
-    [uploadItems]
-  )
   const preparingOverallProgress = useMemo(
     () => getPreparingOverallProgress(preparingState),
     [preparingState]
@@ -645,7 +639,6 @@ export function SectionCreateForm() {
     const warmupPdfRuntime = () => {
       if (cancelled) return
       void getPdfjsLib().catch(() => {
-        // aquecimento opcional; falhas não devem impactar o fluxo normal
       })
     }
 
@@ -739,7 +732,6 @@ export function SectionCreateForm() {
         if (!nextModel) return
         setOpenRouterModel(nextModel)
       } catch {
-        // OpenRouter opcional
       }
     }
     void loadOpenRouterStatus()
@@ -1129,7 +1121,6 @@ export function SectionCreateForm() {
       return
     }
 
-    // modo PDF em massa — role 4: até 5 por lote, demais perfis: até 3 por lote
     const remaining = Math.max(0, maxBatchPdfsAllowedNow - uploadItems.length)
     if (remaining <= 0) {
       if (remainingSectionQuota !== null && remainingSectionQuota <= 0) {
@@ -1174,7 +1165,6 @@ export function SectionCreateForm() {
     const inputElement = event.currentTarget
     const selectedFiles = Array.from(inputElement.files ?? [])
 
-    // Limpa imediatamente para permitir reenvio do mesmo arquivo após descarte.
     inputElement.value = ''
     await appendSelectedFiles(selectedFiles)
   }
@@ -1198,14 +1188,6 @@ export function SectionCreateForm() {
       delete next[itemId]
       return next
     })
-    if (fileInputRef.current) fileInputRef.current.value = ''
-    if (imageInputRef.current) imageInputRef.current.value = ''
-  }
-
-  const handleClearUploads = () => {
-    uploadItems.forEach((item) => revokePreviewUrl(item.previewUrl))
-    setUploadItems([])
-    setBatchPdfStatusByItemId({})
     if (fileInputRef.current) fileInputRef.current.value = ''
     if (imageInputRef.current) imageInputRef.current.value = ''
   }
@@ -1258,7 +1240,6 @@ export function SectionCreateForm() {
       }
     }
 
-// Converter PDF único antes de criar (não converte na seleção do arquivo)
     let filesToUpload = files
     if (uploadMode === 'pdf') {
       const singleItem = uploadItems[0]

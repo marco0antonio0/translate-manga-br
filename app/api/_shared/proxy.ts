@@ -46,7 +46,7 @@ export function notFoundResponse(message: string) {
   )
 }
 
-/** Resolve o usuário e exige role de admin (4). Retorna o usuário ou uma resposta de erro. */
+
 export async function requireAdmin(): Promise<
   { user: NonNullable<Awaited<ReturnType<typeof requireUser>>> } | { response: NextResponse }
 > {

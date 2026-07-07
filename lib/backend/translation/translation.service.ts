@@ -40,11 +40,7 @@ function parseOpenRouterMessageContent(content: unknown) {
     .trim()
 }
 
-/**
- * Prompt OCR-aware: o texto vem de balões de quadrinho extraídos por OCR e
- * pode conter erros de reconhecimento; o modelo deve inferir a palavra mais
- * provável pelo contexto em vez de traduzir o ruído literalmente.
- */
+
 function buildOpenRouterSystemPrompt(sourceLang: string, targetLang: string) {
   return [
     `You are a professional manga/comic translator. Translate the user's text from ${sourceLang} to ${targetLang}.`,
@@ -143,11 +139,6 @@ export class TranslationService {
     return `${TRANSLATION_CACHE_PREFIX}:${hash}`
   }
 
-  /**
-   * Traduz um lote de textos. Falha de um item vira fallback para o texto
-   * original (nunca lança por item). Lança apenas em erro de configuração
-   * (ex.: OpenRouter sem API key).
-   */
   async translateBatch(
     texts: string[],
     sourceLang: string,

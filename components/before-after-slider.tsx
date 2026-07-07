@@ -12,7 +12,7 @@ interface HomeGalleryPayload {
 }
 
 export function BeforeAfterSlider() {
-  const [position, setPosition] = useState(100) // starts at 100% original, animates to 50%
+  const [position, setPosition] = useState(100)
   const [isDragging, setIsDragging] = useState(false)
   const [hasInteracted, setHasInteracted] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -55,7 +55,6 @@ export function BeforeAfterSlider() {
     }
   }, [loadGalleryImages])
 
-  // Entrance animation: sweep from 100% → 50%
   useEffect(() => {
     let start: number | null = null
     const duration = 1200
@@ -66,7 +65,6 @@ export function BeforeAfterSlider() {
       if (!start) start = timestamp
       const elapsed = timestamp - start
       const progress = Math.min(elapsed / duration, 1)
-      // ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3)
       setPosition(from + (to - from) * eased)
       if (progress < 1) {
@@ -74,7 +72,6 @@ export function BeforeAfterSlider() {
       }
     }
 
-    // Delay slightly so the page has rendered
     const timeout = setTimeout(() => {
       animFrameRef.current = requestAnimationFrame(step)
     }, 600)
@@ -94,7 +91,6 @@ export function BeforeAfterSlider() {
     if (!hasInteracted) setHasInteracted(true)
   }, [hasInteracted])
 
-  // Mouse
   const onMouseDown = (e: React.MouseEvent) => {
     e.preventDefault()
     setIsDragging(true)
@@ -112,10 +108,9 @@ export function BeforeAfterSlider() {
     }
   }, [isDragging, resolvePosition])
 
-  // Touch — só ativa o slider se o gesto for predominantemente horizontal
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
-    isHorizontalGestureRef.current = null // ainda não sabemos a direção
+    isHorizontalGestureRef.current = null
   }
 
   useEffect(() => {
@@ -125,13 +120,12 @@ export function BeforeAfterSlider() {
       const dx = Math.abs(e.touches[0].clientX - touchStartRef.current.x)
       const dy = Math.abs(e.touches[0].clientY - touchStartRef.current.y)
 
-      // Determina a direção na primeira movimentação significativa
       if (isHorizontalGestureRef.current === null && (dx > 4 || dy > 4)) {
         isHorizontalGestureRef.current = dx > dy
       }
 
       if (isHorizontalGestureRef.current) {
-        e.preventDefault() // bloqueia scroll só em gesto horizontal
+        e.preventDefault()
         setIsDragging(true)
         resolvePosition(e.touches[0].clientX)
       }

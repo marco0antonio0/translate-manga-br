@@ -20,10 +20,7 @@ function extFromName(name: string) {
   return ext
 }
 
-/**
- * Acesso a dados de seções: SQLite + arquivos em storage/sections.
- * Orquestração de OCR/tradução vive em sections.processing.service.ts.
- */
+
 export class SectionsRepository {
   listSections(userId: number) {
     const sectionRows = db.prepare(`
@@ -94,7 +91,7 @@ export class SectionsRepository {
     })
   }
 
-  /** Insere a seção e grava as imagens em disco. Não dispara processamento. */
+  
   createSectionWithImages(userId: number, data: CreateSectionData, files: SectionImageFileInput[]) {
     const now = new Date().toISOString()
     const sectionInsert = db.prepare(`
@@ -225,7 +222,7 @@ export class SectionsRepository {
     insertTx(detections)
   }
 
-  /** Reseta imagens e status para reprocessamento. Não dispara o pipeline. */
+  
   resetSectionForReprocess(sectionId: number) {
     const now = new Date().toISOString()
     db.prepare(`

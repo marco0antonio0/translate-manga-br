@@ -198,12 +198,9 @@
   animation: payment-success-dot-float 1.15s ease-out infinite;
 }
 
-/* =====================================================================
-   Motivos visuais "anime/mangá" — preservam a paleta (primária rosa/
-   magenta + acento roxo). Tudo decorativo: usado via classes utilitárias.
-   ===================================================================== */
 
-/* Screentone / halftone de mangá (pontilhado de meio-tom) */
+
+
 .anime-halftone {
   background-image: radial-gradient(
     color-mix(in oklch, var(--primary) 42%, transparent) 1.1px,
@@ -220,7 +217,7 @@
   background-size: 10px 10px;
 }
 
-/* Linhas de velocidade / ação irradiando do centro */
+
 .anime-speedlines {
   background-image: repeating-conic-gradient(
     from 0deg at 50% 50%,
@@ -231,7 +228,7 @@
   mask-image: radial-gradient(circle at 50% 50%, transparent 28%, black 78%);
 }
 
-/* Varredura de brilho (estilo painel de mangá) no hover */
+
 .anime-shine {
   position: absolute;
   inset: 0;
@@ -262,7 +259,7 @@
   100% { transform: translateX(320%) skewX(-18deg); }
 }
 
-/* Flutuar suave para sparkles / acentos */
+
 @keyframes anime-float {
   0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.65; }
   50% { transform: translateY(-7px) rotate(8deg); opacity: 1; }
@@ -270,14 +267,14 @@
 .anime-float { animation: anime-float 3.2s ease-in-out infinite; }
 .anime-float-delayed { animation: anime-float 3.8s ease-in-out 0.6s infinite; }
 
-/* Pulso de brilho neon (glow) para selos de destaque */
+
 @keyframes anime-glow-pulse {
   0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 35%, transparent); }
   50% { box-shadow: 0 0 16px 2px color-mix(in oklch, var(--primary) 45%, transparent); }
 }
 .anime-glow-pulse { animation: anime-glow-pulse 2.6s ease-in-out infinite; }
 
-/* Texto com gradiente rosa→roxo (kanji / títulos) — versão clara p/ legibilidade */
+
 .anime-gradient-text {
   background-image: linear-gradient(
     100deg,
@@ -289,15 +286,15 @@
   color: transparent;
 }
 
-/* Pétalas de sakura caindo (decoração de fundo, atrás do conteúdo) */
-/* Queda vertical: usa `top` (relativo ao container) p/ atravessar toda a altura. */
+
+
 @keyframes anime-petal-fall {
   0%   { top: -12%; opacity: 0; }
   8%   { opacity: var(--petal-opacity, 0.8); }
   92%  { opacity: var(--petal-opacity, 0.8); }
   100% { top: 112%; opacity: 0; }
 }
-/* Balanço lateral + giro 3D (folha rodopiando ao cair). */
+
 @keyframes anime-petal-sway {
   0%   { transform: translateX(0) rotateZ(0deg) rotateY(0deg); }
   25%  { transform: translateX(var(--petal-sway, 16px)) rotateZ(70deg) rotateY(140deg); }
@@ -325,21 +322,21 @@
   pointer-events: none;
 }
 
-/* Balanço suave do mascote */
+
 @keyframes anime-bob {
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(-6px); }
 }
 .anime-bob { animation: anime-bob 3.6s ease-in-out infinite; }
 
-/* Estrelinhas "kira-kira" cintilando */
+
 @keyframes anime-twinkle {
   0%, 100% { transform: scale(0.6) rotate(0deg); opacity: 0.35; }
   50%      { transform: scale(1.15) rotate(35deg); opacity: 1; }
 }
 .anime-twinkle { animation: anime-twinkle 2.4s ease-in-out infinite; }
 
-/* Entrada com "pop" estilo selo de anime */
+
 @keyframes anime-pop-in {
   0%   { transform: scale(0.4) rotate(-12deg); opacity: 0; }
   60%  { transform: scale(1.08) rotate(4deg); opacity: 1; }
@@ -347,14 +344,14 @@
 }
 .anime-pop-in { animation: anime-pop-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
-/* Entrada suave (fade + sobe) — usada nos cards da biblioteca com stagger */
+
 @keyframes anime-rise {
   0%   { transform: translateY(14px); opacity: 0; }
   100% { transform: translateY(0); opacity: 1; }
 }
 .anime-rise { animation: anime-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
 
-/* Acessibilidade: respeita quem prefere menos movimento */
+
 @media (prefers-reduced-motion: reduce) {
   .anime-petal,
   .anime-float,

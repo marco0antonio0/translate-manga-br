@@ -208,10 +208,7 @@ function sanitizeOverlayState(rawValue: unknown): OverlayStateRecord | null {
   }
 }
 
-/**
- * Estado do overlay do leitor (fonte, formas, ajustes por balão, itens
- * manuais) persistido por seção+usuário, com sanitização estrita do payload.
- */
+
 export class OverlayStateService {
   constructor(private readonly repository: OverlayStateRepository) {}
 

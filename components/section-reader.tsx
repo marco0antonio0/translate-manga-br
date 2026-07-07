@@ -50,9 +50,7 @@ import {
 } from '@/lib/sections'
 import { readAutoProcessingEnabledPreference } from '@/lib/user-preferences'
 import {
-  AlertTriangle,
   ArrowLeft,
-  ArrowRight,
   BookOpen,
   BarChart3,
   Check,
@@ -158,11 +156,6 @@ interface LimitModalState {
   title: string
   description: string
   details?: string
-}
-
-interface QueueMetricCardProps {
-  label: string
-  value: string
 }
 
 interface QueueActionOptions {
@@ -334,15 +327,6 @@ function resolveAuthMePayload(payload: unknown) {
   }
 }
 
-function QueueMetricCard({ label, value }: QueueMetricCardProps) {
-  return (
-    <div className="rounded-md border border-border/70 bg-background/70 px-2.5 py-2">
-      <p className="text-[11px] text-muted-foreground">{label}</p>
-      <p className="text-sm font-semibold text-foreground">{value}</p>
-    </div>
-  )
-}
-
 const PROCESSING_STATUSES = new Set([
   'processing',
   'processando',
@@ -366,7 +350,6 @@ export const SECTION_READ_LS_PREFIX = 'manga-section-read-'
 const SECTION_READ_THRESHOLD = 0.70
 const SECTION_CATEGORY_MAX_LENGTH = 64
 const OCR_COMPLETED_STATUSES = new Set(['ocr_concluido', 'ocr_completed'])
-const OCR_OVERLAY_PROVIDER_DEFAULT = 'google'
 const OCR_OVERLAY_FONT_SCALE_MIN = 0.1
 const OCR_OVERLAY_FONT_SCALE_MAX = 1.5
 const OCR_OVERLAY_FONT_SCALE_STEP = 0.05
@@ -375,7 +358,6 @@ const OCR_OVERLAY_DEFAULT_FONT_FAMILY: OcrOverlayFontFamily = 'condensed'
 const OCR_OVERLAY_DEFAULT_SHAPE: OcrOverlayShape = 'rect'
 const OCR_OVERLAY_BOX_INSET_MIN = -20
 const OCR_OVERLAY_BOX_INSET_MAX = 30
-const OCR_OVERLAY_BOX_INSET_STEP = 2
 const OCR_OVERLAY_DEFAULT_BOX_INSET = 6
 const OCR_OVERLAY_ITEM_FONT_SCALE_MIN = 0.45
 const OCR_OVERLAY_ITEM_FONT_SCALE_MAX = 5
@@ -967,11 +949,6 @@ function toOverlaySeedItems(image: SectionImage) {
   return result
 }
 
-function hasOcrOverlayData(image: SectionImage | null) {
-  if (!image) return false
-  return toOverlaySeedItems(image).length > 0
-}
-
 function isImageOcrReady(image: SectionImage | null) {
   if (!image) return false
   return isOcrCompletedStatus(image.status) || isOcrCompletedStatus(image.translation_status)
@@ -1250,7 +1227,6 @@ function sampleAverageColor(
     }
   }
 
-  // Evita "puxar" para preto/cinza por conta de texto escuro sobre o balão.
   if (nonDarkCount >= Math.max(4, Math.floor(count * 0.2))) {
     return {
       red: nonDarkRed / nonDarkCount,
@@ -1892,7 +1868,6 @@ function OcrTextOverlay({
         const backgroundColor = sampledColors
           ? `rgba(${sampledColors.red}, ${sampledColors.green}, ${sampledColors.blue}, ${backgroundAlpha})`
           : `rgba(255, 255, 255, ${backgroundAlpha})`
-        const borderColor = sampledColors?.borderColor ?? 'rgba(255,255,255,0)'
         const textColor = sampledColors?.textColor ?? 'rgba(15,23,42,0.96)'
         const isSelected = editable && selectedItemId === item.id
         const isDragEnabledForItem = editable && dragEnabledItemId === item.id
@@ -2304,7 +2279,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
   const [ocrOverlayLoadingByImageId, setOcrOverlayLoadingByImageId] = useState<Record<number, boolean>>({})
   const [ocrOverlayTranslateQueue, setOcrOverlayTranslateQueue] = useState<number[]>([])
   const [ocrOverlayCreatingSelectionByImageId, setOcrOverlayCreatingSelectionByImageId] = useState<Record<number, boolean>>({})
-  const [ocrOverlayErrorByImageId, setOcrOverlayErrorByImageId] = useState<Record<number, string>>({})
   const [isOverlaySelectionMode, setIsOverlaySelectionMode] = useState(false)
   const [overlaySelectionDraft, setOverlaySelectionDraft] = useState<{
     imageId: number
@@ -2483,13 +2457,11 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
     forcedPollingEndAtRef.current = Date.now() + durationMs
   }, [])
 
-  // Derivados a partir dos status individuais das imagens (processing_images_count e
-  // queued_images_count NÃO chegam via WebSocket — só na rota de listagem)
   const derivedProcessingCount = useMemo(
     () => (
       section?.images ?? []
     ).filter((img) => img.selected_for_processing && isImageProcessing(img)).length,
-    [section?.images]
+    [section]
   )
   const derivedQueuedCount = useMemo(
     () => (
@@ -2498,7 +2470,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
       img.selected_for_processing
       && (img.translation_status === 'queued' || img.translation_status === 'pending')
     )).length,
-    [section?.images]
+    [section]
   )
 
   useEffect(() => {
@@ -2506,7 +2478,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
     const isForcedPolling = Date.now() < forcedPollingEndAtRef.current
     const shouldPoll = isProcessing || isForcedPolling
 
-    // Quando o processamento termina, faz um fetch final para garantir o estado atualizado
     if (prevProcessingRef.current && !isProcessing && !isForcedPolling) {
       const timeout = setTimeout(() => void fetchSection({ silent: true }), 1500)
       prevProcessingRef.current = false
@@ -2651,7 +2622,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
     setOcrOverlayLoadingByImageId({})
     setOcrOverlayTranslateQueue([])
     setOcrOverlayCreatingSelectionByImageId({})
-    setOcrOverlayErrorByImageId({})
     setOcrOverlayColorsByImageId({})
     setOcrOverlayColorLoadingByImageId({})
     setOcrOverlayOverridesByImageId({})
@@ -2919,13 +2889,11 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
     return section.images.slice().sort((a, b) => a.order_index - b.order_index)
   }, [section])
 
-  // Reset lazy-load counter and revealed images whenever a new section is opened
   useEffect(() => {
     setSectionGridVisibleCount(SECTION_GRID_INITIAL_PAGES)
     setRevealedScrollImageIds(new Set())
   }, [sectionId])
 
-  // IntersectionObserver — revela src da imagem só quando entra na viewport
   useEffect(() => {
     scrollImageObserverRef.current = new IntersectionObserver(
       (entries) => {
@@ -3121,7 +3089,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
     }
   }, [])
 
-  // Carrega páginas lidas do localStorage
   useEffect(() => {
     try {
       const stored = localStorage.getItem(`${READ_PAGES_LS_PREFIX}${sectionId}`)
@@ -3133,7 +3100,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
     }
   }, [sectionId])
 
-  // Marca a página atual como lida ao navegar no modo leitura paginada.
   useEffect(() => {
     if (!readingMode || readingViewMode !== 'paginated' || sectionImages.length === 0) return
     const image = sectionImages[currentReadingPage]
@@ -3150,7 +3116,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
     })
   }, [currentReadingPage, readingMode, readingViewMode, sectionImages, sectionId])
 
-  // No modo scroll contínuo, marca como lida quando a página fica visível na área de leitura.
   useEffect(() => {
     if (!readingMode || readingViewMode !== 'scroll' || sectionImages.length === 0) return
     if (typeof IntersectionObserver === 'undefined') return
@@ -3197,8 +3162,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
       },
       {
         root: zone,
-        // Páginas muito altas raramente alcançam ratio alto dentro do viewport.
-        // Com limiar menor, marcamos como lida ao entrar de forma consistente no campo de visão.
         threshold: [0.12, 0.2, 0.35],
       }
     )
@@ -3208,7 +3171,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
     return () => observer.disconnect()
   }, [readingMode, readingViewMode, sectionImages, sectionId])
 
-  // Marca a seção como lida quando >= 70% das páginas e sincroniza local + Redis + eventos da biblioteca.
   useEffect(() => {
     if (sectionImages.length === 0) return
     const ratio = readPages.size / sectionImages.length
@@ -3244,7 +3206,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ done: isDone }),
     }).catch(() => {
-      // Permite nova tentativa em próximos ciclos.
       readProgressLastSyncedDoneRef.current = null
     })
   }, [readPages, sectionImages, sectionId])
@@ -3266,18 +3227,26 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
     () => new Set(ocrOverlayTranslateQueue),
     [ocrOverlayTranslateQueue]
   )
-  const currentPageOverlayItems = currentPage
-    ? filterOverlayItemsByHiddenIds(
-      mergeOverlayItems(
+  const currentPageOverlayItems = useMemo(
+    () => currentPage
+      ? filterOverlayItemsByHiddenIds(
         mergeOverlayItems(
-          toOverlaySeedItems(currentPage),
-          ocrOverlayByImageId[currentPage.id] ?? []
+          mergeOverlayItems(
+            toOverlaySeedItems(currentPage),
+            ocrOverlayByImageId[currentPage.id] ?? []
+          ),
+          ocrOverlayManualItemsByImageId[currentPage.id] ?? []
         ),
-        ocrOverlayManualItemsByImageId[currentPage.id] ?? []
-      ),
-      ocrOverlayHiddenItemIdsByImageId[currentPage.id] ?? []
-    )
-    : []
+        ocrOverlayHiddenItemIdsByImageId[currentPage.id] ?? []
+      )
+      : [],
+    [
+      currentPage,
+      ocrOverlayByImageId,
+      ocrOverlayHiddenItemIdsByImageId,
+      ocrOverlayManualItemsByImageId,
+    ]
+  )
   const currentPageOverlayLoading = currentPage
     ? Boolean(
       ocrOverlayLoadingByImageId[currentPage.id]
@@ -3289,7 +3258,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
   const overlayDensityLabel = `${Math.round(ocrOverlayDensity * 100)}%`
   const overlayOpacityLabel = `${Math.round(ocrOverlayOpacity * 100)}%`
   const overlayFontPercentLabel = toRelativePercent(ocrOverlayFontScale, OCR_OVERLAY_DEFAULT_FONT_SCALE)
-  const overlayBoxInsetLabel = `${toRelativePercent(ocrOverlayBoxInsetPercent, OCR_OVERLAY_DEFAULT_BOX_INSET)}%`
   const overlaySelectionEnabled = isOverlaySelectionMode && !overlaySelectionDraft
   const currentPageOverlayOverrides = currentPage ? (ocrOverlayOverridesByImageId[currentPage.id] ?? {}) : {}
   const currentPageOverlayColors = currentPage ? (ocrOverlayColorsByImageId[currentPage.id] ?? {}) : {}
@@ -3398,7 +3366,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
     const createdAtMs = new Date(section.created_at).getTime()
     if (!Number.isFinite(createdAtMs)) return false
     return Date.now() - createdAtMs <= 5 * 60 * 1000
-  }, [section?.created_at])
+  }, [section])
   const isSectionLoadingImagesInBackground = Boolean(
     section
     && sectionImages.length === 0
@@ -3431,7 +3399,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
       }
       return latest
     }, section.jobs[0] ?? null)
-  }, [section?.jobs])
+  }, [section])
   const queueSnapshot = section?.queue ?? null
   const latestJobQueueSnapshot = latestJobSnapshot?.queue ?? null
   const hasLiveQueueSnapshot = queueSnapshot !== null
@@ -3447,9 +3415,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
   const queueJobsAhead = hasLiveQueueSnapshot
     ? toFiniteNumber(queueSnapshot?.jobs_ahead)
     : firstDefined(toFiniteNumber(latestJobQueueSnapshot?.jobs_ahead), 0)
-  const queueEstimatedWaitSeconds = hasLiveQueueSnapshot
-    ? toFiniteNumber(queueSnapshot?.estimated_wait_seconds)
-    : firstDefined(toFiniteNumber(latestJobQueueSnapshot?.estimated_wait_seconds), 0)
   const queueEstimatedWaitMinutes = hasLiveQueueSnapshot
     ? toFiniteNumber(queueSnapshot?.estimated_wait_minutes)
     : firstDefined(toFiniteNumber(latestJobQueueSnapshot?.estimated_wait_minutes), 0)
@@ -3459,32 +3424,12 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
       toStringValue(latestJobQueueSnapshot?.estimated_start_at),
       toStringValue(latestJobSnapshot?.estimated_start_at)
     )
-  const queueAverageMsPerImage = firstDefined(
-    toFiniteNumber(queueSnapshot?.avg_ms_per_image_reference),
-    toFiniteNumber(latestJobQueueSnapshot?.avg_ms_per_image_reference),
-    toFiniteNumber(latestJobSnapshot?.avg_ms_per_image_snapshot)
-  )
-  const queueAveragePerImageLabel = queueAverageMsPerImage !== null
-    ? `${(queueAverageMsPerImage / 1000).toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })} s`
-    : '—'
   const queueEstimatedStartLabel = queueEstimatedStartRaw
     ? formatSectionDate(queueEstimatedStartRaw)
     : '—'
-  const queueActiveJobLabel = queueActiveJobId !== null ? String(queueActiveJobId) : 'Nenhum'
   const queueStatusLabel = queueActiveJobStatus
     ? formatStatus(queueActiveJobStatus)
     : 'Sem job ativo'
-  const queuePositionLabel = queuePosition !== null
-    ? `#${queuePosition}`
-    : queueActiveJobId === null ? 'Fora da fila' : '—'
-  const queueDataOriginLabel = hasLiveQueueSnapshot
-    ? 'Fonte: fila em tempo real'
-    : latestJobSnapshot
-      ? 'Fonte: último job da seção'
-      : 'Fonte: indisponível'
   const hasQueueImageCounters = derivedProcessingCount > 0 || derivedQueuedCount > 0
   const hasQueueRuntimeSignals = Boolean(
     hasQueueImageCounters
@@ -3915,7 +3860,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
     setOverlayQuickEditorState(null)
     setOverlayDragEnabledTarget(null)
     setOverlaySelectionDraft(payload)
-  }, [section?.source_lang, section?.target_lang, sectionImages])
+  }, [section, sectionImages])
 
   const handleOverlaySelectionDraftChange = useCallback((payload: {
     imageId: number
@@ -4154,12 +4099,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
           [image.id]: upsertOverlayItem(imageItems, finalizedItem),
         }
       })
-      setOcrOverlayErrorByImageId((prev) => {
-        if (!prev[image.id]) return prev
-        const next = { ...prev }
-        delete next[image.id]
-        return next
-      })
     } catch (err) {
       setOcrOverlayManualItemsByImageId((prev) => {
         const imageItems = prev[image.id] ?? []
@@ -4186,10 +4125,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
       })
 
       const message = err instanceof Error ? err.message : 'Falha ao criar balão manual.'
-      setOcrOverlayErrorByImageId((prev) => ({
-        ...prev,
-        [image.id]: message,
-      }))
       toast.error(message)
     } finally {
       setOcrOverlayCreatingSelectionByImageId((prev) => ({ ...prev, [image.id]: false }))
@@ -4435,22 +4370,10 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
 
     if (pendingItems.length === 0) {
       setOcrOverlayByImageId((prev) => ({ ...prev, [image.id]: baseItems }))
-      setOcrOverlayErrorByImageId((prev) => {
-        if (!prev[image.id]) return prev
-        const next = { ...prev }
-        delete next[image.id]
-        return next
-      })
       return
     }
 
     setOcrOverlayLoadingByImageId((prev) => ({ ...prev, [image.id]: true }))
-    setOcrOverlayErrorByImageId((prev) => {
-      if (!prev[image.id]) return prev
-      const next = { ...prev }
-      delete next[image.id]
-      return next
-    })
 
     try {
       const response = await fetch(translateEndpoint, {
@@ -4501,7 +4424,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
           [image.id]: nextImageManualItems,
         }
       })
-    } catch (err) {
+    } catch {
       const fallbackItems = baseItems.map((item) => ({
         ...item,
         translatedText: item.translatedText || item.ocrText,
@@ -4522,10 +4445,6 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
           [image.id]: nextImageManualItems,
         }
       })
-      setOcrOverlayErrorByImageId((prev) => ({
-        ...prev,
-        [image.id]: err instanceof Error ? err.message : 'Falha ao traduzir OCR.',
-      }))
     } finally {
       setOcrOverlayLoadingByImageId((prev) => ({ ...prev, [image.id]: false }))
     }
@@ -4533,9 +4452,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
     ocrOverlayByImageId,
     ocrOverlayHiddenItemIdsByImageId,
     ocrOverlayManualItemsByImageId,
-    section?.provider_lang,
-    section?.source_lang,
-    section?.target_lang,
+    section,
   ])
 
   useEffect(() => {
@@ -6017,7 +5934,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
             {currentReadingPage === sectionImages.length - 1 && suggestedSections.length > 0 && (
               <div className="flex-none border-t border-border bg-card/95 px-3 py-2">
                 {!showSuggestions ? (
-                  /* pílula minimizada */
+                  
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
@@ -6048,7 +5965,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
                     </Link>
                   </div>
                 ) : (
-                  /* expandido */
+                  
                   <div className="overflow-hidden rounded-xl border border-border">
                     <div className="flex items-center justify-between border-b border-border bg-muted/30 px-3 py-2">
                       <div className="flex items-center gap-2 min-w-0">
@@ -6657,7 +6574,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
                 {suggestedSections.length > 0 && (
                   <div className="w-full max-w-xl">
                     {!showSuggestions ? (
-                      /* pílula minimizada */
+                      
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
@@ -6688,7 +6605,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
                         </Link>
                       </div>
                     ) : (
-                      /* expandido */
+                      
                       <div className="overflow-hidden rounded-2xl border border-border">
                         <div className="flex items-center justify-between border-b border-border bg-muted/30 px-4 py-2.5">
                           <div className="flex items-center gap-2 min-w-0">
@@ -7580,10 +7497,7 @@ export function SectionReader({ sectionId }: SectionReaderProps) {
                         </div>
                       </div>
 
-                      {/* <Button size="sm" className="w-full" onClick={() => openReadingPage(idx)}>
-                        <BookOpen className="h-4 w-4" />
-                        Ler
-                      </Button> */}
+                      {}
                     </article>
                   )
                   })}

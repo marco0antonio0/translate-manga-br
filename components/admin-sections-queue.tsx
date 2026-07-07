@@ -162,14 +162,6 @@ function formatAvgPerImage(value: number | null) {
   return `${(value / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}s`
 }
 
-function resolveStatusBadgeVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
-  const n = normalizeStatus(status)
-  if (n === 'done' || n === 'completed' || n === 'success') return 'secondary'
-  if (n === 'failed' || n === 'error') return 'destructive'
-  if (PROCESSING_JOB_STATUSES.has(n) || QUEUED_JOB_STATUSES.has(n)) return 'default'
-  return 'outline'
-}
-
 function resolveStatusColor(status: string) {
   const n = normalizeStatus(status)
   if (n === 'done' || n === 'completed' || n === 'success')

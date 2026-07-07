@@ -475,7 +475,6 @@ export function PreferencesHub() {
     setRenameCategoryName(selectedCategory.name)
     setCategoryPreferences(selectedCategory.preferences ?? DEFAULT_CATEGORY_PREFERENCES)
     void loadCategoryPreferences(selectedCategory.id).catch(() => {
-      // fallback para preferências já carregadas no category_items
     })
   }, [selectedCategory])
 
@@ -707,7 +706,6 @@ export function PreferencesHub() {
 
       let data = await response.json() as CategoriesPayload
 
-      // Fallback legado: alguns ambientes mantêm remoção por nome.
       if (!response.ok) {
         const fallbackResponse = await fetch('/api/sections/categories', {
           method: 'DELETE',
@@ -725,7 +723,6 @@ export function PreferencesHub() {
         throw new Error(data.message || 'Não foi possível excluir categoria.')
       }
 
-      // Sempre recarrega do servidor para evitar reentrada visual de item removido.
       await loadCategories()
       const nextItems = normalizeCategoryItems(data)
       setCategories(nextItems)

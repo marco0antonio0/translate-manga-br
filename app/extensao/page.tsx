@@ -50,8 +50,7 @@ function SectionHeading({ icon, badge, title, subtitle }: { icon: React.ReactNod
   )
 }
 
-/* Ilustração (em CSS) da tela chrome://extensions do Kiwi Browser,
-   destacando o botão "+ (from .zip)" usado na instalação. */
+
 function KiwiExtensionsMock() {
   return (
     <div className="rounded-xl border border-border bg-background overflow-hidden shadow-lg max-w-md mx-auto text-left">
@@ -94,7 +93,6 @@ function KiwiExtensionsMock() {
 export default function ExtensaoPage() {
   return (
     <div className="min-h-screen bg-linear-to-br from-background via-background to-primary/5">
-      {/* Header com navegação */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/inicio/secoes" className="flex items-center gap-2 font-bold text-lg hover:opacity-80 transition">
@@ -108,7 +106,6 @@ export default function ExtensaoPage() {
       </header>
 
       <main className="container mx-auto px-4 py-14 sm:py-16 space-y-20">
-        {/* Hero */}
         <section className="relative text-center space-y-6 max-w-2xl mx-auto">
           <div className="pointer-events-none absolute -top-10 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" aria-hidden />
           <div className="relative flex justify-center">
@@ -147,7 +144,6 @@ export default function ExtensaoPage() {
           </div>
         </section>
 
-        {/* Recursos principais */}
         <section className="grid sm:grid-cols-3 gap-5 max-w-5xl mx-auto">
           <Card className="p-6 border border-border/50 hover:border-primary/50 hover:shadow-[0_0_24px_-10px_color-mix(in_oklch,var(--primary)_50%,transparent)] transition space-y-3">
             <div className="p-2 w-fit rounded-lg bg-primary/20">
@@ -180,7 +176,6 @@ export default function ExtensaoPage() {
           </Card>
         </section>
 
-        {/* Tutorial desktop */}
         <section id="tutorial-desktop" className="max-w-3xl mx-auto space-y-8 scroll-mt-24">
           <SectionHeading
             icon={<Monitor className="h-3.5 w-3.5" />}
@@ -208,7 +203,6 @@ export default function ExtensaoPage() {
           </div>
         </section>
 
-        {/* Tutorial Android (Kiwi) */}
         <section id="tutorial-android" className="max-w-3xl mx-auto space-y-8 scroll-mt-24">
           <SectionHeading
             icon={<Smartphone className="h-3.5 w-3.5" />}
@@ -217,7 +211,6 @@ export default function ExtensaoPage() {
             subtitle="No Android, use o Kiwi Browser — um navegador baseado no Chrome com suporte completo a extensões."
           />
 
-          {/* Aviso: Kiwi é software de terceiros */}
           <div className="flex gap-3 rounded-lg border border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground">
             <Shield className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
             <p>
@@ -282,7 +275,6 @@ export default function ExtensaoPage() {
           </div>
         </section>
 
-        {/* Como usar */}
         <section className="max-w-3xl mx-auto space-y-8">
           <SectionHeading
             icon={<BookOpen className="h-3.5 w-3.5" />}
@@ -313,7 +305,6 @@ export default function ExtensaoPage() {
           </div>
         </section>
 
-        {/* FAQ */}
         <section className="max-w-3xl mx-auto space-y-8">
           <SectionHeading
             icon={<Sparkles className="h-3.5 w-3.5" />}
@@ -380,7 +371,6 @@ export default function ExtensaoPage() {
           </div>
         </section>
 
-        {/* CTA Final */}
         <section className="relative text-center space-y-6 max-w-2xl mx-auto py-10 overflow-hidden rounded-2xl border border-primary/20 bg-linear-to-br from-card via-card to-accent/10 px-6">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-linear-to-r from-primary via-accent to-primary" aria-hidden />
           <div className="pointer-events-none absolute -right-12 -top-14 h-44 w-44 rounded-full bg-primary/20 blur-3xl" aria-hidden />
@@ -417,7 +407,6 @@ export default function ExtensaoPage() {
         </section>
       </main>
 
-      {/* Footer */}
       <footer className="border-t border-border bg-card/50 mt-20">
         <div className="container mx-auto px-4 py-8 text-center text-sm text-muted-foreground">
           <p>

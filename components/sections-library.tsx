@@ -538,7 +538,6 @@ export function SectionsLibrary() {
       )
     }
 
-    // Complementa com dados do Redis (assíncrono, cross-device)
     const sectionIdsParam = sections.map((s) => s.id).join(',')
     void fetch(`/api/sections/read-progress?section_ids=${sectionIdsParam}`, { cache: 'no-store' })
       .then((res) => (res.ok ? (res.json() as Promise<{ done: Record<string, boolean> }>) : null))
@@ -746,7 +745,6 @@ export function SectionsLibrary() {
     <div className="space-y-4">
       <Link href="/inicio/secoes/nova" data-tour="new-section">
         <div className="relative cursor-pointer rounded-xl overflow-hidden border border-primary/30 hover:border-primary/70 transition-all duration-300 group bg-card hover:shadow-[0_0_30px_-6px_color-mix(in_oklch,var(--primary)_45%,transparent)]">
-          {/* Glow suave no hover (sem poluir o texto) */}
           <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
           <div className="anime-shine" />
           <div className="h-0.75 w-full bg-linear-to-r from-primary via-accent to-primary" />
@@ -786,15 +784,11 @@ export function SectionsLibrary() {
         </div>
       </Link>
 
-      {/* Extension Banner — wrapper com padding: o space-y-4 do container
-          define margens que conflitam com margin no próprio card, então o
-          respiro extra vem de padding (não colapsa nem disputa cascata). */}
+      {}
       <div className="pt-4 pb-2 sm:pt-6 sm:pb-3">
       <Link href="/extensao" className="block">
         <div className="relative cursor-pointer rounded-xl overflow-hidden border border-primary/30 hover:border-primary/70 transition-all duration-300 group bg-card hover:shadow-[0_0_30px_-6px_color-mix(in_oklch,var(--primary)_45%,transparent)]">
-          {/* Faixa gradiente no topo, como no card de Nova Tradução */}
           <div className="h-0.75 w-full bg-linear-to-r from-accent via-primary to-accent" />
-          {/* Glow suave no hover */}
           <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
           <div className="absolute -right-20 -top-20 h-44 w-44 rounded-full bg-primary/15 blur-3xl opacity-60 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
@@ -863,19 +857,16 @@ export function SectionsLibrary() {
 
 
       <section className="relative mt-3 overflow-hidden rounded-xl border border-primary/20 bg-linear-to-br from-card via-card to-accent/10 p-4 sm:p-5 lg:pr-48">
-        {/* Camadas decorativas estilo anime */}
         <div className="anime-speedlines pointer-events-none absolute -right-24 -top-24 h-80 w-80 opacity-50" />
         <div className="pointer-events-none absolute -right-12 -top-16 h-52 w-52 rounded-full bg-primary/25 blur-3xl" />
         <div className="pointer-events-none absolute -left-10 bottom-0 h-36 w-36 rounded-full bg-accent/20 blur-3xl" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-linear-to-r from-primary via-accent to-primary" />
         <SakuraPetals />
 
-        {/* Estrelinhas kira-kira cintilando (na faixa inferior, longe dos controles) */}
         <KiraSparkle className="anime-twinkle pointer-events-none absolute bottom-5 right-[34%] z-0 h-4 w-4" />
         <KiraSparkle className="anime-twinkle pointer-events-none absolute bottom-12 right-[26%] z-0 h-3 w-3 [animation-delay:0.8s]" />
         <KiraSparkle className="anime-twinkle pointer-events-none absolute bottom-3 right-[44%] z-0 hidden h-5 w-5 sm:block [animation-delay:1.4s]" />
 
-        {/* Livro animado no canto (telas grandes) */}
         <div className="anime-bob pointer-events-none absolute bottom-3 right-6 z-0 hidden lg:block xl:right-10">
           <div className="anime-pop-in absolute -top-3 left-1/2 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-2xl rounded-bl-sm border border-primary/30 bg-card/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-lg shadow-primary/10 backdrop-blur">
             Vamos traduzir? <span className="text-primary">✨</span>
@@ -890,7 +881,6 @@ export function SectionsLibrary() {
 
         <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            {/* Livro pequeno (telas médias) */}
             <span
               aria-hidden="true"
               className="anime-bob hidden select-none text-4xl drop-shadow-[0_4px_10px_color-mix(in_oklch,var(--primary)_45%,transparent)] sm:block lg:hidden"
@@ -1036,7 +1026,6 @@ export function SectionsLibrary() {
           </div>
         ) : sections.length === 0 ? (
           <div className="relative overflow-hidden rounded-xl border border-primary/25 bg-linear-to-b from-card via-muted/10 to-accent/10 py-12 text-center sm:py-16">
-            {/* Cena estilo destaque de catálogo: speedlines + halftone + spotlight */}
             <div className="anime-speedlines pointer-events-none absolute inset-0 opacity-60" />
             <div className="anime-halftone pointer-events-none absolute inset-x-0 bottom-0 h-24 opacity-[0.07]" />
             <SakuraPetals className="opacity-80" />
@@ -1049,7 +1038,6 @@ export function SectionsLibrary() {
             <KiraSparkle className="anime-twinkle pointer-events-none absolute right-[34%] bottom-16 hidden h-4 w-4 sm:block [animation-delay:0.5s]" />
 
             <div className="relative flex flex-col items-center gap-5 px-4">
-              {/* Livro animado com sparkles */}
               <div className="anime-bob relative select-none">
                 <span
                   aria-hidden="true"
@@ -1108,7 +1096,6 @@ export function SectionsLibrary() {
                       }}
                     >
                       <div className="relative aspect-3/4 overflow-hidden rounded-lg bg-muted/35 ring-1 ring-inset ring-white/5">
-                        {/* Tags no canto superior esquerdo (estilo catálogo) */}
                         <div className="absolute left-2 top-2 z-20 flex flex-col items-start gap-1">
                           {isRead && (
                             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-linear-to-r from-emerald-600 to-emerald-500 px-2 py-0.5 text-[10px] font-semibold text-white shadow-lg shadow-emerald-900/40">
@@ -1133,7 +1120,6 @@ export function SectionsLibrary() {
                           )}
                         </div>
 
-                        {/* Excluir seção (aparece ao passar o mouse) */}
                         <button
                           type="button"
                           aria-label={`Excluir seção ${section.name}`}
@@ -1185,7 +1171,6 @@ export function SectionsLibrary() {
                           </div>
                           <span className="text-xs font-bold uppercase tracking-[0.18em] text-white drop-shadow">Ler</span>
                         </div>
-                        {/* Varredura de brilho estilo mangá */}
                         <div className="anime-shine" />
                       </div>
 

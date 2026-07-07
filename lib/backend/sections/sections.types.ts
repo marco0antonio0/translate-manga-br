@@ -6,7 +6,7 @@ export interface ResolvedImageFile {
 
 export type ImageKind = 'original' | 'translated'
 
-/** Idiomas/provider de uma seção, usados pelo pipeline de processamento. */
+
 export interface SectionLangs {
   sourceLang: string
   targetLang: string
@@ -30,7 +30,7 @@ export interface PendingSectionImage {
   mime: string
 }
 
-/** Detecção retornada pelo runtime de OCR (lib/server/manga-ocr-node). */
+
 export interface OcrDetection {
   det_id?: number
   cls_name?: string
