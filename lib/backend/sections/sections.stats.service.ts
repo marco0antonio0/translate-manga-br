@@ -11,7 +11,7 @@ function toNum(value: unknown) {
   return Number.isFinite(n) ? n : 0
 }
 
-/** Estatísticas de processamento e estimativa de custo por seção. */
+
 export class SectionsStatsService {
   constructor(
     private readonly repository: SectionsRepository,

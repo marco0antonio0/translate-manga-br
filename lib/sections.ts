@@ -502,7 +502,6 @@ export function buildPublicReaderUrl(sharedKey: string) {
     try {
       return new URL(path, configuredBaseUrl).toString()
     } catch {
-      // Ignora URL malformada de ambiente e usa fallback local.
     }
   }
 

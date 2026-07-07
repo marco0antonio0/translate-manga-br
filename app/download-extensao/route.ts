@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { readdir, readFile } from 'fs/promises'
 import { join } from 'path'
 import AdmZip from 'adm-zip'
@@ -6,7 +6,7 @@ import AdmZip from 'adm-zip'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const extensionDir = join(process.cwd(), 'chrome-extension')
     const zip = new AdmZip()

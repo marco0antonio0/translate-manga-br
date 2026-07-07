@@ -13,7 +13,6 @@ type FooterLink = {
   external?: boolean
 }
 
-// Links configuráveis — prontos para apontar a rotas futuras.
 const FOOTER_LINKS: FooterLink[] = [
   { label: 'Sobre', href: '/sobre' },
   { label: 'Termos de uso', href: '/termos' },
@@ -65,7 +64,7 @@ function DeveloperCredit({ className }: { className?: string }) {
 }
 
 export type SiteFooterProps = {
-  /** Versão enxuta para páginas internas do sistema. */
+  
   compact?: boolean
   className?: string
 }

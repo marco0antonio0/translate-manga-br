@@ -57,9 +57,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email ou senha incorretos' }, { status: 401 })
     }
 
-    // Login vindo da extensão (chrome-extension://) é cross-site em relação ao
-    // site: o cookie precisa ser SameSite=None; Secure para ser enviado nas
-    // requisições subsequentes (criar seção, /me etc). Para o app web, mantém Lax.
     const fromExtension = isExtensionOrigin(request)
     const cookieStore = await cookies()
     cookieStore.set(AUTH_TOKEN_COOKIE, login.token, {

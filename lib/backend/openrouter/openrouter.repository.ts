@@ -30,7 +30,6 @@ export class OpenRouterRepository {
     const decrypted = decryptSecret(raw)
     if (decrypted) return decrypted
 
-    // Migração automática de valor legado em texto puro.
     this.setKv(OPENROUTER_KEY_KV, encryptSecret(raw))
     return raw
   }

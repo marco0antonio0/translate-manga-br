@@ -60,18 +60,18 @@ export async function redisSetJson(key: string, value: unknown, ttlSeconds?: num
   return redisSetString(key, JSON.stringify(value), ttlSeconds)
 }
 
-export async function redisDeleteByPrefix(prefix: string, _scanCount = 200) {
+export async function redisDeleteByPrefix(prefix: string) {
   db.prepare('DELETE FROM kv_store WHERE key LIKE ?').run(`${prefix}%`)
 }
 
-export async function redisHGetAll(_key: string): Promise<Record<string, string> | null> {
+export async function redisHGetAll(): Promise<Record<string, string> | null> {
   return null
 }
 
-export async function redisLLen(_key: string): Promise<number | null> {
+export async function redisLLen(): Promise<number | null> {
   return null
 }
 
-export async function redisLPos(_key: string, _element: string): Promise<number | null> {
+export async function redisLPos(): Promise<number | null> {
   return null
 }

@@ -6,11 +6,7 @@ import type { EnqueueOcrJobResult, OcrJobLookup } from './ocr-jobs.types'
 const OCR_TIMEOUT_SEC = 10
 const QUEUE_KEY = 'local:ocr-queue'
 
-/**
- * "Fila" local de OCR de imagem avulsa: nesta instância o OCR roda inline e o
- * job é persistido já concluído, mantendo o contrato de fila usado pelo
- * frontend/extensão (enqueue + polling).
- */
+
 export class OcrJobsService {
   constructor(private readonly repository: OcrJobsRepository) {}
 

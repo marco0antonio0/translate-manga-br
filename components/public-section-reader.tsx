@@ -19,7 +19,6 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
   Loader2,
   X,
   ZoomIn,
@@ -297,8 +296,6 @@ export function PublicSectionReader({ sharedKey }: PublicSectionReaderProps) {
 
   if (readingMode && section && currentPage) {
     const translatedAvailable = readingTranslatedAvailable
-    const originalViewUrl = readingOriginalViewUrl
-    const translatedViewUrl = readingTranslatedViewUrl
     const displayUrl = readingDisplayUrl
 
     const statusA = normalizeStatus(currentPage.status)
@@ -582,12 +579,6 @@ export function PublicSectionReader({ sharedKey }: PublicSectionReaderProps) {
                           Ler
                         </Button>
 
-                        {/* <Button asChild variant="outline" size="sm" className="flex-1 min-w-[110px]">
-                          <a href={previewUrl} target="_blank" rel="noreferrer">
-                            <ExternalLink className="h-4 w-4" />
-                            Abrir
-                          </a>
-                        </Button> */}
                       </div>
                     </article>
                   )

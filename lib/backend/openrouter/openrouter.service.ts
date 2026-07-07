@@ -9,12 +9,12 @@ import {
 export class OpenRouterService {
   constructor(private readonly repository: OpenRouterRepository) {}
 
-  /** Chave descriptografada para uso em chamadas de tradução. */
+  
   getApiKey(): string {
     return (this.repository.getApiKey() || '').trim()
   }
 
-  /** Modelo selecionado persistido (sem validar contra a API). */
+  
   getSelectedModel(): string {
     return (this.repository.getSelectedModel() || '').trim()
   }
@@ -63,7 +63,7 @@ export class OpenRouterService {
     }
   }
 
-  /** Salva a chave (criptografada) e garante um modelo selecionado válido. */
+  
   async saveApiKey(apiKey: string): Promise<OpenRouterKeyValidation> {
     const validation = await this.validateApiKey(apiKey)
     if (!validation.valid) return validation

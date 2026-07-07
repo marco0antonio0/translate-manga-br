@@ -19,7 +19,7 @@ export class UsersService {
     return { ok: true, id }
   }
 
-  /** Retorna os limites atualizados, ou null se o usuário não existe. */
+  
   updatePassword(userId: number, newPassword: string): boolean {
     const existing = this.repository.findLimitsById(userId)
     if (!existing) return false

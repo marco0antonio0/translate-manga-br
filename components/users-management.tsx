@@ -179,14 +179,6 @@ export function UsersManagement() {
     return () => { cancelled = true }
   }, [fetchUsers, handleUnauthorized, router])
 
-  const openPasswordDialog = (user: UserItem) => {
-    setSelectedUserForPassword(user)
-    setNewPassword('')
-    setIsPasswordDialogOpen(true)
-    setError('')
-    setSuccess('')
-  }
-
   const closePasswordDialog = () => {
     if (isUpdatingPassword) return
     setIsPasswordDialogOpen(false)

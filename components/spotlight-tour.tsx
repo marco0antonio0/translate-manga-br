@@ -8,8 +8,8 @@ import { cn } from '@/lib/utils'
 
 const PADDING = 12
 const TOOLTIP_W = 308
-const TOOLTIP_H_EST = 196 // altura estimada desktop
-const TOOLTIP_MOBILE_H = 200 // reserva de espaço no scroll mobile
+const TOOLTIP_H_EST = 196
+const TOOLTIP_MOBILE_H = 200
 const GAP = 14
 const MOBILE_BP = 640
 const TRANSITION = 'x 0.35s cubic-bezier(0.4,0,0.2,1), y 0.35s cubic-bezier(0.4,0,0.2,1), width 0.35s cubic-bezier(0.4,0,0.2,1), height 0.35s cubic-bezier(0.4,0,0.2,1), rx 0.35s'
@@ -17,7 +17,7 @@ const TRANSITION = 'x 0.35s cubic-bezier(0.4,0,0.2,1), y 0.35s cubic-bezier(0.4,
 export interface TourStep {
   title: string
   description: string
-  /** valor do atributo data-tour no elemento alvo */
+  
   selector?: string
   tooltipSide?: 'top' | 'bottom' | 'left' | 'right' | 'auto'
 }
@@ -74,7 +74,7 @@ function resolveDesktopSide(
   return canBelow ? 'bottom' : canAbove ? 'top' : 'bottom'
 }
 
-/** Posicionamento desktop: calcula top/left absolutos */
+
 function getDesktopTooltipStyle(
   rect: Rect | null,
   side: TourStep['tooltipSide'],
@@ -116,7 +116,7 @@ function getDesktopTooltipStyle(
   return { position: 'fixed', top, left, width: TOOLTIP_W }
 }
 
-/** Calcula a seta que aponta tooltip → elemento (somente desktop) */
+
 function getArrowStyle(
   rect: Rect,
   side: TourStep['tooltipSide'],
@@ -172,7 +172,6 @@ export function SpotlightTour({
     else setRect(null)
   }, [])
 
-  // Find element, scroll to visible area, capture rect
   useEffect(() => {
     if (!open) return
     const selector = steps[step]?.selector
@@ -181,7 +180,6 @@ export function SpotlightTour({
     const el = document.querySelector(`[data-tour="${selector}"]`)
     if (!el) { setRect(null); return }
 
-    // No mobile reserva espaço para o bottom-sheet ao calcular o scroll
     if (isMobileViewport()) {
       const r = el.getBoundingClientRect()
       const vh = window.innerHeight
@@ -199,7 +197,6 @@ export function SpotlightTour({
     return () => clearTimeout(timer)
   }, [open, step, steps, captureRect])
 
-  // Sync rect on scroll / resize
   useEffect(() => {
     if (!open) return
     const selector = steps[step]?.selector
@@ -255,14 +252,12 @@ export function SpotlightTour({
   const mobile = isMobileViewport()
   const progressPct = ((step + 1) / steps.length) * 100
 
-  // Desktop tooltip positioning
   const desktopStyle = !mobile ? getDesktopTooltipStyle(rect, currentStep.tooltipSide) : {}
   const desktopArrow =
     !mobile && rect && typeof desktopStyle.left === 'number'
       ? getArrowStyle(rect, currentStep.tooltipSide, desktopStyle.left as number)
       : null
 
-  // ── Tooltip content (shared between mobile and desktop) ──
   const tooltipContent = (
     <div className="rounded-xl border border-border bg-card shadow-2xl overflow-hidden">
       <div className="h-0.75 w-full bg-muted">
@@ -414,7 +409,7 @@ export function SpotlightTour({
       )}
 
       {mobile ? (
-        /* ── Mobile: bottom sheet ── */
+        
         <div
           key={tooltipKey}
           className="tour-tooltip-in"
@@ -507,7 +502,7 @@ export function SpotlightTour({
           </div>
         </div>
       ) : (
-        /* ── Desktop: floating tooltip ── */
+        
         <div
           key={tooltipKey}
           className="tour-tooltip-in"

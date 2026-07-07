@@ -18,7 +18,7 @@ export class ReadProgressService {
     })
   }
 
-  /** Mapa sectionId -> done para uma lista de IDs (limitada e validada). */
+  
   async getDoneMap(rawIds: string[], userId: number) {
     const validIds = rawIds.filter((id) => /^\d+$/.test(id)).slice(0, MAX_SECTION_IDS)
     const done: Record<string, boolean> = {}

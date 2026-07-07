@@ -17,7 +17,6 @@ const OCR_OVERLAY_OPACITY_MIN = 0.08
 const OCR_OVERLAY_OPACITY_MAX = 1
 const OCR_OVERLAY_OPACITY_STEP = 0.05
 
-// Ajustes por balão (painel do duplo toque) — mesmos min/max/step de components/section-reader.tsx.
 const OCR_OVERLAY_ITEM_FONT_SCALE_MIN = 0.45
 const OCR_OVERLAY_ITEM_FONT_SCALE_MAX = 5
 const OCR_OVERLAY_ITEM_FONT_SCALE_STEP = 0.1
@@ -42,7 +41,6 @@ const OCR_OVERLAY_FONT_FAMILIES = {
 }
 const OCR_OVERLAY_FONT_FAMILY_DEFAULT = 'sans'
 
-// Portão de autenticação/config sobre o leitor (substitui o antigo popup).
 const MTL_LANGUAGE_OPTIONS = [
   { code: 'auto', name: 'Detectar automaticamente' },
   { code: 'en', name: 'Inglês' },
@@ -69,12 +67,9 @@ const MTL_LANGUAGE_OPTIONS = [
 const MTL_TARGET_LANGUAGE_OPTIONS = MTL_LANGUAGE_OPTIONS.filter((language) => language.code !== 'auto')
 const MTL_GOOGLE_PROVIDER = { value: 'google', label: 'Google Translate' }
 
-// Referências do leitor atualmente aberto na página, usadas para reabrir o
-// modal de auth (ícone da extensão / botão de conta) sem recriar o leitor.
 let activeReaderShadow = null
 let activeReaderState = null
 
-// Fecha o leitor por completo (usado pelo X da topbar e pelo X do modal de auth).
 function closeActiveReader() {
   if (activeReaderState) {
     activeReaderState.cleanupFns.forEach((cleanup) => cleanup())
@@ -104,15 +99,10 @@ function setCachedSectionIdForPage(pageUrl, sectionId) {
       localStorage.removeItem(key)
     }
   } catch {
-    // ignore localStorage errors
   }
 }
 
-// --- Portão de autenticação/config sobre o leitor -------------------------
-// Substitui o antigo popup: o leitor já abre por baixo, e este modal (login,
-// aceite de termos e depois config) fica por cima até o usuário confirmar.
 
-// Mesma chave/versão do site (components/terms-modal.tsx). Bump lá = bump aqui.
 const MTL_TERMS_STORAGE_KEY = 'manga-terms-v2'
 
 async function mtlHasAcceptedTerms() {
@@ -128,7 +118,6 @@ async function mtlMarkTermsAccepted() {
   try {
     await chrome.storage.local.set({ [MTL_TERMS_STORAGE_KEY]: 'accepted' })
   } catch {
-    // sem storage: o aceite vale só para esta sessão
   }
 }
 
@@ -356,7 +345,6 @@ function bindAuthOverlay(overlay) {
   }
   overlay._mtlEls = els
 
-  // Aceite dos termos: obrigatório marcar a caixa; persiste e segue pra config.
   els.termsContinue.addEventListener('click', async () => {
     if (!els.termsCheckbox.checked) {
       els.termsError.hidden = false
@@ -372,17 +360,14 @@ function bindAuthOverlay(overlay) {
       els.termsAcceptLabel.classList.remove('mtl-auth-terms-accept-error')
     }
   })
-  // Abrir o link dos termos não deve marcar/desmarcar o checkbox do label.
   els.termsLink.addEventListener('click', (event) => {
     event.stopPropagation()
   })
 
-  // X no canto do modal: fecha a extensão inteira (leitor incluso).
   overlay.querySelector('[data-role="auth-close"]').addEventListener('click', () => {
     closeActiveReader()
   })
 
-  // Tela de conexão: tenta o fluxo inteiro de novo.
   els.retryButton.addEventListener('click', () => {
     if (activeReaderShadow && activeReaderState) {
       void runAuthGate(activeReaderShadow, activeReaderState)
@@ -427,7 +412,6 @@ function bindAuthOverlay(overlay) {
       await mtlPopulateProviderSelect(els, settings)
       mtlFillFormFromSettings(els, settings)
       mtlFillUserInfo(els, response.user)
-      // Igual ao site: aceite de termos é obrigatório antes de usar.
       mtlShowAuthScreen(overlay, (await mtlHasAcceptedTerms()) ? 'main' : 'terms')
     } finally {
       mtlSetAuthBusy(els, false)
@@ -473,7 +457,6 @@ function bindAuthOverlay(overlay) {
   els.loginEmail.addEventListener('input', () => mtlClearLoginError(els))
   els.loginPassword.addEventListener('input', () => mtlClearLoginError(els))
 
-  // Nunca deixa clique/scroll vazar para o leitor por baixo enquanto o portão está aberto.
   overlay.addEventListener('pointerdown', (event) => event.stopPropagation())
   overlay.addEventListener('click', (event) => event.stopPropagation())
 }
@@ -607,12 +590,10 @@ async function runAuthGate(shadow, state) {
     const session = await chrome.runtime.sendMessage({ type: 'MTL_CHECK_SESSION', payload: { settings } })
     if (session?.ok && session.authenticated) {
       mtlFillUserInfo(els, session.user)
-      // Igual ao site: aceite de termos é obrigatório antes de usar.
       mtlShowAuthScreen(overlay, (await mtlHasAcceptedTerms()) ? 'main' : 'terms')
       return
     }
 
-    // Servidor inacessível: tela de conexão amigável em vez do erro cru.
     if (!session?.ok && session?.network) {
       mtlShowAuthScreen(overlay, 'offline')
       return
@@ -630,8 +611,6 @@ chrome.runtime.onMessage.addListener((message) => {
   if (!message || typeof message !== 'object') return
   if (message.type === 'MTL_OPEN_READER') {
     const existingHost = document.getElementById(READER_HOST_ID)
-    // Reader já aberto e nenhuma imagem específica pedida (ex.: clicou no
-    // ícone de novo): não recria tudo, só reabre o portão de auth/config.
     if (existingHost && activeReaderShadow && activeReaderState && !message.imageUrl) {
       void runAuthGate(activeReaderShadow, activeReaderState)
       return
@@ -640,15 +619,6 @@ chrome.runtime.onMessage.addListener((message) => {
   }
 })
 
-// Muitos sites de leitura têm handlers globais em document/window que chamam
-// preventDefault() — atalhos de teclado (ex.: "m" cancelava a digitação nos
-// inputs da extensão) e bloqueio de scroll (touchmove/wheel, que congelava a
-// rolagem do modal). Como esses eventos são composed, eles atravessam o
-// Shadow DOM e chegam à página. Barra a propagação na fase de captura do
-// host: as ações padrão (digitar, rolar) não dependem de propagação, então
-// continuam funcionando — só os handlers da página deixam de interferir.
-// Importante: NÃO incluir 'input'/'click' etc. aqui — captura no host impede
-// os listeners internos da extensão de receberem o evento.
 function stopHostEventPropagation(event) {
   event.stopPropagation()
 }
@@ -696,11 +666,7 @@ function openReader(preferredImageUrl = '') {
     imageNaturalSizeByUrl: new Map(),
     activeStatus: '',
     cleanupFns: [],
-    // Painel de "mais opções" da topbar (zoom/modo/Aa/overlay) — recolhido por
-    // padrão em telas estreitas para dar mais espaço de leitura; sempre
-    // visível em telas largas (ver @media em readerCss).
     isTopbarMoreOpen: false,
-    // Painel "Aa" (config. global do overlay) — mesmos campos de section-reader.tsx.
     isFontPanelOpen: false,
     ocrOverlayFontScale: OCR_OVERLAY_DEFAULT_FONT_SCALE,
     ocrOverlayFontFamily: OCR_OVERLAY_FONT_FAMILY_DEFAULT,
@@ -709,7 +675,6 @@ function openReader(preferredImageUrl = '') {
     ocrOverlayGlobalShape: 'rect',
     isSelectionMode: false,
     selectionDraft: null,
-    // Ajustes por balão: chave `${pageUrl}::${itemId}` -> { shape, fontScale, sizeScale, density, hidden, dx, dy }.
     itemOverrides: new Map(),
     selectedItem: null,
     dragEnabledItemKey: null,
@@ -730,8 +695,6 @@ function openReader(preferredImageUrl = '') {
   bindReader(shadow, host, state)
   renderReader(shadow, state)
   void loadSettings(state, shadow)
-  // O leitor já fica visível (imagens, controles) por baixo; o portão de
-  // auth/config sobe por cima e só libera o uso após login + confirmação.
   void runAuthGate(shadow, state)
 }
 
@@ -788,8 +751,6 @@ async function loadSettings(state, shadow) {
   state.settings = await chrome.runtime.sendMessage({ type: 'MTL_GET_SETTINGS' })
   renderReader(shadow, state)
 
-  // Se já existe uma seção cacheada para esta página, puxa do site o que já foi
-  // traduzido (sem reprocessar), para o leitor abrir já atualizado.
   if (state.syncedSectionId) {
     void syncExistingSectionOnOpen(state, shadow)
   }
@@ -803,7 +764,6 @@ async function syncExistingSectionOnOpen(state, shadow) {
 
   if (!check?.ok) return
   if (check.exists === false) {
-    // Seção não existe mais: limpa o cache local.
     state.syncedSectionId = null
     setCachedSectionIdForPage(window.location.href, null)
     return
@@ -823,7 +783,6 @@ async function syncExistingSectionOnOpen(state, shadow) {
   }
 
   if (anyDone) renderReader(shadow, state)
-  // Ainda processando no site → acompanha o progresso até terminar.
   if (!allDone) void processAllPages(shadow, state, { force: false, syncSection: false })
 }
 
@@ -1023,7 +982,6 @@ function bindReader(shadow, host, state) {
       if (state.isProcessing || state.isBatchProcessing || state.isSyncingSection) return
       const allPagesProcessed = state.pages.length > 0
         && state.pages.every((page) => state.processedByUrl.has(page.url))
-      // Feedback imediato: marca sincronização e re-renderiza antes do await.
       state.isSyncingSection = true
       state.activeStatus = 'Processando...'
       renderReader(shadow, state)
@@ -1137,7 +1095,6 @@ function bindReader(shadow, host, state) {
       const refSize = state.imageNaturalSizeByUrl.get(pageUrl) || { width: 1, height: 1 }
 
       const handleMove = (moveEvent) => {
-        // Re-consulta o wrap: renderReader reconstrói o innerHTML e detacha o nó antigo.
         const wrap = shadow.querySelector(`.mtl-image-wrap[data-page-url="${cssEscape(pageUrl)}"]`)
         if (!wrap) return
         const rect = wrap.getBoundingClientRect()
@@ -1179,10 +1136,6 @@ function bindReader(shadow, host, state) {
     const startYPercent = clampRange(((event.clientY - rect.top) / rect.height) * 100, 0, 100)
     state.selectionDraft = { pageUrl, x1: startXPercent, y1: startYPercent, x2: startXPercent, y2: startYPercent }
 
-    // Cria/atualiza o retângulo de seleção diretamente no DOM.
-    // NÃO chamamos renderReader durante o arrasto: ele reconstrói o innerHTML
-    // do stage e destrói o <img>, deixando imgEl detached (getBoundingClientRect
-    // passa a retornar 0x0 e a seleção congela).
     let draftEl = wrapEl.querySelector('.mtl-selection-draft')
     if (!draftEl) {
       draftEl = document.createElement('div')
@@ -1218,7 +1171,6 @@ function bindReader(shadow, host, state) {
       try { wrapEl.releasePointerCapture(event.pointerId) } catch {}
       const created = finalizeManualSelection(state, pageUrl)
       if (created) {
-        // Ao concluir uma seleção válida, desliga o modo seleção (igual ao site).
         state.isSelectionMode = false
       }
       renderReader(shadow, state)
@@ -1279,8 +1231,6 @@ function updateManualDetection(state, pageUrl, itemId, patch) {
   state.processedByUrl.set(pageUrl, processed)
 }
 
-// Replica o fluxo do site (handleCreateOverlaySelectionBox): recorta a área,
-// faz OCR via fila e traduz, atualizando o balão manual com o resultado.
 async function runManualSelectionOcr(shadow, state, pageUrl, itemId, box) {
   const refSize = state.imageNaturalSizeByUrl.get(pageUrl)
   try {
@@ -1303,7 +1253,6 @@ async function runManualSelectionOcr(shadow, state, pageUrl, itemId, box) {
       pending: false,
     })
 
-    // Persiste no cache da página para o balão manual sobreviver ao recarregar o leitor.
     chrome.runtime.sendMessage({
       type: 'MTL_UPDATE_PAGE_CACHE',
       payload: {
@@ -1322,10 +1271,6 @@ async function runManualSelectionOcr(shadow, state, pageUrl, itemId, box) {
   } finally {
     renderReader(shadow, state)
   }
-}
-
-function processCurrentPage(shadow, state, options = {}) {
-  return processPageAt(shadow, state, state.pageIndex, options)
 }
 
 async function createSectionForPages(shadow, state) {
@@ -1348,7 +1293,6 @@ async function createSectionForPages(shadow, state) {
     })
     if (!response?.ok) throw new Error(response?.error || 'Não foi possível criar a seção no site.')
     state.syncedSectionId = response.sectionId || null
-    // Mapa order_index -> URL da página (na ordem em que foram enviadas ao site).
     state.sectionOrderUrls = Array.isArray(response.uploadedUrls) ? response.uploadedUrls : null
     setCachedSectionIdForPage(window.location.href, state.syncedSectionId)
     state.activeStatus = response.skippedCount > 0
@@ -1385,8 +1329,6 @@ async function reprocessSyncedSection(shadow, state) {
 }
 
 async function ensureSectionSynced(shadow, state, options = {}) {
-  // Se temos um ID (memória ou cache local), confirmamos no site se a seção
-  // ainda existe. Deletada no site → o cache local não vale, cria de novo.
   if (state.syncedSectionId) {
     state.isSyncingSection = true
     state.activeStatus = 'Verificando seção no site...'
@@ -1398,16 +1340,13 @@ async function ensureSectionSynced(shadow, state, options = {}) {
     state.isSyncingSection = false
 
     if (check?.ok && check.exists === true) {
-      // Seção existe: recupera. Só reprocessa se o usuário pediu (force).
       return options.force ? await reprocessSyncedSection(shadow, state) : true
     }
 
     if (check?.ok && check.exists === false) {
-      // Confirmadamente deletada: limpa o cache e segue para criação.
       state.syncedSectionId = null
       setCachedSectionIdForPage(window.location.href, null)
     } else {
-      // Não deu para confirmar (offline/401/500): não arrisca duplicar.
       state.error = check?.error || 'Não foi possível verificar a seção no site.'
       renderReader(shadow, state)
       return false
@@ -1417,7 +1356,6 @@ async function ensureSectionSynced(shadow, state, options = {}) {
   return await createSectionForPages(shadow, state)
 }
 
-// Constantes de polling do estado da seção no site.
 const SECTION_SYNC_INTERVAL_MS = 1500
 const SECTION_SYNC_TIMEOUT_MS = 30 * 60 * 1000
 
@@ -1425,8 +1363,6 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-// Resolve a URL da página a partir do order_index do site.
-// Usa o mapa preciso (upload) quando disponível; senão assume ordem 1:1.
 function mapOrderToPageUrl(state, orderIndex) {
   if (Array.isArray(state.sectionOrderUrls) && state.sectionOrderUrls[orderIndex]) {
     return state.sectionOrderUrls[orderIndex]
@@ -1435,7 +1371,6 @@ function mapOrderToPageUrl(state, orderIndex) {
   return page ? page.url : null
 }
 
-// Converte uma imagem já processada pelo site em um "processed" do leitor.
 function applyServerImageToPage(state, pageUrl, image) {
   const items = Array.isArray(image?.ocr?.items) ? image.ocr.items : []
   const detections = items.map((item, idx) => {
@@ -1465,7 +1400,6 @@ function applyServerImageToPage(state, pageUrl, image) {
   }
   state.processedByUrl.set(pageUrl, result)
 
-  // Persiste no cache para sobreviver ao recarregar o leitor.
   chrome.runtime.sendMessage({
     type: 'MTL_UPDATE_PAGE_CACHE',
     payload: { imageUrl: pageUrl, settings: state.settings, result },
@@ -1475,7 +1409,6 @@ function applyServerImageToPage(state, pageUrl, image) {
 function isServerImageDone(image) {
   const status = String(image?.translation_status || '')
   const imgStatus = String(image?.status || '')
-  // 'extracted' e 'translated' são ambos estados terminais de sucesso no site.
   return status === 'extracted' || status === 'translated' || status === 'completed' || imgStatus === 'completed'
 }
 
@@ -1483,16 +1416,12 @@ function isServerImageFailed(image) {
   return String(image?.status || '') === 'error' || String(image?.translation_status || '') === 'failed'
 }
 
-// Imagem "resolvida" = não está mais pendente de processamento (concluída,
-// falhou, ou não foi marcada para processar). Usada para saber se o lote acabou.
 function isServerImageResolved(image) {
   if (isServerImageDone(image) || isServerImageFailed(image)) return true
   if (image && image.selected_for_processing === false) return true
   return false
 }
 
-// Novo fluxo: o site é a única fonte de processamento. A extensão cria/verifica
-// a seção e faz polling do progresso, consumindo os resultados já traduzidos.
 async function processAllPages(shadow, state, options = {}) {
   if (state.isProcessing || state.isBatchProcessing) return
   const force = Boolean(options.force)
@@ -1512,7 +1441,7 @@ async function processAllPages(shadow, state, options = {}) {
   const startedAt = Date.now()
   let done = false
   let lastError = ''
-  const appliedOrders = new Set() // evita re-aplicar/re-cachear a mesma imagem
+  const appliedOrders = new Set()
 
   while (!done && Date.now() - startedAt < SECTION_SYNC_TIMEOUT_MS) {
     const response = await chrome.runtime.sendMessage({
@@ -1521,7 +1450,6 @@ async function processAllPages(shadow, state, options = {}) {
     }).catch(() => null)
 
     if (response?.ok && response.exists === false) {
-      // Seção sumiu no meio do caminho (deletada): interrompe.
       lastError = 'A seção foi removida no site.'
       break
     }
@@ -1571,121 +1499,6 @@ async function processAllPages(shadow, state, options = {}) {
   state.isBatchProcessing = false
   state.batchProgress = null
   renderReader(shadow, state)
-}
-
-async function processPageAt(shadow, state, pageIndex, options = {}) {
-  const page = state.pages[pageIndex]
-  if (!page || state.isProcessing) return false
-
-  let succeeded = false
-  state.isProcessing = true
-  state.processingPageUrl = page.url
-  state.error = ''
-  state.activeStatus = 'Extraindo balões e traduzindo...'
-  renderReader(shadow, state)
-
-  try {
-    const response = await chrome.runtime.sendMessage({
-      type: 'MTL_EXTRACT_AND_TRANSLATE_IMAGE',
-      payload: {
-        imageUrl: page.url,
-        pageUrl: window.location.href,
-        settings: state.settings,
-        force: Boolean(options.force),
-      },
-    })
-    if (!response?.ok) throw new Error(response?.error || 'Falha ao processar imagem.')
-    let result = response.result
-    let count = Array.isArray(result?.detections) ? result.detections.length : 0
-
-    if (count === 0) {
-      state.activeStatus = 'Tentando captura visual da página...'
-      renderReader(shadow, state)
-      const captured = await captureVisibleReaderImage(shadow, state, page)
-      if (captured?.ok && Array.isArray(captured.result?.detections) && captured.result.detections.length > 0) {
-        result = captured.result
-        count = result.detections.length
-      } else if (captured?.error) {
-        result = {
-          ...result,
-          fallbackError: captured.error,
-        }
-      }
-    }
-
-    state.processedByUrl.set(page.url, result)
-    succeeded = true
-    const textCount = Number(result?.textDetectionsCount) || 0
-    state.activeStatus = count > 0
-      ? `${count} balões detectados, ${textCount} com texto OCR`
-      : result?.fallbackError
-        ? `OCR sem balões. Captura visual também falhou: ${result.fallbackError}`
-        : 'OCR concluído, mas nenhum balão foi detectado nesta imagem.'
-  } catch (error) {
-    const originalError = error instanceof Error ? error.message : 'Falha ao processar imagem.'
-    state.activeStatus = 'Download da imagem falhou. Tentando captura visual...'
-    renderReader(shadow, state)
-
-    const captured = await captureVisibleReaderImage(shadow, state, page)
-    if (captured?.ok) {
-      state.processedByUrl.set(page.url, captured.result)
-      succeeded = true
-      const count = Array.isArray(captured.result?.detections) ? captured.result.detections.length : 0
-      const textCount = Number(captured.result?.textDetectionsCount) || 0
-      state.error = ''
-      state.activeStatus = count > 0
-        ? `${count} balões detectados, ${textCount} com texto OCR`
-        : `Captura visual processada, mas sem balões. Erro original: ${originalError}`
-    } else {
-      state.error = `${originalError} | Captura visual: ${captured?.error || 'falhou'}`
-      state.activeStatus = ''
-    }
-  } finally {
-    state.isProcessing = false
-    state.processingPageUrl = null
-    renderReader(shadow, state)
-  }
-
-  return succeeded
-}
-
-async function captureVisibleReaderImage(shadow, state, page) {
-  const reader = shadow.querySelector('.mtl-reader')
-  const image = shadow.querySelector(`img[data-page-url="${cssEscape(page.url)}"]`)
-  if (!(reader instanceof HTMLElement) || !(image instanceof HTMLImageElement)) {
-    return { ok: false, error: 'Imagem do leitor não encontrada para captura.' }
-  }
-
-  const rect = image.getBoundingClientRect()
-  const clippedRect = {
-    x: Math.max(0, rect.left),
-    y: Math.max(0, rect.top),
-    width: Math.min(window.innerWidth, rect.right) - Math.max(0, rect.left),
-    height: Math.min(window.innerHeight, rect.bottom) - Math.max(0, rect.top),
-  }
-  if (clippedRect.width < 16 || clippedRect.height < 16) {
-    return { ok: false, error: 'A imagem não está visível o suficiente para captura.' }
-  }
-
-  reader.classList.add('mtl-capture-mode')
-  try {
-    await nextFrame()
-    await nextFrame()
-    return await chrome.runtime.sendMessage({
-      type: 'MTL_CAPTURE_EXTRACT_TRANSLATE',
-      payload: {
-        rect: clippedRect,
-        devicePixelRatio: window.devicePixelRatio || 1,
-        settings: state.settings,
-      },
-    })
-  } finally {
-    reader.classList.remove('mtl-capture-mode')
-  }
-}
-
-function nextFrame() {
-  return new Promise((resolve) => requestAnimationFrame(() => resolve()))
 }
 
 function renderReader(shadow, state) {
@@ -2324,12 +2137,9 @@ function readerCss() {
       flex-wrap: wrap;
     }
     .mtl-actions-secondary[hidden] { display: none; }
-    /* Botão "mais opções": só existe em telas estreitas (ver @media abaixo);
-       em telas largas a barra secundária já fica sempre visível ao lado. */
+    
     .mtl-more-toggle { display: none; }
-    /* Em telas largas o recolhimento é só um detalhe de mobile: força a barra
-       secundária visível mesmo com [hidden] (o estado isTopbarMoreOpen começa
-       fechado e não há botão "⋮" aqui para reabri-la). */
+    
     @media (min-width: 721px) {
       .mtl-actions-secondary[hidden] {
         display: flex !important;
@@ -2479,9 +2289,7 @@ function readerCss() {
       width: min(260px, 42vw);
       padding: 0 10px;
     }
-    /* Telas estreitas (celular): a topbar precisa ficar baixa para não tomar
-       espaço de leitura, mas configurações/ações continuam a um toque via o
-       botão "mais opções" (⋮), que só existe nesta faixa de largura. */
+    
     @media (max-width: 720px) {
       .mtl-topbar {
         align-items: stretch;
@@ -2493,8 +2301,7 @@ function readerCss() {
         min-width: 0;
         flex: 1;
       }
-      /* No mobile o nome do app some da topbar (o usuário já sabe o que abriu);
-         fica só o status, então a linha do título encolhe bastante. */
+      
       .mtl-title strong {
         display: none;
       }
@@ -2511,9 +2318,7 @@ function readerCss() {
         justify-content: flex-start;
         gap: 8px;
       }
-      /* Linha principal compacta: só ícone de conta, "mais opções" e o botão
-         de traduzir (que ocupa o espaço restante). Zoom/modo/Aa/overlay ficam
-         escondidos em .mtl-actions-secondary até o usuário pedir. */
+      
       .mtl-actions > .mtl-icon-button {
         flex: none;
       }
@@ -2550,7 +2355,7 @@ function readerCss() {
       }
     }
 
-    /* Painel "Aa" (config. global do overlay) */
+    
     .mtl-font-popover-wrap {
       position: relative;
     }
@@ -2657,7 +2462,7 @@ function readerCss() {
       gap: 6px;
     }
 
-    /* Barra de progresso do lote de tradução */
+    
     .mtl-progress {
       display: flex;
       flex-direction: column;
@@ -2736,7 +2541,7 @@ function readerCss() {
       flex: none;
     }
 
-    /* Seleção manual de área */
+    
     .mtl-selection-draft {
       position: absolute;
       z-index: 15;
@@ -2745,7 +2550,7 @@ function readerCss() {
       pointer-events: none;
     }
 
-    /* Balões interativos (drag / seleção / duplo toque) */
+    
     .mtl-box {
       pointer-events: auto;
       cursor: pointer;
@@ -2767,7 +2572,7 @@ function readerCss() {
       pointer-events: none;
     }
 
-    /* Editor rápido (duplo toque no balão) */
+    
     .mtl-quick-editor {
       position: absolute;
       z-index: 30;
@@ -2849,7 +2654,7 @@ function readerCss() {
       font-size: 11px;
     }
 
-    /* Portão de autenticação/config sobre o leitor (substitui o antigo popup) */
+    
     .mtl-auth-overlay {
       position: absolute;
       inset: 0;
@@ -2873,7 +2678,7 @@ function readerCss() {
       max-height: calc(100% - 32px);
       overflow-y: auto;
       overflow-x: hidden;
-      /* rolagem do modal não vaza pro leitor/página por trás */
+      
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
       display: flex;
@@ -2881,9 +2686,7 @@ function readerCss() {
       gap: 16px;
       border: 1px solid color-mix(in oklch, var(--primary) 28%, var(--border));
       border-radius: calc(var(--radius) + 4px);
-      /* Glows decorativos como camadas de background (não como elementos):
-         elementos absolutos com posições negativas estendiam a área rolável
-         e criavam scrollbar mesmo com o conteúdo cabendo no modal. */
+      
       background:
         radial-gradient(160px 160px at calc(100% + 30px) -40px, color-mix(in oklch, var(--primary) 20%, transparent), transparent 70%),
         radial-gradient(170px 170px at -40px calc(100% + 40px), color-mix(in oklch, var(--accent) 16%, transparent), transparent 70%),
@@ -2900,7 +2703,7 @@ function readerCss() {
       0% { opacity: 0; transform: translateY(10px) scale(0.97); }
       100% { opacity: 1; transform: translateY(0) scale(1); }
     }
-    /* Faixa gradiente no topo, igual aos cards do site */
+    
     .mtl-auth-topstrip {
       position: absolute;
       inset: 0 0 auto 0;
@@ -2908,7 +2711,7 @@ function readerCss() {
       background: linear-gradient(90deg, var(--primary), var(--accent), var(--primary));
     }
 
-    /* X no canto: fecha a extensão inteira */
+    
     .mtl-auth-close {
       position: absolute;
       top: 12px;
@@ -2946,7 +2749,7 @@ function readerCss() {
       display: flex;
       align-items: center;
       gap: 11px;
-      /* espaço para o X no canto não sobrepor o texto da marca */
+      
       padding-right: 32px;
     }
     .mtl-auth-brand-mark {
@@ -3001,7 +2804,7 @@ function readerCss() {
     .mtl-auth-screen { position: relative; display: flex; flex-direction: column; gap: 14px; }
     .mtl-auth-screen[hidden] { display: none; }
 
-    /* Loading */
+    
     .mtl-auth-loading {
       display: flex;
       flex-direction: column;
@@ -3019,7 +2822,7 @@ function readerCss() {
     }
     .mtl-auth-hint { margin: 0; color: var(--muted-foreground); font-size: 13px; text-align: center; }
 
-    /* Servidor fora do alcance */
+    
     .mtl-auth-offline {
       display: flex;
       flex-direction: column;
@@ -3099,7 +2902,7 @@ function readerCss() {
       stroke-linejoin: round;
     }
 
-    /* Boas-vindas (tela de login) */
+    
     .mtl-auth-welcome {
       display: flex;
       flex-direction: column;
@@ -3109,7 +2912,7 @@ function readerCss() {
     .mtl-auth-welcome strong { font-size: 17px; }
     .mtl-auth-welcome span { color: var(--muted-foreground); font-size: 12.5px; }
 
-    /* Aceite de termos (espelha o modal do site) */
+    
     .mtl-auth-terms-cards {
       display: flex;
       flex-direction: column;
@@ -3188,7 +2991,7 @@ function readerCss() {
     }
     .mtl-auth-terms-error[hidden] { display: none; }
 
-    /* Linha "Sistema" como pílula discreta no rodapé da tela */
+    
     .mtl-auth-system-line {
       display: flex;
       align-items: center;
@@ -3213,7 +3016,7 @@ function readerCss() {
       text-align: right;
     }
 
-    /* Divisor de seção ("Tradução") */
+    
     .mtl-auth-section-label {
       display: flex;
       align-items: center;
@@ -3251,7 +3054,7 @@ function readerCss() {
       color: var(--muted-foreground);
     }
 
-    /* Campo com ícone à esquerda (login) */
+    
     .mtl-auth-field {
       position: relative;
       display: flex;
@@ -3304,7 +3107,7 @@ function readerCss() {
       box-shadow: 0 0 0 3px color-mix(in oklch, var(--destructive) 18%, transparent);
     }
 
-    /* Selects com chevron customizado */
+    
     .mtl-auth-panel select {
       appearance: none;
       -webkit-appearance: none;
@@ -3315,7 +3118,7 @@ function readerCss() {
       cursor: pointer;
     }
 
-    /* Botões principais (Entrar / Iniciar leitor) */
+    
     .mtl-auth-submit, .mtl-auth-continue {
       display: inline-flex;
       align-items: center;
@@ -3375,7 +3178,7 @@ function readerCss() {
     }
     .mtl-auth-error[hidden] { display: none; }
 
-    /* Cartão do usuário conectado */
+    
     .mtl-auth-user-card {
       position: relative;
       overflow: hidden;
@@ -3436,7 +3239,7 @@ function readerCss() {
       white-space: nowrap;
     }
 
-    /* "Sair" compacto ao lado do usuário */
+    
     .mtl-auth-danger {
       display: inline-flex;
       align-items: center;

@@ -9,11 +9,7 @@ const SECTION_IMAGE_PROCESSING_CONCURRENCY = Math.max(
   Math.floor(Number(process.env.SECTION_IMAGE_PROCESSING_CONCURRENCY ?? 10) || 10)
 )
 
-/**
- * Pipeline de processamento de seções: para cada imagem pendente, roda a
- * detecção/OCR local (ONNX) e traduz os textos pelo provider configurado,
- * persistindo os resultados via repositório.
- */
+
 export class SectionsProcessingService {
   constructor(
     private readonly repository: SectionsRepository,

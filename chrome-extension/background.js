@@ -43,8 +43,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   void openReaderInTab(tab, info.srcUrl || '')
 })
 
-// Sem popup: o clique no ícone abre o leitor direto na aba ativa (com o
-// modal de login/config por cima).
 const mtlActionApi = chrome.action
 if (mtlActionApi?.onClicked) {
   mtlActionApi.onClicked.addListener((tab) => {
@@ -60,8 +58,6 @@ async function openReaderInTab(tab, imageUrl) {
     await chrome.tabs.sendMessage(tab.id, payload)
     return
   } catch {
-    // Provavelmente o content script ainda não foi injetado nesta aba
-    // (aberta antes da instalação/atualização da extensão). Injeta e tenta de novo.
   }
 
   try {
@@ -162,7 +158,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return false
 })
 
-// Busca o detalhe completo da seção (imagens + itens de OCR já processados pelo site).
 async function getSectionDetail(rawPayload) {
   try {
     const payload = rawPayload && typeof rawPayload === 'object' ? rawPayload : {}
@@ -188,7 +183,6 @@ async function getSectionDetail(rawPayload) {
   }
 }
 
-// Verifica no site se uma seção ainda existe (GET /api/sections/{id}).
 async function checkSectionExists(rawPayload) {
   try {
     const payload = rawPayload && typeof rawPayload === 'object' ? rawPayload : {}
@@ -205,7 +199,6 @@ async function checkSectionExists(rawPayload) {
     })
     if (response.status === 404) return { ok: true, exists: false }
     if (!response.ok) {
-      // Erros como 401/500 não confirmam ausência: sinaliza indefinido.
       return { ok: false, exists: null, status: response.status }
     }
     const section = await readJson(response)
@@ -234,8 +227,6 @@ async function updatePageCache(rawPayload) {
   }
 }
 
-// "Failed to fetch"/"NetworkError" = servidor fora do ar ou URL inacessível.
-// A UI usa a flag `network` para exibir a tela de conexão amigável.
 function isNetworkFetchError(error) {
   const message = error instanceof Error ? error.message : String(error || '')
   return /failed to fetch|networkerror|fetch failed|load failed|network request failed/i.test(message)
@@ -374,7 +365,6 @@ async function createSectionFromPages(rawPayload) {
 
     let appendedCount = 0
     let skippedCount = 0
-    // URLs efetivamente enviadas, na mesma ordem em que viram order_index no site.
     const uploadedUrls = []
     for (let index = 0; index < pages.length; index += 1) {
       const page = pages[index] && typeof pages[index] === 'object' ? pages[index] : {}
@@ -663,12 +653,9 @@ async function extractAndTranslateBlob({ blob, fileName, settings }) {
   }
 }
 
-// Constantes de polling da fila de OCR — iguais às de components/section-reader.tsx.
 const OCR_QUEUE_POLL_INTERVAL_MS = 900
 const OCR_QUEUE_POLL_TIMEOUT_MS = 45000
 
-// Replica o fluxo do site para uma área selecionada manualmente:
-// baixa a imagem original, recorta a área, faz OCR via fila e traduz o texto.
 async function ocrTranslateCrop(rawPayload) {
   try {
     const payload = rawPayload && typeof rawPayload === 'object' ? rawPayload : {}
@@ -709,7 +696,6 @@ async function ocrTranslateCrop(rawPayload) {
   }
 }
 
-// Recorta um box (em coordenadas do refSize) direto do blob da imagem original.
 async function cropImageBlobToBox(blob, box, refSize) {
   if (typeof createImageBitmap !== 'function' || typeof OffscreenCanvas === 'undefined') {
     throw new Error('Recorte de área não está disponível neste navegador.')
@@ -743,7 +729,6 @@ async function cropImageBlobToBox(blob, box, refSize) {
   }
 }
 
-// Enfileira o OCR e faz polling até concluir — mesma sequência de rotas do site.
 async function ocrImageViaQueue(settings, blob, fileName) {
   const formData = new FormData()
   formData.append('file', blob, fileName || 'crop.png')
