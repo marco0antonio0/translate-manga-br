@@ -28,6 +28,7 @@ import { toErrorMessage } from '@/lib/sections'
 import {
   AlertCircle,
   FileStack,
+  Flag,
   Loader2,
   RefreshCw,
   ShieldCheck,
@@ -237,6 +238,12 @@ export function UsersManagement() {
               <Link href="/inicio/usuarios/novo">
                 <UserPlus className="h-4 w-4" />
                 Novo usuário
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="flex-1 sm:flex-none">
+              <Link href="/inicio/usuarios/reports">
+                <Flag className="h-4 w-4" />
+                Reports
               </Link>
             </Button>
             <Button type="button" variant="outline" onClick={() => void fetchUsers()} disabled={isLoadingUsers} className="flex-1 sm:flex-none">

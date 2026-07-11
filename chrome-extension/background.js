@@ -135,6 +135,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true
   }
 
+  if (message.type === 'MTL_REPORT_TRANSLATION') {
+    reportTranslation(message.payload).then(sendResponse)
+    return true
+  }
+
   if (message.type === 'MTL_REPROCESS_SECTION') {
     reprocessSection(message.payload).then(sendResponse)
     return true
@@ -452,6 +457,82 @@ async function reprocessSection(rawPayload) {
     return { ok: true, sectionId }
   } catch (error) {
     return { ok: false, error: toErrorMessage(error, 'Não foi possível reprocessar a seção no site.') }
+  }
+}
+
+const REPORT_CROP_PADDING_RATIO = 0.18
+const REPORT_CROP_MAX_DATA_URL_LENGTH = 2_000_000
+
+// O site de origem costuma bloquear hotlink, então o painel admin não consegue
+// carregar a imagem pela URL. A extensão baixa e recorta o balão aqui (onde os
+// cookies/referer do site valem) e envia o recorte junto do reporte.
+async function buildReportImageCrop(payload) {
+  try {
+    const imageUrl = typeof payload.imageUrl === 'string' ? payload.imageUrl : ''
+    const box = Array.isArray(payload.box) ? payload.box.map(Number) : []
+    if (!imageUrl || box.length !== 4 || !box.every(Number.isFinite)) return ''
+
+    const response = await fetch(imageUrl, {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+      referrer: isHttpUrl(payload.pageUrl) ? payload.pageUrl : undefined,
+      referrerPolicy: 'unsafe-url',
+    })
+    if (!response.ok) return ''
+    const rawBlob = await response.blob()
+    if (rawBlob.type && !rawBlob.type.startsWith('image/')) return ''
+    const blob = rawBlob.type
+      ? rawBlob
+      : new Blob([rawBlob], { type: guessImageMimeType(imageUrl) })
+
+    const x1 = Math.min(box[0], box[2])
+    const y1 = Math.min(box[1], box[3])
+    const x2 = Math.max(box[0], box[2])
+    const y2 = Math.max(box[1], box[3])
+    const padding = Math.min(120, Math.max(12, Math.round(Math.max(x2 - x1, y2 - y1) * REPORT_CROP_PADDING_RATIO)))
+    const paddedBox = [x1 - padding, y1 - padding, x2 + padding, y2 + padding]
+
+    const croppedBlob = await cropImageBlobToBox(blob, paddedBox, null)
+    const dataUrl = await blobToDataUrl(croppedBlob)
+    return dataUrl.length <= REPORT_CROP_MAX_DATA_URL_LENGTH ? dataUrl : ''
+  } catch {
+    return ''
+  }
+}
+
+async function reportTranslation(rawPayload) {
+  try {
+    const payload = rawPayload && typeof rawPayload === 'object' ? rawPayload : {}
+    const settings = normalizeSettings({ ...(await getSettings()), ...payload.settings })
+    const imageCrop = await buildReportImageCrop(payload)
+    const response = await trackedFetch(buildApiUrl(settings.apiBaseUrl, '/api/translation-reports'), {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        reason: payload.reason,
+        page_url: payload.pageUrl,
+        image_url: payload.imageUrl,
+        item_id: payload.itemId,
+        box: payload.box,
+        ocr_text: payload.ocrText,
+        translated_text: payload.translatedText,
+        image_crop: imageCrop,
+        source_lang: payload.sourceLang || settings.sourceLang,
+        target_lang: payload.targetLang || settings.targetLang,
+        provider_lang: payload.providerLang || settings.providerLang,
+      }),
+    }, { label: 'Reportar tradução', reason: payload.reason })
+    const body = await readJson(response)
+    if (!response.ok) {
+      throw new Error(toErrorMessage(body, `Falha ao reportar tradução (HTTP ${response.status}).`))
+    }
+    return { ok: true, reportId: Number(body?.report_id || body?.report?.id || 0) || null }
+  } catch (error) {
+    return { ok: false, error: toErrorMessage(error, 'Não foi possível enviar o reporte da tradução.') }
   }
 }
 
