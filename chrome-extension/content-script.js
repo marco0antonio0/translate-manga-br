@@ -1,5 +1,6 @@
 const READER_HOST_ID = 'manga-translator-local-reader-host'
 const PAGE_SECTION_CACHE_PREFIX = 'mtl:page-section:'
+const EXTENSION_LOG_DISPLAY_LIMIT = 80
 const MIN_IMAGE_WIDTH = 240
 const MIN_IMAGE_HEIGHT = 320
 const OCR_OVERLAY_DEFAULT_FONT_SCALE = 0.3
@@ -100,6 +101,167 @@ function setCachedSectionIdForPage(pageUrl, sectionId) {
     }
   } catch {
   }
+}
+
+function isAutoSectionCreationEnabled(settings) {
+  return settings?.autoCreateSections === true
+}
+
+function formatExtensionLogTime(value) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '--:--:--'
+  return date.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+}
+
+function logDetailsFromError(error) {
+  if (error instanceof Error) return error.stack || error.message
+  return String(error || '')
+}
+
+function recordExtensionLog(state, level, message, details = '') {
+  chrome.runtime.sendMessage({
+    type: 'MTL_ADD_LOG',
+    payload: {
+      level,
+      message,
+      details,
+      pageUrl: window.location.href,
+    },
+  }).catch(() => {})
+
+  if (!state) return
+  const logs = Array.isArray(state.logs) ? state.logs : []
+  state.logs = [
+    ...logs,
+    {
+      id: `local-${Date.now()}`,
+      time: new Date().toISOString(),
+      level,
+      message,
+      details,
+      pageUrl: window.location.href,
+    },
+  ].slice(-EXTENSION_LOG_DISPLAY_LIMIT)
+}
+
+async function loadExtensionLogs(state, shadow) {
+  state.isLoadingLogs = true
+  renderReader(shadow, state)
+  try {
+    const response = await chrome.runtime.sendMessage({ type: 'MTL_GET_LOGS' })
+    state.logs = Array.isArray(response?.logs)
+      ? response.logs.slice(-EXTENSION_LOG_DISPLAY_LIMIT)
+      : []
+    state.networkLogs = Array.isArray(response?.networkLogs)
+      ? response.networkLogs.slice(-EXTENSION_LOG_DISPLAY_LIMIT)
+      : []
+  } catch (error) {
+    state.logs = [{
+      id: `error-${Date.now()}`,
+      time: new Date().toISOString(),
+      level: 'error',
+      message: 'Não foi possível carregar os logs da extensão.',
+      details: logDetailsFromError(error),
+      pageUrl: window.location.href,
+    }]
+    state.networkLogs = []
+  } finally {
+    state.isLoadingLogs = false
+    renderReader(shadow, state)
+  }
+}
+
+async function copyTextToClipboard(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text)
+    return
+  }
+
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.setAttribute('readonly', '')
+  textarea.style.position = 'fixed'
+  textarea.style.left = '-9999px'
+  document.documentElement.append(textarea)
+  textarea.select()
+  document.execCommand('copy')
+  textarea.remove()
+}
+
+function formatLogsForCopy(state) {
+  const kind = state.logsTab === 'network' ? 'network' : 'events'
+  const items = kind === 'network'
+    ? (Array.isArray(state.networkLogs) ? state.networkLogs : [])
+    : (Array.isArray(state.logs) ? state.logs : [])
+  return JSON.stringify({
+    kind,
+    copiedAt: new Date().toISOString(),
+    pageUrl: window.location.href,
+    count: items.length,
+    items,
+  }, null, 2)
+}
+
+function formatSingleLogForCopy(state, logId) {
+  const kind = state.logsTab === 'network' ? 'network' : 'events'
+  const items = kind === 'network'
+    ? (Array.isArray(state.networkLogs) ? state.networkLogs : [])
+    : (Array.isArray(state.logs) ? state.logs : [])
+  const item = items.find((entry) => String(entry?.id || '') === String(logId || ''))
+  return item
+    ? JSON.stringify({ kind, copiedAt: new Date().toISOString(), item }, null, 2)
+    : ''
+}
+
+function renderEventLogRow(log) {
+  const level = String(log.level || 'info').toLowerCase()
+  const logId = String(log.id || '')
+  return `
+    <article class="mtl-log-row mtl-log-${escapeAttr(level)}">
+      <div class="mtl-log-meta">
+        <span>${escapeHtml(formatExtensionLogTime(log.time))}</span>
+        <strong>${escapeHtml(level.toUpperCase())}</strong>
+        <button type="button" class="mtl-log-copy" data-action="copy-log-item" data-log-id="${escapeAttr(logId)}">Copiar</button>
+      </div>
+      <p>${escapeHtml(log.message || 'Evento da extensão')}</p>
+      ${log.details ? `<pre>${escapeHtml(log.details)}</pre>` : ''}
+    </article>
+  `
+}
+
+function renderNetworkLogRow(log) {
+  const ok = Boolean(log.ok)
+  const status = Number(log.status) || 0
+  const method = String(log.method || 'GET').toUpperCase()
+  const label = typeof log.context?.label === 'string' ? log.context.label : ''
+  const logId = String(log.id || '')
+  return `
+    <article class="mtl-log-row mtl-network-row ${ok ? 'mtl-log-info' : 'mtl-log-error'}">
+      <div class="mtl-log-meta mtl-network-meta">
+        <span>${escapeHtml(formatExtensionLogTime(log.time))}</span>
+        <strong>${escapeHtml(method)}</strong>
+        <em>${status || 'ERR'} ${escapeHtml(log.statusText || '')}</em>
+        <span>${Number(log.durationMs) || 0}ms</span>
+        <button type="button" class="mtl-log-copy" data-action="copy-log-item" data-log-id="${escapeAttr(logId)}">Copiar</button>
+      </div>
+      <p>${label ? `${escapeHtml(label)} · ` : ''}${escapeHtml(log.url || '')}</p>
+      <details>
+        <summary>Detalhes</summary>
+        <pre>${escapeHtml(JSON.stringify({
+          requestHeaders: log.requestHeaders || {},
+          requestBody: log.requestBody || '',
+          responseHeaders: log.responseHeaders || {},
+          responseBody: log.responseBody || '',
+          error: log.error || '',
+          context: log.context || {},
+        }, null, 2))}</pre>
+      </details>
+    </article>
+  `
 }
 
 
@@ -668,6 +830,13 @@ function openReader(preferredImageUrl = '') {
     cleanupFns: [],
     isTopbarMoreOpen: false,
     isFontPanelOpen: false,
+    isSettingsMenuOpen: false,
+    isLogsPanelOpen: false,
+    isLoadingLogs: false,
+    logsTab: 'events',
+    logsCopyStatus: '',
+    logs: [],
+    networkLogs: [],
     ocrOverlayFontScale: OCR_OVERLAY_DEFAULT_FONT_SCALE,
     ocrOverlayFontFamily: OCR_OVERLAY_FONT_FAMILY_DEFAULT,
     ocrOverlayDensity: OCR_OVERLAY_DENSITY_DEFAULT,
@@ -783,7 +952,9 @@ async function syncExistingSectionOnOpen(state, shadow) {
   }
 
   if (anyDone) renderReader(shadow, state)
-  if (!allDone) void processAllPages(shadow, state, { force: false, syncSection: false })
+  if (!allDone && isAutoSectionCreationEnabled(state.settings)) {
+    void processAllPages(shadow, state, { force: false, syncSection: false })
+  }
 }
 
 function bindReader(shadow, host, state) {
@@ -795,6 +966,15 @@ function bindReader(shadow, host, state) {
 
     if (!target.closest('.mtl-font-popover-wrap') && state.isFontPanelOpen) {
       state.isFontPanelOpen = false
+      renderReader(shadow, state)
+    }
+    // No mobile o menu vira bottom sheet e o backdrop (::before) devolve o
+    // próprio .mtl-settings-menu como alvo do clique — também deve fechar.
+    if (
+      state.isSettingsMenuOpen
+      && (!target.closest('.mtl-settings-menu-wrap') || target.classList.contains('mtl-settings-menu'))
+    ) {
+      state.isSettingsMenuOpen = false
       renderReader(shadow, state)
     }
     if (
@@ -857,6 +1037,94 @@ function bindReader(shadow, host, state) {
     }
     if (action === 'toggle-font-panel') {
       state.isFontPanelOpen = !state.isFontPanelOpen
+      state.isSettingsMenuOpen = false
+      renderReader(shadow, state)
+      return
+    }
+    if (action === 'toggle-settings-menu') {
+      state.isSettingsMenuOpen = !state.isSettingsMenuOpen
+      state.isFontPanelOpen = false
+      renderReader(shadow, state)
+      return
+    }
+    if (action === 'open-logs') {
+      state.isSettingsMenuOpen = false
+      state.isLogsPanelOpen = true
+      void loadExtensionLogs(state, shadow)
+      return
+    }
+    if (action === 'close-logs') {
+      state.isLogsPanelOpen = false
+      renderReader(shadow, state)
+      return
+    }
+    if (action === 'logs-tab-events' || action === 'logs-tab-network') {
+      state.logsTab = action === 'logs-tab-network' ? 'network' : 'events'
+      state.logsCopyStatus = ''
+      renderReader(shadow, state)
+      return
+    }
+    if (action === 'clear-logs') {
+      const kind = state.logsTab === 'network' ? 'network' : 'events'
+      void chrome.runtime.sendMessage({ type: 'MTL_CLEAR_LOGS', payload: { kind } }).then((response) => {
+        if (response?.ok) {
+          if (kind === 'network') state.networkLogs = []
+          else state.logs = []
+        }
+        else recordExtensionLog(state, 'error', response?.error || 'Não foi possível limpar os logs.')
+        renderReader(shadow, state)
+      }).catch((error) => {
+        recordExtensionLog(state, 'error', 'Não foi possível limpar os logs.', logDetailsFromError(error))
+        renderReader(shadow, state)
+      })
+      return
+    }
+    if (action === 'copy-logs') {
+      void copyTextToClipboard(formatLogsForCopy(state)).then(() => {
+        state.logsCopyStatus = 'Copiado'
+        renderReader(shadow, state)
+      }).catch((error) => {
+        state.logsCopyStatus = 'Falha ao copiar'
+        recordExtensionLog(state, 'error', 'Não foi possível copiar os logs.', logDetailsFromError(error))
+        renderReader(shadow, state)
+      })
+      return
+    }
+    if (action === 'copy-log-item') {
+      const logId = target.closest('[data-log-id]')?.getAttribute('data-log-id') || ''
+      const text = formatSingleLogForCopy(state, logId)
+      if (!text) return
+      void copyTextToClipboard(text).then(() => {
+        state.logsCopyStatus = 'Item copiado'
+        renderReader(shadow, state)
+      }).catch((error) => {
+        state.logsCopyStatus = 'Falha ao copiar'
+        recordExtensionLog(state, 'error', 'Não foi possível copiar o item de log.', logDetailsFromError(error))
+        renderReader(shadow, state)
+      })
+      return
+    }
+    if (action === 'toggle-auto-section') {
+      const nextSettings = {
+        ...(state.settings || {}),
+        autoCreateSections: !isAutoSectionCreationEnabled(state.settings),
+      }
+      state.settings = nextSettings
+      state.isSettingsMenuOpen = false
+      recordExtensionLog(
+        state,
+        'info',
+        nextSettings.autoCreateSections
+          ? 'Criação automática de seção habilitada.'
+          : 'Criação automática de seção desabilitada.'
+      )
+      void chrome.runtime.sendMessage({ type: 'MTL_SAVE_SETTINGS', settings: nextSettings }).then((response) => {
+        if (response?.settings) state.settings = response.settings
+        renderReader(shadow, state)
+      }).catch((error) => {
+        recordExtensionLog(state, 'error', 'Não foi possível salvar a preferência de criação de seção.', logDetailsFromError(error))
+        renderReader(shadow, state)
+      })
       renderReader(shadow, state)
       return
     }
@@ -1301,6 +1569,7 @@ async function createSectionForPages(shadow, state) {
     return true
   } catch (error) {
     state.error = error instanceof Error ? error.message : 'Não foi possível criar a seção no site.'
+    recordExtensionLog(state, 'error', 'Falha ao criar seção no site.', logDetailsFromError(error))
     return false
   } finally {
     state.isSyncingSection = false
@@ -1321,6 +1590,7 @@ async function reprocessSyncedSection(shadow, state) {
     return true
   } catch (error) {
     state.error = error instanceof Error ? error.message : 'Não foi possível reprocessar a seção no site.'
+    recordExtensionLog(state, 'error', 'Falha ao reprocessar seção no site.', logDetailsFromError(error))
     return false
   } finally {
     state.isSyncingSection = false
@@ -1348,6 +1618,7 @@ async function ensureSectionSynced(shadow, state, options = {}) {
       setCachedSectionIdForPage(window.location.href, null)
     } else {
       state.error = check?.error || 'Não foi possível verificar a seção no site.'
+      recordExtensionLog(state, 'error', 'Falha ao verificar seção no site.', state.error)
       renderReader(shadow, state)
       return false
     }
@@ -1425,10 +1696,15 @@ function isServerImageResolved(image) {
 async function processAllPages(shadow, state, options = {}) {
   if (state.isProcessing || state.isBatchProcessing) return
   const force = Boolean(options.force)
+  const shouldUseSection = options.syncSection && isAutoSectionCreationEnabled(state.settings)
 
-  if (options.syncSection) {
+  if (shouldUseSection) {
     const synced = await ensureSectionSynced(shadow, state, { force })
     if (!synced) return
+  }
+  if (!shouldUseSection && options.syncSection) {
+    await processAllPagesDirectly(shadow, state, { force })
+    return
   }
   if (!state.syncedSectionId) return
 
@@ -1494,8 +1770,63 @@ async function processAllPages(shadow, state, options = {}) {
   }
   if (!done && lastError) {
     state.error = lastError
+    recordExtensionLog(state, 'error', 'Falha ao sincronizar tradução da seção.', lastError)
   }
 
+  state.isBatchProcessing = false
+  state.batchProgress = null
+  renderReader(shadow, state)
+}
+
+async function processAllPagesDirectly(shadow, state, options = {}) {
+  const force = Boolean(options.force)
+  state.isSyncingSection = false
+  state.isBatchProcessing = true
+  state.batchProgress = { current: 0, total: state.pages.length, failures: 0 }
+  state.activeStatus = 'Traduzindo sem criar seção...'
+  recordExtensionLog(state, 'info', 'Tradução iniciada sem criação automática de seção.')
+  renderReader(shadow, state)
+
+  let failures = 0
+  for (let index = 0; index < state.pages.length; index += 1) {
+    const page = state.pages[index]
+    if (!page) continue
+    if (!force && state.processedByUrl.has(page.url)) {
+      state.batchProgress = { current: index + 1, total: state.pages.length, failures }
+      renderReader(shadow, state)
+      continue
+    }
+
+    state.processingPageUrl = page.url
+    state.activeStatus = `Traduzindo página ${index + 1} de ${state.pages.length} sem criar seção...`
+    renderReader(shadow, state)
+
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: 'MTL_EXTRACT_AND_TRANSLATE_IMAGE',
+        payload: {
+          imageUrl: page.url,
+          pageUrl: window.location.href,
+          force,
+          settings: state.settings,
+        },
+      })
+      if (!response?.ok) throw new Error(response?.error || 'Falha ao traduzir a imagem.')
+      state.processedByUrl.set(page.url, response.result)
+      recordExtensionLog(state, 'info', `Página ${index + 1} traduzida sem criar seção.`)
+    } catch (error) {
+      failures += 1
+      recordExtensionLog(state, 'error', `Falha ao traduzir página ${index + 1}.`, logDetailsFromError(error))
+    } finally {
+      state.processingPageUrl = null
+      state.batchProgress = { current: index + 1, total: state.pages.length, failures }
+      renderReader(shadow, state)
+    }
+  }
+
+  state.activeStatus = failures > 0
+    ? `Concluído sem seção: ${state.pages.length - failures}/${state.pages.length} página(s) traduzida(s), ${failures} com falha.`
+    : `${state.pages.length} página(s) traduzida(s) sem criar seção.`
   state.isBatchProcessing = false
   state.batchProgress = null
   renderReader(shadow, state)
@@ -1606,6 +1937,42 @@ function renderReader(shadow, state) {
   const fontPanel = shadow.querySelector('.mtl-font-panel')
   if (fontTrigger) fontTrigger.classList.toggle('mtl-font-trigger-open', state.isFontPanelOpen)
   if (fontPanel) fontPanel.hidden = !state.isFontPanelOpen
+
+  const settingsToggle = shadow.querySelector('[data-action="toggle-settings-menu"]')
+  const settingsMenu = shadow.querySelector('.mtl-settings-menu')
+  const autoSectionStatus = shadow.querySelector('[data-role="auto-section-status"]')
+  const autoSectionEnabled = isAutoSectionCreationEnabled(state.settings)
+  if (settingsToggle) {
+    settingsToggle.classList.toggle('mtl-icon-button-active', state.isSettingsMenuOpen)
+    settingsToggle.setAttribute('aria-expanded', String(state.isSettingsMenuOpen))
+  }
+  if (settingsMenu) settingsMenu.hidden = !state.isSettingsMenuOpen
+  if (autoSectionStatus) {
+    autoSectionStatus.textContent = autoSectionEnabled ? 'Ligada' : 'Desligada'
+    autoSectionStatus.classList.toggle('mtl-settings-status-off', !autoSectionEnabled)
+  }
+
+  const logsPanel = shadow.querySelector('.mtl-logs-panel')
+  const logsList = shadow.querySelector('[data-role="logs-list"]')
+  const logsCopyStatus = shadow.querySelector('[data-role="logs-copy-status"]')
+  if (logsPanel) logsPanel.hidden = !state.isLogsPanelOpen
+  shadow.querySelector('[data-action="logs-tab-events"]')?.classList.toggle('mtl-logs-tab-on', state.logsTab !== 'network')
+  shadow.querySelector('[data-action="logs-tab-network"]')?.classList.toggle('mtl-logs-tab-on', state.logsTab === 'network')
+  if (logsCopyStatus) logsCopyStatus.textContent = state.logsCopyStatus || ''
+  if (logsList) {
+    if (state.isLoadingLogs) {
+      logsList.innerHTML = '<div class="mtl-logs-empty">Carregando logs...</div>'
+    } else if (state.logsTab === 'network') {
+      const networkLogs = Array.isArray(state.networkLogs) ? state.networkLogs : []
+      logsList.innerHTML = networkLogs.length === 0
+        ? '<div class="mtl-logs-empty">Nenhum request registrado ainda.</div>'
+        : networkLogs.slice().reverse().map(renderNetworkLogRow).join('')
+    } else if (!Array.isArray(state.logs) || state.logs.length === 0) {
+      logsList.innerHTML = '<div class="mtl-logs-empty">Nenhum evento registrado nesta extensão.</div>'
+    } else {
+      logsList.innerHTML = state.logs.slice().reverse().map(renderEventLogRow).join('')
+    }
+  }
 
   const topbarMoreToggle = shadow.querySelector('.mtl-more-toggle')
   const topbarSecondary = shadow.querySelector('.mtl-actions-secondary')
@@ -1915,6 +2282,23 @@ function buildReaderMarkup() {
           <span class="mtl-badge mtl-page-counter">1 / 1</span>
         </div>
         <div class="mtl-actions">
+          <div class="mtl-settings-menu-wrap">
+            <button class="mtl-icon-button mtl-settings-toggle" type="button" data-action="toggle-settings-menu" title="Configurações rápidas" aria-label="Configurações rápidas" aria-expanded="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 15 19.4a1.65 1.65 0 0 0-1 .6l-.09.09a2 2 0 0 1-3.82-1v-.09A1.65 1.65 0 0 0 9 17.6a1.65 1.65 0 0 0-1.82-.33l-.06.03a2 2 0 1 1-2-3.46l.06-.03A1.65 1.65 0 0 0 5.6 12a1.65 1.65 0 0 0-.6-1l-.09-.09a2 2 0 0 1 1-3.82H6a1.65 1.65 0 0 0 1.4-1.09 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 12 4.6a1.65 1.65 0 0 0 1-.6l.09-.09a2 2 0 0 1 3.82 1V5a1.65 1.65 0 0 0 1.09 1.4 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 12c0 .35.11.69.33 1l.03.06a2 2 0 1 1-3.46 2l-.03-.06A1.65 1.65 0 0 0 15 14.4"/></svg>
+            </button>
+            <div class="mtl-settings-menu" hidden>
+              <p class="mtl-panel-label">Configurações rápidas</p>
+              <button type="button" class="mtl-settings-menu-item" data-action="open-logs">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>
+                <span>Logs</span>
+              </button>
+              <button type="button" class="mtl-settings-menu-item" data-action="toggle-auto-section">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                <span>Criação de seção</span>
+                <small data-role="auto-section-status" class="mtl-settings-status-off">Desligada</small>
+              </button>
+            </div>
+          </div>
           <button class="mtl-icon-button" type="button" data-action="open-account" title="Conta e configurações" aria-label="Conta e configurações">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
           </button>
@@ -2001,6 +2385,32 @@ function buildReaderMarkup() {
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
         </button>
       </footer>
+      <div class="mtl-logs-panel" role="dialog" aria-label="Logs da extensão" hidden>
+        <div class="mtl-logs-card">
+          <div class="mtl-logs-topstrip"></div>
+          <div class="mtl-logs-head">
+            <div class="mtl-logs-title">
+              <div class="mtl-logs-heading">
+                <strong>Logs</strong>
+                <span>Eventos e requisições da extensão</span>
+              </div>
+              <div class="mtl-logs-tabs" role="tablist" aria-label="Tipo de log">
+                <button type="button" data-action="logs-tab-events">Eventos</button>
+                <button type="button" data-action="logs-tab-network">DevTools</button>
+              </div>
+            </div>
+            <div class="mtl-logs-actions">
+              <span data-role="logs-copy-status"></span>
+              <button type="button" data-action="copy-logs">Copiar</button>
+              <button type="button" data-action="clear-logs">Limpar</button>
+              <button type="button" class="mtl-logs-close" data-action="close-logs" title="Fechar logs" aria-label="Fechar logs">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="mtl-logs-list" data-role="logs-list"></div>
+        </div>
+      </div>
     </section>
   `
 }
@@ -2110,6 +2520,204 @@ function readerCss() {
     .mtl-footer-hidden {
       display: none;
     }
+    .mtl-logs-panel[hidden] {
+      display: none;
+    }
+    .mtl-logs-panel {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: color-mix(in oklch, var(--background) 82%, transparent);
+      backdrop-filter: blur(6px);
+      padding: 16px;
+    }
+    .mtl-logs-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      width: min(760px, 100%);
+      max-height: min(620px, calc(100vh - 32px));
+      overflow: hidden;
+      border: 1px solid color-mix(in oklch, var(--primary) 28%, var(--border));
+      border-radius: calc(var(--radius) + 4px);
+      background: var(--card);
+      color: var(--card-foreground);
+      box-shadow:
+        0 24px 60px rgb(0 0 0 / 50%),
+        0 0 40px -12px color-mix(in oklch, var(--primary) 45%, transparent);
+      animation: mtl-auth-pop 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .mtl-logs-topstrip {
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--accent), var(--primary));
+    }
+    .mtl-logs-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 14px;
+    }
+    .mtl-logs-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .mtl-logs-heading {
+      display: grid;
+      line-height: 1.25;
+    }
+    .mtl-logs-heading strong {
+      font-size: 14px;
+    }
+    .mtl-logs-heading span {
+      color: var(--muted-foreground);
+      font-size: 11px;
+    }
+    .mtl-logs-close {
+      width: 28px;
+      height: 28px;
+      min-height: 28px;
+      padding: 0;
+      border-color: transparent;
+      background: transparent;
+      color: var(--muted-foreground);
+      transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+    .mtl-logs-close svg {
+      width: 15px;
+      height: 15px;
+    }
+    .mtl-logs-close:hover {
+      color: var(--foreground);
+      background: color-mix(in oklch, var(--destructive) 16%, transparent);
+      border-color: color-mix(in oklch, var(--destructive) 40%, var(--border));
+    }
+    .mtl-logs-tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--input);
+      padding: 3px;
+    }
+    .mtl-logs-tabs button {
+      min-height: 28px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      padding: 0 9px;
+      font-size: 12px;
+    }
+    .mtl-logs-tabs button.mtl-logs-tab-on {
+      background: var(--primary);
+      color: var(--primary-foreground);
+    }
+    .mtl-logs-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mtl-logs-actions [data-role="logs-copy-status"] {
+      min-width: 56px;
+      color: var(--muted-foreground);
+      font-size: 11px;
+      text-align: right;
+    }
+    .mtl-logs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow: auto;
+      padding: 12px;
+    }
+    .mtl-logs-empty {
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      color: var(--muted-foreground);
+      padding: 18px;
+      text-align: center;
+      font-size: 13px;
+    }
+    .mtl-log-row {
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--muted-foreground);
+      border-radius: 8px;
+      background: color-mix(in oklch, var(--muted) 45%, transparent);
+      padding: 8px 10px;
+    }
+    .mtl-log-error {
+      border-left-color: var(--destructive);
+    }
+    .mtl-log-warn {
+      border-left-color: #facc15;
+    }
+    .mtl-log-info {
+      border-left-color: var(--primary);
+    }
+    .mtl-log-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--muted-foreground);
+      font-size: 11px;
+    }
+    .mtl-network-meta em {
+      color: var(--foreground);
+      font-style: normal;
+      font-weight: 700;
+    }
+    .mtl-log-copy {
+      min-height: 20px;
+      margin-left: auto;
+      border-color: transparent;
+      background: transparent;
+      color: var(--muted-foreground);
+      padding: 0 4px;
+      font-size: 10px;
+      opacity: 0.62;
+    }
+    .mtl-log-copy:hover {
+      border-color: var(--border);
+      background: color-mix(in oklch, var(--muted) 70%, transparent);
+      color: var(--foreground);
+      opacity: 1;
+    }
+    .mtl-log-row p {
+      margin: 5px 0 0;
+      font-size: 13px;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+    .mtl-log-row pre {
+      max-height: 160px;
+      overflow: auto;
+      margin: 6px 0 0;
+      border-radius: 6px;
+      background: rgb(0 0 0 / 28%);
+      padding: 8px;
+      color: var(--muted-foreground);
+      font-size: 11px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .mtl-network-row details {
+      margin-top: 6px;
+    }
+    .mtl-network-row summary {
+      cursor: pointer;
+      color: var(--muted-foreground);
+      font-size: 12px;
+    }
     .mtl-title {
       display: grid;
       min-width: 160px;
@@ -2137,6 +2745,73 @@ function readerCss() {
       flex-wrap: wrap;
     }
     .mtl-actions-secondary[hidden] { display: none; }
+    .mtl-settings-menu-wrap {
+      position: relative;
+      z-index: 30;
+    }
+    .mtl-settings-menu[hidden] {
+      display: none;
+    }
+    .mtl-settings-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: auto;
+      z-index: 25;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: min(224px, calc(100vw - 20px));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--popover);
+      color: var(--popover-foreground);
+      padding: 10px;
+      box-shadow: 0 12px 32px rgb(0 0 0 / 35%);
+    }
+    .mtl-settings-menu > .mtl-panel-label {
+      margin: 0;
+    }
+    .mtl-settings-menu-item {
+      justify-content: flex-start;
+      width: 100%;
+      min-height: 32px;
+      text-align: left;
+      font-size: 12px;
+      gap: 8px;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .mtl-settings-menu-item svg {
+      width: 15px;
+      height: 15px;
+      color: var(--muted-foreground);
+    }
+    .mtl-settings-menu-item:hover {
+      border-color: var(--accent);
+      background: color-mix(in oklch, var(--accent) 18%, var(--input));
+    }
+    .mtl-settings-menu-item:hover svg {
+      color: var(--foreground);
+    }
+    .mtl-settings-menu-item span {
+      flex: 1;
+    }
+    .mtl-settings-menu-item small {
+      border-radius: 999px;
+      background: rgb(34 197 94 / 16%);
+      color: #86efac;
+      padding: 2px 6px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .mtl-settings-menu-item small.mtl-settings-status-off {
+      background: color-mix(in oklch, var(--muted) 70%, transparent);
+      color: var(--muted-foreground);
+    }
+    @keyframes mtl-sheet-up {
+      from { opacity: 0.6; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     
     .mtl-more-toggle { display: none; }
     
@@ -2317,6 +2992,104 @@ function readerCss() {
         width: 100%;
         justify-content: flex-start;
         gap: 8px;
+      }
+      .mtl-settings-menu {
+        position: fixed;
+        inset: auto 0 0 0;
+        top: auto;
+        width: auto;
+        max-height: min(70dvh, 420px);
+        overflow: auto;
+        gap: 10px;
+        border-bottom: 0;
+        border-radius: 16px 16px 0 0;
+        padding: 20px 14px calc(14px + env(safe-area-inset-bottom, 0px));
+        box-shadow: 0 -18px 48px rgb(0 0 0 / 45%);
+        animation: mtl-sheet-up 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .mtl-settings-menu::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background: color-mix(in oklch, var(--background) 62%, transparent);
+        backdrop-filter: blur(3px);
+      }
+      .mtl-settings-menu::after {
+        content: '';
+        position: absolute;
+        top: 7px;
+        left: 50%;
+        width: 42px;
+        height: 4px;
+        transform: translateX(-50%);
+        border-radius: 999px;
+        background: color-mix(in oklch, var(--muted-foreground) 45%, transparent);
+      }
+      .mtl-settings-menu > .mtl-panel-label {
+        font-size: 12px;
+      }
+      .mtl-settings-menu-item {
+        min-height: 44px;
+        font-size: 13px;
+        border-radius: 10px;
+      }
+      .mtl-settings-menu-item svg {
+        width: 17px;
+        height: 17px;
+      }
+      .mtl-settings-menu-item small {
+        font-size: 11px;
+        padding: 3px 8px;
+      }
+      .mtl-logs-panel {
+        align-items: stretch;
+        justify-content: stretch;
+        padding: 8px;
+      }
+      .mtl-logs-card {
+        width: 100%;
+        max-height: none;
+        height: calc(100dvh - 16px);
+        border-radius: 10px;
+      }
+      .mtl-logs-head {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px;
+      }
+      .mtl-logs-title {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .mtl-logs-tabs {
+        width: 100%;
+      }
+      .mtl-logs-tabs button {
+        flex: 1 1 0;
+      }
+      .mtl-logs-actions {
+        width: 100%;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+      }
+      .mtl-logs-actions [data-role="logs-copy-status"] {
+        order: 10;
+        width: 100%;
+        min-width: 0;
+        text-align: right;
+      }
+      .mtl-logs-list {
+        min-height: 0;
+        padding: 8px;
+      }
+      .mtl-log-row {
+        padding: 8px;
+      }
+      .mtl-log-copy {
+        margin-left: 0;
       }
       
       .mtl-actions > .mtl-icon-button {

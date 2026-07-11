@@ -8,9 +8,14 @@ const DEFAULT_SETTINGS = {
   sourceLang: resolveConfiguredValue('sourceLang', 'auto'),
   targetLang: resolveConfiguredValue('targetLang', 'pt-BR'),
   providerLang: resolveConfiguredValue('providerLang', 'google'),
+  autoCreateSections: false,
 }
 
 const IMAGE_CACHE_PREFIX = 'reader:image:'
+const LOG_STORAGE_KEY = 'mtl:extension-logs'
+const NETWORK_LOG_STORAGE_KEY = 'mtl:extension-network-logs'
+const LOG_LIMIT = 200
+const LOG_PREVIEW_LIMIT = 4000
 
 function resolveConfiguredApiBaseUrl() {
   const config = globalThis.MTL_EXTENSION_CONFIG && typeof globalThis.MTL_EXTENSION_CONFIG === 'object'
@@ -87,6 +92,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === 'MTL_SAVE_SETTINGS') {
     saveSettings(message.settings).then(sendResponse)
+    return true
+  }
+
+  if (message.type === 'MTL_GET_LOGS') {
+    getExtensionLogs().then(sendResponse)
+    return true
+  }
+
+  if (message.type === 'MTL_CLEAR_LOGS') {
+    clearExtensionLogs(message.payload).then(sendResponse)
+    return true
+  }
+
+  if (message.type === 'MTL_ADD_LOG') {
+    addExtensionLog(message.payload).then(sendResponse)
     return true
   }
 
@@ -167,11 +187,11 @@ async function getSectionDetail(rawPayload) {
       throw new Error('Seção inválida.')
     }
 
-    const response = await fetch(buildApiUrl(settings.apiBaseUrl, `/api/sections/${sectionId}`), {
+    const response = await trackedFetch(buildApiUrl(settings.apiBaseUrl, `/api/sections/${sectionId}`), {
       method: 'GET',
       credentials: 'include',
       cache: 'no-store',
-    })
+    }, { label: 'Buscar seção' })
     if (response.status === 404) return { ok: true, exists: false, section: null }
     const body = await readJson(response)
     if (!response.ok) {
@@ -192,11 +212,11 @@ async function checkSectionExists(rawPayload) {
       return { ok: true, exists: false }
     }
 
-    const response = await fetch(buildApiUrl(settings.apiBaseUrl, `/api/sections/${sectionId}`), {
+    const response = await trackedFetch(buildApiUrl(settings.apiBaseUrl, `/api/sections/${sectionId}`), {
       method: 'GET',
       credentials: 'include',
       cache: 'no-store',
-    })
+    }, { label: 'Verificar seção' })
     if (response.status === 404) return { ok: true, exists: false }
     if (!response.ok) {
       return { ok: false, exists: null, status: response.status }
@@ -247,11 +267,11 @@ async function checkSession(rawPayload) {
   try {
     const payload = rawPayload && typeof rawPayload === 'object' ? rawPayload : {}
     const settings = normalizeSettings({ ...(await getSettings()), ...payload.settings })
-    const response = await fetch(buildApiUrl(settings.apiBaseUrl, '/api/auth/me'), {
+    const response = await trackedFetch(buildApiUrl(settings.apiBaseUrl, '/api/auth/me'), {
       method: 'GET',
       credentials: 'include',
       cache: 'no-store',
-    })
+    }, { label: 'Verificar sessão' })
     if (!response.ok) return { ok: true, authenticated: false }
 
     const user = await readJson(response)
@@ -269,12 +289,12 @@ async function login(rawPayload) {
     const password = typeof payload.password === 'string' ? payload.password : ''
     if (!email || !password) throw new Error('Informe email e senha.')
 
-    const response = await fetch(buildApiUrl(settings.apiBaseUrl, '/api/auth/login'), {
+    const response = await trackedFetch(buildApiUrl(settings.apiBaseUrl, '/api/auth/login'), {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
-    })
+    }, { label: 'Login' })
     const body = await readJson(response)
     if (!response.ok) {
       throw new Error(toErrorMessage(body, `Falha ao entrar (HTTP ${response.status}).`))
@@ -295,10 +315,10 @@ async function logout(rawPayload) {
   try {
     const payload = rawPayload && typeof rawPayload === 'object' ? rawPayload : {}
     const settings = normalizeSettings({ ...(await getSettings()), ...payload.settings })
-    const response = await fetch(buildApiUrl(settings.apiBaseUrl, '/api/auth/logout'), {
+    const response = await trackedFetch(buildApiUrl(settings.apiBaseUrl, '/api/auth/logout'), {
       method: 'POST',
       credentials: 'include',
-    })
+    }, { label: 'Logout' })
     if (!response.ok) {
       const body = await readJson(response)
       throw new Error(toErrorMessage(body, `Falha ao sair (HTTP ${response.status}).`))
@@ -313,11 +333,11 @@ async function getOpenRouterStatus(rawPayload) {
   try {
     const payload = rawPayload && typeof rawPayload === 'object' ? rawPayload : {}
     const settings = normalizeSettings({ ...(await getSettings()), ...payload.settings })
-    const response = await fetch(buildApiUrl(settings.apiBaseUrl, '/api/openrouter'), {
+    const response = await trackedFetch(buildApiUrl(settings.apiBaseUrl, '/api/openrouter'), {
       method: 'GET',
       credentials: 'include',
       cache: 'no-store',
-    })
+    }, { label: 'OpenRouter status' })
     if (response.status === 401 || response.status === 403) {
       return { ok: true, available: false, availableModels: [], selectedModel: null }
     }
@@ -389,11 +409,11 @@ async function createSectionFromPages(rawPayload) {
       throw new Error('Não foi possível baixar nenhuma imagem para criar a seção.')
     }
 
-    const response = await fetch(buildApiUrl(settings.apiBaseUrl, '/api/sections'), {
+    const response = await trackedFetch(buildApiUrl(settings.apiBaseUrl, '/api/sections'), {
       method: 'POST',
       credentials: 'include',
       body: formData,
-    })
+    }, { label: 'Criar seção', pageCount: pages.length, uploadedCount: appendedCount, skippedCount })
     const body = await readJson(response)
     if (!response.ok) {
       throw new Error(toErrorMessage(body, `Falha ao criar seção (HTTP ${response.status}).`))
@@ -421,10 +441,10 @@ async function reprocessSection(rawPayload) {
       throw new Error('Seção inválida para reprocessar.')
     }
 
-    const response = await fetch(buildApiUrl(settings.apiBaseUrl, `/api/sections/${sectionId}/reprocess`), {
+    const response = await trackedFetch(buildApiUrl(settings.apiBaseUrl, `/api/sections/${sectionId}/reprocess`), {
       method: 'POST',
       credentials: 'include',
-    })
+    }, { label: 'Reprocessar seção' })
     const body = await readJson(response)
     if (!response.ok) {
       throw new Error(toErrorMessage(body, `Falha ao reprocessar seção (HTTP ${response.status}).`))
@@ -436,13 +456,13 @@ async function reprocessSection(rawPayload) {
 }
 
 async function downloadImageForSection(imageUrl, pageUrl) {
-  const response = await fetch(imageUrl, {
+  const response = await trackedFetch(imageUrl, {
     method: 'GET',
     credentials: 'include',
     cache: 'no-store',
     referrer: isHttpUrl(pageUrl) ? pageUrl : undefined,
     referrerPolicy: 'unsafe-url',
-  })
+  }, { label: 'Baixar imagem para seção' })
   if (!response.ok) throw new Error(`Imagem HTTP ${response.status}`)
 
   const blob = await response.blob()
@@ -493,8 +513,9 @@ function normalizeSettings(rawValue) {
   const sourceLang = normalizeLang(raw.sourceLang, DEFAULT_SETTINGS.sourceLang)
   const targetLang = normalizeLang(raw.targetLang, DEFAULT_SETTINGS.targetLang)
   const providerLang = normalizeLang(raw.providerLang, DEFAULT_SETTINGS.providerLang)
+  const autoCreateSections = raw.autoCreateSections === true
 
-  return { apiBaseUrl, sourceLang, targetLang, providerLang }
+  return { apiBaseUrl, sourceLang, targetLang, providerLang, autoCreateSections }
 }
 
 function normalizeBaseUrl(value, fallback) {
@@ -536,13 +557,13 @@ async function extractAndTranslateImage(rawPayload) {
       return { ok: true, cached: true, result: cached[cacheKey] }
     }
 
-    const imageResponse = await fetch(imageUrl, {
+    const imageResponse = await trackedFetch(imageUrl, {
       method: 'GET',
       credentials: 'include',
       cache: 'no-store',
       referrer: isHttpUrl(pageUrl) ? pageUrl : undefined,
       referrerPolicy: 'unsafe-url',
-    })
+    }, { label: 'Baixar imagem para OCR' })
     if (!imageResponse.ok) {
       throw new Error(`Não foi possível baixar a imagem. HTTP ${imageResponse.status}.`)
     }
@@ -588,7 +609,7 @@ async function captureExtractAndTranslate(rawPayload, sender) {
     const screenshotUrl = await chrome.tabs.captureVisibleTab(sender.tab.windowId, {
       format: 'png',
     })
-    const screenshotBlob = await (await fetch(screenshotUrl)).blob()
+    const screenshotBlob = await (await trackedFetch(screenshotUrl, {}, { label: 'Ler captura visível' })).blob()
     const croppedBlob = await cropImageBlob(screenshotBlob, rect, devicePixelRatio)
     const imageDataUrl = await blobToDataUrl(croppedBlob)
     const result = await extractAndTranslateBlob({
@@ -611,13 +632,16 @@ async function captureExtractAndTranslate(rawPayload, sender) {
 }
 
 async function extractAndTranslateBlob({ blob, fileName, settings }) {
-  const formData = new FormData()
-  formData.append('file', blob, fileName)
+  const contentType = blob.type && blob.type.startsWith('image/') ? blob.type : 'image/png'
 
-  const extractResponse = await fetch(buildApiUrl(settings.apiBaseUrl, '/api/translate/extract'), {
+  const extractResponse = await trackedFetch(buildApiUrl(settings.apiBaseUrl, '/api/translate/extract'), {
     method: 'POST',
-    body: formData,
-  })
+    headers: {
+      'Content-Type': contentType,
+      'X-File-Name': fileName || 'image.png',
+    },
+    body: blob,
+  }, { label: 'Extrair OCR' })
   const extractPayload = await readJson(extractResponse)
   if (!extractResponse.ok) {
     throw new Error(toErrorMessage(extractPayload, 'Erro ao extrair texto da imagem.'))
@@ -669,13 +693,13 @@ async function ocrTranslateCrop(rawPayload) {
       throw new Error('Área inválida para OCR.')
     }
 
-    const imageResponse = await fetch(imageUrl, {
+    const imageResponse = await trackedFetch(imageUrl, {
       method: 'GET',
       credentials: 'include',
       cache: 'no-store',
       referrer: isHttpUrl(pageUrl) ? pageUrl : undefined,
       referrerPolicy: 'unsafe-url',
-    })
+    }, { label: 'Baixar imagem para recorte OCR' })
     if (!imageResponse.ok) {
       throw new Error(`Não foi possível baixar a imagem. HTTP ${imageResponse.status}.`)
     }
@@ -733,11 +757,11 @@ async function ocrImageViaQueue(settings, blob, fileName) {
   const formData = new FormData()
   formData.append('file', blob, fileName || 'crop.png')
 
-  const queueResponse = await fetch(buildApiUrl(settings.apiBaseUrl, '/api/ocr-image/queue'), {
+  const queueResponse = await trackedFetch(buildApiUrl(settings.apiBaseUrl, '/api/ocr-image/queue'), {
     method: 'POST',
     credentials: 'include',
     body: formData,
-  })
+  }, { label: 'Enfileirar OCR da seleção' })
   const queueData = await readJson(queueResponse)
   if (!queueResponse.ok) {
     throw new Error(toErrorMessage(queueData, 'Falha ao enfileirar OCR da área selecionada.'))
@@ -755,9 +779,10 @@ async function ocrImageViaQueue(settings, blob, fileName) {
     params.set('job_key', jobKey)
     if (queueKey) params.set('queue_key', queueKey)
 
-    const pollResponse = await fetch(
+    const pollResponse = await trackedFetch(
       buildApiUrl(settings.apiBaseUrl, `/api/ocr-image/job?${params.toString()}`),
-      { method: 'GET', credentials: 'include', cache: 'no-store' }
+      { method: 'GET', credentials: 'include', cache: 'no-store' },
+      { label: 'Consultar OCR da seleção' }
     )
     const pollData = await readJson(pollResponse)
     if (pollResponse.ok && pollData) {
@@ -792,7 +817,7 @@ async function translateTexts(rawPayload) {
 }
 
 async function translateBatch(settings, texts) {
-  const response = await fetch(buildApiUrl(settings.apiBaseUrl, '/api/translate/text-batch'), {
+  const response = await trackedFetch(buildApiUrl(settings.apiBaseUrl, '/api/translate/text-batch'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -803,7 +828,7 @@ async function translateBatch(settings, texts) {
       provider_lang: settings.providerLang,
       texts,
     }),
-  })
+  }, { label: 'Traduzir textos', textCount: texts.length })
   const payload = await readJson(response)
   if (!response.ok) {
     throw new Error(toErrorMessage(payload, 'Erro ao traduzir textos em lote.'))
@@ -819,6 +844,210 @@ async function readJson(response) {
   } catch {
     return null
   }
+}
+
+async function getExtensionLogs() {
+  try {
+    const stored = await chrome.storage.local.get({ [LOG_STORAGE_KEY]: [], [NETWORK_LOG_STORAGE_KEY]: [] })
+    const logs = Array.isArray(stored[LOG_STORAGE_KEY]) ? stored[LOG_STORAGE_KEY] : []
+    const networkLogs = Array.isArray(stored[NETWORK_LOG_STORAGE_KEY]) ? stored[NETWORK_LOG_STORAGE_KEY] : []
+    return { ok: true, logs, networkLogs }
+  } catch (error) {
+    return { ok: false, logs: [], networkLogs: [], error: toErrorMessage(error, 'Não foi possível ler os logs.') }
+  }
+}
+
+async function clearExtensionLogs(rawPayload) {
+  try {
+    const payload = rawPayload && typeof rawPayload === 'object' ? rawPayload : {}
+    const kind = payload.kind === 'network' ? 'network' : payload.kind === 'events' ? 'events' : 'all'
+    const patch = {}
+    if (kind === 'events' || kind === 'all') patch[LOG_STORAGE_KEY] = []
+    if (kind === 'network' || kind === 'all') patch[NETWORK_LOG_STORAGE_KEY] = []
+    await chrome.storage.local.set(patch)
+    return { ok: true, logs: [], networkLogs: [] }
+  } catch (error) {
+    return { ok: false, error: toErrorMessage(error, 'Não foi possível limpar os logs.') }
+  }
+}
+
+async function addExtensionLog(rawPayload) {
+  try {
+    const payload = rawPayload && typeof rawPayload === 'object' ? rawPayload : {}
+    const entry = {
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      time: new Date().toISOString(),
+      level: normalizeLogLevel(payload.level),
+      message: String(payload.message || 'Evento da extensão').slice(0, 500),
+      details: payload.details == null ? '' : String(payload.details).slice(0, 2000),
+      pageUrl: typeof payload.pageUrl === 'string' ? payload.pageUrl.slice(0, 500) : '',
+    }
+    const stored = await chrome.storage.local.get({ [LOG_STORAGE_KEY]: [] })
+    const current = Array.isArray(stored[LOG_STORAGE_KEY]) ? stored[LOG_STORAGE_KEY] : []
+    const logs = [...current, entry].slice(-LOG_LIMIT)
+    await chrome.storage.local.set({ [LOG_STORAGE_KEY]: logs })
+    return { ok: true, entry }
+  } catch (error) {
+    return { ok: false, error: toErrorMessage(error, 'Não foi possível registrar o log.') }
+  }
+}
+
+function normalizeLogLevel(value) {
+  const level = String(value || '').toLowerCase()
+  return level === 'error' || level === 'warn' || level === 'info' ? level : 'info'
+}
+
+async function trackedFetch(input, init = {}, context = {}) {
+  const startedAt = Date.now()
+  const request = describeFetchRequest(input, init)
+  try {
+    const response = await fetch(input, init)
+    const responseBody = await readResponsePreview(response)
+    await addNetworkLog({
+      ...request,
+      context,
+      ok: response.ok,
+      status: response.status,
+      statusText: response.statusText,
+      durationMs: Date.now() - startedAt,
+      responseHeaders: headersToObject(response.headers),
+      responseBody,
+    })
+    return response
+  } catch (error) {
+    await addNetworkLog({
+      ...request,
+      context,
+      ok: false,
+      status: 0,
+      statusText: 'FETCH_ERROR',
+      durationMs: Date.now() - startedAt,
+      error: toErrorMessage(error, 'Falha no request.'),
+      errorStack: error instanceof Error ? String(error.stack || '') : '',
+    })
+    throw error
+  }
+}
+
+function describeFetchRequest(input, init = {}) {
+  const inputRequest = input instanceof Request ? input : null
+  const method = String(init.method || inputRequest?.method || 'GET').toUpperCase()
+  const url = inputRequest?.url || String(input || '')
+  const headers = headersToObject(init.headers || inputRequest?.headers || {})
+  return {
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    time: new Date().toISOString(),
+    method,
+    url: limitText(url, 1200),
+    requestHeaders: sanitizeHeaders(headers),
+    requestBody: describeRequestBody(init.body),
+  }
+}
+
+function headersToObject(headersLike) {
+  const output = {}
+  try {
+    const headers = headersLike instanceof Headers ? headersLike : new Headers(headersLike)
+    headers.forEach((value, key) => {
+      output[key] = value
+    })
+  } catch {
+  }
+  return output
+}
+
+function sanitizeHeaders(headers) {
+  const output = {}
+  for (const [key, value] of Object.entries(headers || {})) {
+    output[key] = /authorization|cookie|token|secret|key/i.test(key)
+      ? '[redacted]'
+      : limitText(String(value), 500)
+  }
+  return output
+}
+
+function describeRequestBody(body) {
+  if (body == null) return ''
+  if (body instanceof FormData) {
+    const entries = []
+    for (const [field, value] of body.entries()) {
+      if (value instanceof Blob) {
+        entries.push({
+          field,
+          fileName: value instanceof File ? value.name : undefined,
+          type: value.type || 'application/octet-stream',
+          size: value.size,
+        })
+      } else {
+        entries.push({ field, value: redactText(String(value)) })
+      }
+    }
+    return JSON.stringify({ type: 'FormData', entries })
+  }
+  if (body instanceof Blob) {
+    return JSON.stringify({ type: 'Blob', mime: body.type || 'application/octet-stream', size: body.size })
+  }
+  if (body instanceof URLSearchParams) {
+    return redactText(body.toString())
+  }
+  if (typeof body === 'string') {
+    return redactText(body)
+  }
+  if (body instanceof ArrayBuffer) {
+    return JSON.stringify({ type: 'ArrayBuffer', byteLength: body.byteLength })
+  }
+  if (ArrayBuffer.isView(body)) {
+    return JSON.stringify({ type: body.constructor?.name || 'TypedArray', byteLength: body.byteLength })
+  }
+  return `[${Object.prototype.toString.call(body)}]`
+}
+
+async function readResponsePreview(response) {
+  const contentType = response.headers.get('content-type') || ''
+  const contentLength = Number(response.headers.get('content-length')) || 0
+  const isTextLike = /json|text\/|javascript|xml|x-www-form-urlencoded/i.test(contentType)
+  if (!isTextLike) {
+    return `[body not previewed; content-type=${contentType || 'unknown'}; content-length=${contentLength || 'unknown'}]`
+  }
+  try {
+    return limitText(await response.clone().text(), LOG_PREVIEW_LIMIT)
+  } catch {
+    return ''
+  }
+}
+
+async function addNetworkLog(entry) {
+  try {
+    const stored = await chrome.storage.local.get({ [NETWORK_LOG_STORAGE_KEY]: [] })
+    const current = Array.isArray(stored[NETWORK_LOG_STORAGE_KEY]) ? stored[NETWORK_LOG_STORAGE_KEY] : []
+    const logs = [...current, entry].slice(-LOG_LIMIT)
+    await chrome.storage.local.set({ [NETWORK_LOG_STORAGE_KEY]: logs })
+  } catch {
+  }
+}
+
+function redactText(value) {
+  let text = limitText(String(value || ''), LOG_PREVIEW_LIMIT)
+  try {
+    const parsed = JSON.parse(text)
+    return JSON.stringify(redactObject(parsed), null, 2)
+  } catch {
+  }
+  return text.replace(/("(?:password|token|apiKey|api_key|authorization|secret)"\s*:\s*")[^"]*(")/gi, '$1[redacted]$2')
+}
+
+function redactObject(value) {
+  if (Array.isArray(value)) return value.map(redactObject)
+  if (!value || typeof value !== 'object') return value
+  return Object.fromEntries(Object.entries(value).map(([key, item]) => [
+    key,
+    /password|token|apiKey|api_key|authorization|secret/i.test(key) ? '[redacted]' : redactObject(item),
+  ]))
+}
+
+function limitText(value, limit = LOG_PREVIEW_LIMIT) {
+  const text = String(value || '')
+  return text.length > limit ? `${text.slice(0, limit)}...[truncated ${text.length - limit} chars]` : text
 }
 
 function normalizeDetections(payload) {
