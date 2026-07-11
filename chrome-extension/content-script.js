@@ -67,6 +67,13 @@ const MTL_LANGUAGE_OPTIONS = [
 ]
 const MTL_TARGET_LANGUAGE_OPTIONS = MTL_LANGUAGE_OPTIONS.filter((language) => language.code !== 'auto')
 const MTL_GOOGLE_PROVIDER = { value: 'google', label: 'Google Translate' }
+const MTL_TRANSLATION_REPORT_REASONS = [
+  { value: 'incorrect_translation', label: 'Tradução incorreta' },
+  { value: 'not_translated', label: 'Não traduziu' },
+  { value: 'inadequate_meaning', label: 'Tradução com sentido inadequado' },
+  { value: 'unethical_content', label: 'Conteúdo antiético' },
+]
+const MTL_TRANSLATION_REPORT_DEFAULT_REASON = MTL_TRANSLATION_REPORT_REASONS[0].value
 
 let activeReaderShadow = null
 let activeReaderState = null
@@ -215,6 +222,110 @@ function formatSingleLogForCopy(state, logId) {
   return item
     ? JSON.stringify({ kind, copiedAt: new Date().toISOString(), item }, null, 2)
     : ''
+}
+
+function normalizeReportReason(value) {
+  const reason = String(value || '')
+  return MTL_TRANSLATION_REPORT_REASONS.some((item) => item.value === reason)
+    ? reason
+    : MTL_TRANSLATION_REPORT_DEFAULT_REASON
+}
+
+function detectionItemId(item) {
+  return item?.det_id ?? item?.detId ?? item?.id
+}
+
+function detectionOcrText(item) {
+  return String(item?.ocr_text || item?.ocrText || item?.text || '').trim()
+}
+
+function detectionTranslatedText(item) {
+  return String(item?.translated_text || item?.translatedText || item?.translated || '').trim()
+}
+
+function findReportTargetForSelectedItem(state) {
+  const selected = state.selectedItem
+  if (!selected) return null
+  const processed = state.processedByUrl.get(selected.pageUrl)
+  const detections = Array.isArray(processed?.detections) ? processed.detections : []
+  const item = detections.find((entry) => String(detectionItemId(entry)) === String(selected.itemId))
+  if (!item) return null
+  const box = Array.isArray(item.box) ? item.box.map(Number) : []
+
+  return {
+    itemId: selected.itemId,
+    pageUrl: window.location.href,
+    imageUrl: selected.pageUrl,
+    box: box.length === 4 && box.every(Number.isFinite) ? box : [],
+    ocrText: detectionOcrText(item),
+    translatedText: detectionTranslatedText(item),
+    sourceLang: processed?.sourceLang || state.settings?.sourceLang || '',
+    targetLang: processed?.targetLang || state.settings?.targetLang || '',
+    providerLang: processed?.providerLang || state.settings?.providerLang || '',
+  }
+}
+
+function closeReportPanel(state) {
+  state.isReportPanelOpen = false
+  state.isSubmittingReport = false
+  state.reportSubmitted = false
+  state.reportStatus = ''
+  state.reportTarget = null
+}
+
+async function submitTranslationReport(shadow, state) {
+  if (state.reportSubmitted) {
+    closeReportPanel(state)
+    renderReader(shadow, state)
+    return
+  }
+  if (state.isSubmittingReport) return
+  const target = state.reportTarget || findReportTargetForSelectedItem(state)
+  if (!target) {
+    state.reportStatus = 'Selecione um balão traduzido antes de reportar.'
+    renderReader(shadow, state)
+    return
+  }
+
+  state.reportTarget = target
+  state.isSubmittingReport = true
+  state.reportSubmitted = false
+  state.reportStatus = 'Enviando reporte...'
+  renderReader(shadow, state)
+
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: 'MTL_REPORT_TRANSLATION',
+      payload: {
+        ...target,
+        reason: normalizeReportReason(state.reportReason),
+        settings: state.settings,
+      },
+    })
+    if (!response?.ok) {
+      throw new Error(response?.error || 'Não foi possível enviar o reporte.')
+    }
+    state.reportSubmitted = true
+    state.reportStatus = ''
+    recordExtensionLog(state, 'info', 'Reporte de tradução enviado.', `Reporte #${response.reportId || '-'}`)
+  } catch (error) {
+    state.reportSubmitted = false
+    state.reportStatus = error instanceof Error ? error.message : 'Não foi possível enviar o reporte.'
+    recordExtensionLog(state, 'error', 'Falha ao enviar reporte de tradução.', logDetailsFromError(error))
+  } finally {
+    state.isSubmittingReport = false
+    renderReader(shadow, state)
+  }
+}
+
+function renderReportReasonOptions(selectedReason) {
+  const current = normalizeReportReason(selectedReason)
+  return MTL_TRANSLATION_REPORT_REASONS.map((reason) => `
+    <label class="mtl-report-option">
+      <input type="radio" name="mtl-report-reason" value="${escapeAttr(reason.value)}"${reason.value === current ? ' checked' : ''}>
+      <span>${escapeHtml(reason.label)}</span>
+    </label>
+  `).join('')
 }
 
 function renderEventLogRow(log) {
@@ -832,9 +943,15 @@ function openReader(preferredImageUrl = '') {
     isFontPanelOpen: false,
     isSettingsMenuOpen: false,
     isLogsPanelOpen: false,
+    isReportPanelOpen: false,
+    isSubmittingReport: false,
+    reportSubmitted: false,
     isLoadingLogs: false,
     logsTab: 'events',
     logsCopyStatus: '',
+    reportTarget: null,
+    reportReason: MTL_TRANSLATION_REPORT_DEFAULT_REASON,
+    reportStatus: '',
     logs: [],
     networkLogs: [],
     ocrOverlayFontScale: OCR_OVERLAY_DEFAULT_FONT_SCALE,
@@ -985,7 +1102,12 @@ function bindReader(shadow, host, state) {
       state.isTopbarMoreOpen = false
       renderReader(shadow, state)
     }
-    if (!target.closest('.mtl-quick-editor') && !target.closest('[data-ocr-item-key]') && state.selectedItem) {
+    if (
+      !target.closest('.mtl-quick-editor')
+      && !target.closest('.mtl-report-panel')
+      && !target.closest('[data-ocr-item-key]')
+      && state.selectedItem
+    ) {
       state.selectedItem = null
       renderReader(shadow, state)
     }
@@ -1056,6 +1178,15 @@ function bindReader(shadow, host, state) {
     if (action === 'close-logs') {
       state.isLogsPanelOpen = false
       renderReader(shadow, state)
+      return
+    }
+    if (action === 'close-report-modal') {
+      closeReportPanel(state)
+      renderReader(shadow, state)
+      return
+    }
+    if (action === 'submit-report') {
+      void submitTranslationReport(shadow, state)
       return
     }
     if (action === 'logs-tab-events' || action === 'logs-tab-network') {
@@ -1177,6 +1308,21 @@ function bindReader(shadow, host, state) {
       renderReader(shadow, state)
       return
     }
+    if (action === 'quick-editor-report') {
+      const targetData = findReportTargetForSelectedItem(state)
+      if (!targetData) {
+        recordExtensionLog(state, 'warn', 'Não foi possível abrir o reporte: balão não encontrado.')
+        return
+      }
+      state.reportTarget = targetData
+      state.reportReason = MTL_TRANSLATION_REPORT_DEFAULT_REASON
+      state.reportStatus = ''
+      state.reportSubmitted = false
+      state.isSubmittingReport = false
+      state.isReportPanelOpen = true
+      renderReader(shadow, state)
+      return
+    }
     if (action === 'quick-editor-toggle-drag') {
       if (state.selectedItem) {
         const key = itemOverrideKey(state.selectedItem.pageUrl, state.selectedItem.itemId)
@@ -1262,6 +1408,12 @@ function bindReader(shadow, host, state) {
 
   shadow.addEventListener('change', (event) => {
     const target = event.target
+    if (target instanceof HTMLInputElement && target.name === 'mtl-report-reason') {
+      state.reportReason = normalizeReportReason(target.value)
+      state.reportStatus = ''
+      renderReader(shadow, state)
+      return
+    }
     if (!(target instanceof HTMLSelectElement)) return
     if (target.name === 'page') {
       state.pageIndex = Number(target.value)
@@ -1967,6 +2119,35 @@ function renderReader(shadow, state) {
     }
   }
 
+  const reportPanel = shadow.querySelector('.mtl-report-panel')
+  if (reportPanel) {
+    reportPanel.hidden = !state.isReportPanelOpen
+    const target = state.reportTarget
+    const options = reportPanel.querySelector('[data-role="report-reasons"]')
+    const original = reportPanel.querySelector('[data-role="report-original"]')
+    const translated = reportPanel.querySelector('[data-role="report-translated"]')
+    const status = reportPanel.querySelector('[data-role="report-status"]')
+    const submit = reportPanel.querySelector('[data-action="submit-report"]')
+    const cancel = reportPanel.querySelector('[data-role="report-cancel"]')
+    const formContent = reportPanel.querySelector('[data-role="report-form-content"]')
+    const successContent = reportPanel.querySelector('[data-role="report-success"]')
+    const submitted = state.reportSubmitted === true
+    if (options) options.innerHTML = renderReportReasonOptions(state.reportReason)
+    if (original) original.textContent = target?.ocrText || 'Sem texto OCR registrado.'
+    if (translated) translated.textContent = target?.translatedText || 'Sem tradução registrada.'
+    if (formContent) formContent.hidden = submitted
+    if (successContent) successContent.hidden = !submitted
+    if (cancel) cancel.hidden = submitted
+    if (status) {
+      status.textContent = state.reportStatus || ''
+      status.hidden = submitted || !state.reportStatus
+    }
+    if (submit) {
+      submit.disabled = state.isSubmittingReport || (!target && !submitted)
+      submit.textContent = submitted ? 'Continuar' : state.isSubmittingReport ? 'Enviando...' : 'Enviar'
+    }
+  }
+
   const topbarMoreToggle = shadow.querySelector('.mtl-more-toggle')
   const topbarSecondary = shadow.querySelector('.mtl-actions-secondary')
   if (topbarMoreToggle) {
@@ -2213,6 +2394,7 @@ function renderQuickEditor(state, detections, refSize) {
         </div>
       </div>
       <div class="mtl-qe-row">
+        <button type="button" class="mtl-qe-report" data-action="quick-editor-report">Reportar</button>
         <button type="button" class="mtl-qe-delete" data-action="quick-editor-delete">Excluir</button>
         <button type="button" class="mtl-qe-reset" data-action="quick-editor-reset">Resetar</button>
       </div>
@@ -2401,6 +2583,52 @@ function buildReaderMarkup() {
             </div>
           </div>
           <div class="mtl-logs-list" data-role="logs-list"></div>
+        </div>
+      </div>
+      <div class="mtl-report-panel" role="dialog" aria-label="Reportar problema na tradução" hidden>
+        <div class="mtl-report-card">
+          <div class="mtl-report-head">
+            <div>
+              <strong>Reportar tradução</strong>
+              <span>Ajude a revisar este balão</span>
+            </div>
+            <button type="button" class="mtl-report-close" data-action="close-report-modal" title="Fechar reporte" aria-label="Fechar reporte">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div class="mtl-report-body">
+            <div class="mtl-report-form-content" data-role="report-form-content">
+              <p class="mtl-report-info">
+                Ao enviar, a área selecionada do balão e a tradução correspondente serão encaminhadas aos administradores para análise. Essas informações serão usadas para revisar erros e melhorar as traduções.
+              </p>
+              <div class="mtl-report-preview">
+                <div>
+                  <span>Texto detectado</span>
+                  <p data-role="report-original">Sem texto OCR registrado.</p>
+                </div>
+                <div>
+                  <span>Tradução exibida</span>
+                  <p data-role="report-translated">Sem tradução registrada.</p>
+                </div>
+              </div>
+              <fieldset class="mtl-report-options">
+                <legend>Motivo</legend>
+                <div data-role="report-reasons">${renderReportReasonOptions(MTL_TRANSLATION_REPORT_DEFAULT_REASON)}</div>
+              </fieldset>
+              <p class="mtl-report-consent">
+                Clicar em Enviar confirma que você concorda com o envio dessas informações para análise administrativa.
+              </p>
+              <p class="mtl-report-status" data-role="report-status" hidden></p>
+            </div>
+            <div class="mtl-report-success" data-role="report-success" hidden>
+              <strong>Report enviado com sucesso</strong>
+              <p>Obrigado pelo feedback. A equipe vai analisar este balão para revisar problemas e melhorar as próximas traduções.</p>
+            </div>
+            <div class="mtl-report-actions">
+              <button type="button" data-role="report-cancel" data-action="close-report-modal">Cancelar</button>
+              <button type="button" class="mtl-primary" data-action="submit-report">Enviar</button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -2709,6 +2937,170 @@ function readerCss() {
       cursor: pointer;
       color: var(--muted-foreground);
       font-size: 12px;
+    }
+    .mtl-report-panel[hidden] {
+      display: none;
+    }
+    .mtl-report-panel {
+      position: fixed;
+      inset: 0;
+      z-index: 45;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: color-mix(in oklch, var(--background) 82%, transparent);
+      backdrop-filter: blur(6px);
+      padding: 16px;
+    }
+    .mtl-report-card {
+      width: min(560px, 100%);
+      max-height: min(650px, calc(100vh - 32px));
+      overflow: auto;
+      border: 1px solid color-mix(in oklch, var(--primary) 28%, var(--border));
+      border-radius: calc(var(--radius) + 4px);
+      background: var(--card);
+      color: var(--card-foreground);
+      box-shadow: 0 24px 60px rgb(0 0 0 / 50%);
+      animation: mtl-auth-pop 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .mtl-report-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      padding: 14px;
+    }
+    .mtl-report-head > div {
+      display: grid;
+      line-height: 1.25;
+    }
+    .mtl-report-head strong {
+      font-size: 15px;
+    }
+    .mtl-report-head span {
+      color: var(--muted-foreground);
+      font-size: 12px;
+    }
+    .mtl-report-close {
+      width: 30px;
+      height: 30px;
+      min-height: 30px;
+      padding: 0;
+      border-color: transparent;
+      background: transparent;
+      color: var(--muted-foreground);
+    }
+    .mtl-report-close:hover {
+      border-color: var(--border);
+      color: var(--foreground);
+    }
+    .mtl-report-body {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+    }
+    .mtl-report-form-content {
+      display: grid;
+      gap: 12px;
+    }
+    .mtl-report-form-content[hidden],
+    .mtl-report-success[hidden] {
+      display: none;
+    }
+    .mtl-report-info,
+    .mtl-report-consent,
+    .mtl-report-status {
+      margin: 0;
+      color: var(--muted-foreground);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .mtl-report-preview {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .mtl-report-preview > div {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: color-mix(in oklch, var(--muted) 35%, transparent);
+      padding: 10px;
+    }
+    .mtl-report-preview span,
+    .mtl-report-options legend {
+      color: var(--muted-foreground);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .mtl-report-preview p {
+      margin: 5px 0 0;
+      max-height: 86px;
+      overflow: auto;
+      font-size: 13px;
+      line-height: 1.35;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .mtl-report-options {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+      margin: 0;
+      border: 0;
+      padding: 0;
+    }
+    .mtl-report-options > div {
+      display: grid;
+      gap: 8px;
+    }
+    .mtl-report-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--input);
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+    .mtl-report-option input {
+      flex: none;
+      accent-color: color-mix(in oklch, var(--primary) 80%, white);
+    }
+    .mtl-report-status {
+      border: 1px solid color-mix(in oklch, var(--primary) 30%, var(--border));
+      border-radius: 8px;
+      background: color-mix(in oklch, var(--primary) 12%, transparent);
+      color: var(--foreground);
+      padding: 9px 10px;
+    }
+    .mtl-report-success {
+      display: grid;
+      gap: 8px;
+      border: 1px solid color-mix(in oklch, var(--primary) 32%, var(--border));
+      border-radius: 8px;
+      background: color-mix(in oklch, var(--primary) 12%, transparent);
+      padding: 18px;
+      text-align: center;
+    }
+    .mtl-report-success strong {
+      font-size: 16px;
+    }
+    .mtl-report-success p {
+      margin: 0;
+      color: var(--muted-foreground);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .mtl-report-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
     }
     .mtl-title {
       display: grid;
@@ -3083,6 +3475,30 @@ function readerCss() {
       .mtl-log-copy {
         margin-left: 0;
       }
+      .mtl-report-panel {
+        align-items: stretch;
+        justify-content: stretch;
+        padding: 8px;
+      }
+      .mtl-report-card {
+        width: 100%;
+        max-height: none;
+        height: calc(100dvh - 16px);
+        border-radius: 10px;
+      }
+      .mtl-report-head {
+        padding: 12px;
+      }
+      .mtl-report-body {
+        padding: 12px;
+      }
+      .mtl-report-preview {
+        grid-template-columns: 1fr;
+      }
+      .mtl-report-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
       
       .mtl-actions > .mtl-icon-button {
         flex: none;
@@ -3410,6 +3826,14 @@ function readerCss() {
       background: color-mix(in oklch, var(--destructive) 18%, transparent);
       color: var(--destructive);
       min-height: 24px;
+      padding: 0 8px;
+      font-size: 11px;
+    }
+    .mtl-qe-report {
+      min-height: 24px;
+      border-color: color-mix(in oklch, var(--accent) 45%, var(--border));
+      background: color-mix(in oklch, var(--accent) 12%, transparent);
+      color: var(--foreground);
       padding: 0 8px;
       font-size: 11px;
     }

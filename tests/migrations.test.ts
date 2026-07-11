@@ -34,13 +34,17 @@ describe('SQLite migrations', () => {
         'sections',
         'section_images',
         'section_image_ocr_items',
+        'translation_reports',
         'kv_store',
         'schema_migrations',
       ])
     )
 
     const applied = db.prepare('SELECT version, name FROM schema_migrations').all()
-    expect(applied).toEqual([{ version: 1, name: '001_initial_schema' }])
+    expect(applied).toEqual([
+      { version: 1, name: '001_initial_schema' },
+      { version: 2, name: '002_translation_reports' },
+    ])
     db.close()
   })
 })
