@@ -1236,11 +1236,6 @@ function bindReader(shadow, host, state) {
       renderReader(shadow, state)
       return
     }
-    if (action === 'toggle-overlay') {
-      state.overlayMode = !state.overlayMode
-      renderReader(shadow, state)
-      return
-    }
     if (action === 'toggle-text') {
       state.textMode = state.textMode === 'translated' ? 'original' : 'translated'
       renderReader(shadow, state)
@@ -1841,7 +1836,6 @@ function renderReader(shadow, state) {
   const pageSelect = shadow.querySelector('select[name="page"]')
   const status = shadow.querySelector('.mtl-status')
   const zoomLabel = shadow.querySelector('.mtl-zoom')
-  const overlayButton = shadow.querySelector('[data-action="toggle-overlay"]')
   const textButton = shadow.querySelector('[data-action="toggle-text"]')
   const pageCounter = shadow.querySelector('.mtl-page-counter')
   const translatedBadge = shadow.querySelector('.mtl-translated-badge')
@@ -1882,7 +1876,6 @@ function renderReader(shadow, state) {
       status.textContent = state.error || state.activeStatus || 'Imagem original'
     }
   }
-  if (overlayButton) overlayButton.textContent = state.overlayMode ? 'Overlay OCR' : 'Imagem limpa'
   if (textButton) textButton.textContent = state.textMode === 'translated' ? 'Tradução' : 'Original'
 
   const translateTrigger = shadow.querySelector('.mtl-translate-trigger')
@@ -2355,7 +2348,6 @@ function buildReaderMarkup() {
                 <p class="mtl-panel-hint">2x no balão para editar. Ative "Arrastar" no menu para mover.</p>
               </div>
             </div>
-            <button type="button" data-action="toggle-overlay">Overlay OCR</button>
           </div>
           <button class="mtl-icon-button mtl-more-toggle" type="button" data-action="toggle-topbar-more" title="Mais opções" aria-label="Mais opções" aria-expanded="false">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
