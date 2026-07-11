@@ -72,7 +72,10 @@ export async function POST(request: Request) {
       section: { id: sectionId },
     })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Erro ao criar seção'
+    const rawMessage = error instanceof Error ? error.message : ''
+    const message = /failed to parse body as formdata/i.test(rawMessage)
+      ? 'Upload muito grande ou incompleto: o corpo da requisição não pôde ser lido. Tente enviar menos páginas por vez.'
+      : rawMessage || 'Erro ao criar seção'
     return NextResponse.json({ message, error: 'Bad Request', statusCode: 400 }, { status: 400 })
   }
 }

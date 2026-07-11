@@ -13,7 +13,7 @@ const nextConfig = {
     '/download-extensao': ['./chrome-extension/**/*'],
   },
   experimental: {
-    proxyClientMaxBodySize: '100mb',
+    proxyClientMaxBodySize: '2gb',
   },
   turbopack: {},
   images: {
