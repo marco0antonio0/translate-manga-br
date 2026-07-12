@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import SetupPageClient from './page-client'
 import { authController } from '@/lib/backend/auth/auth.module'
+import { getPublicUrlSuggestions } from '@/lib/server/public-url-suggestions'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,10 +12,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-export default function SetupPage() {
+export default async function SetupPage() {
   if (authController.hasAnyUser()) {
     redirect('/login')
   }
 
-  return <SetupPageClient />
+  const urlSuggestions = await getPublicUrlSuggestions()
+
+  return (
+    <SetupPageClient
+      lanUrls={urlSuggestions.lanUrls}
+      domainUrl={urlSuggestions.domainUrl}
+    />
+  )
 }

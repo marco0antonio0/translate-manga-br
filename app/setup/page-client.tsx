@@ -3,6 +3,8 @@
 import { FormEvent, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
+  ChevronDown,
+  Chrome,
   Loader2,
   Sparkles,
   HardDrive,
@@ -14,14 +16,24 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 
-export default function SetupPageClient() {
+interface SetupPageClientProps {
+  lanUrls?: string[]
+  domainUrl?: string | null
+}
+
+export default function SetupPageClient({ lanUrls = [], domainUrl = null }: SetupPageClientProps) {
   const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isExtensionOpen, setIsExtensionOpen] = useState(false)
+  const [extensionUrl, setExtensionUrl] = useState('')
+
+  const urlSuggestions = [...(domainUrl ? [domainUrl] : []), ...lanUrls]
 
   const handleCreateAdmin = async () => {
     if (isLoading) return
@@ -40,6 +52,7 @@ export default function SetupPageClient() {
           name: name.trim(),
           email: email.trim(),
           password,
+          extensionPublicUrl: extensionUrl.trim(),
         }),
       })
 
@@ -186,6 +199,69 @@ export default function SetupPageClient() {
                   onChange={(event) => setPassword(event.target.value)}
                   disabled={isLoading}
                 />
+              </div>
+
+              <div className="rounded-xl border border-border/70 bg-muted/20">
+                <button
+                  type="button"
+                  onClick={() => setIsExtensionOpen((open) => !open)}
+                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
+                  aria-expanded={isExtensionOpen}
+                >
+                  <Chrome className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-sm font-medium">Extensão do navegador</span>
+                    <span className="block text-xs text-muted-foreground">
+                      Opcional — dá para configurar depois
+                    </span>
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      'h-4 w-4 shrink-0 text-muted-foreground transition-transform',
+                      isExtensionOpen && 'rotate-180'
+                    )}
+                  />
+                </button>
+
+                {isExtensionOpen && (
+                  <div className="space-y-2.5 border-t border-border/70 px-3 py-3">
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      A extensão traduz mangá direto de qualquer site, e precisa saber o endereço
+                      deste servidor. Se quiser já deixar pronto, informe o endereço pelo qual os
+                      dispositivos vão acessá-lo:
+                    </p>
+                    {urlSuggestions.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {urlSuggestions.map((url) => (
+                          <button
+                            key={url}
+                            type="button"
+                            onClick={() => setExtensionUrl(url)}
+                            className={cn(
+                              'cursor-pointer rounded-md border px-2 py-1 font-mono text-[11px] transition-all',
+                              extensionUrl === url
+                                ? 'border-primary bg-primary/15 font-semibold text-primary'
+                                : 'border-border bg-muted/40 text-muted-foreground hover:border-primary/50 hover:text-foreground'
+                            )}
+                          >
+                            {url}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <Input
+                      value={extensionUrl}
+                      onChange={(event) => setExtensionUrl(event.target.value)}
+                      placeholder="http://192.168.0.10:3080 ou https://seu-dominio.com"
+                      disabled={isLoading}
+                      className="font-mono text-xs"
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      Detectamos os endereços acima — clique em um para usar. Deixe em branco para
+                      pular: um assistente ajuda a configurar depois, na página Extensão.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <Button className="mt-6 w-full" size="lg" type="submit" disabled={isLoading}>

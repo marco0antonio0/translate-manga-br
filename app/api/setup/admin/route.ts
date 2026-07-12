@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
 import { authController } from '@/lib/backend/auth/auth.module'
+import { normalizePublicUrl, publicUrlService } from '@/lib/backend/public-url/public-url.service'
 import { isStateChangingMethod, isTrustedOrigin } from '@/lib/security/request-guards'
 
 type SetupBody = {
   name?: unknown
   email?: unknown
   password?: unknown
+  extensionPublicUrl?: unknown
 }
 
 function asText(value: unknown) {
@@ -43,6 +45,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'A senha deve ter ao menos 6 caracteres.' }, { status: 400 })
     }
 
+    // URL da extensão é opcional no setup; se veio preenchida, valida antes de criar o admin
+    const extensionPublicUrl = asText(body.extensionPublicUrl)
+    if (extensionPublicUrl) {
+      const validation = normalizePublicUrl(extensionPublicUrl)
+      if (!validation.ok) {
+        return NextResponse.json(
+          { message: `URL da extensão inválida: ${validation.error}` },
+          { status: 400 }
+        )
+      }
+    }
+
     const result = authController.createInitialAdmin(name, email, password)
     if (!result.ok) {
       return NextResponse.json(
@@ -51,7 +65,13 @@ export async function POST(request: Request) {
       )
     }
 
-    return NextResponse.json({ success: true, userId: result.userId })
+    let extensionConfigured = false
+    if (extensionPublicUrl) {
+      const saved = publicUrlService.savePublicUrl(extensionPublicUrl)
+      extensionConfigured = saved.ok
+    }
+
+    return NextResponse.json({ success: true, userId: result.userId, extensionConfigured })
   } catch (error) {
     console.error('Setup admin route error:', error)
     return NextResponse.json({ message: 'Erro ao criar administrador inicial.' }, { status: 500 })

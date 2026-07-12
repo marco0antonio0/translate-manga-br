@@ -1,8 +1,8 @@
-import os from 'node:os'
 import { Metadata } from 'next'
-import { cookies, headers } from 'next/headers'
+import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { getPublicUrlSuggestions } from '@/lib/server/public-url-suggestions'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { authController } from '@/lib/backend/auth/auth.module'
@@ -32,48 +32,6 @@ async function getCurrentUser() {
   const cookieStore = await cookies()
   const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value
   return authController.getUserFromToken(token)
-}
-
-interface PublicUrlSuggestions {
-  domainUrl: string | null
-  lanUrls: string[]
-}
-
-function isLocalHostname(hostname: string) {
-  return ['localhost', '127.0.0.1', '::1', '[::1]'].includes(hostname.toLowerCase())
-}
-
-async function getPublicUrlSuggestions(): Promise<PublicUrlSuggestions> {
-  const headerList = await headers()
-  const host = headerList.get('x-forwarded-host') || headerList.get('host') || ''
-  const proto = headerList.get('x-forwarded-proto') || 'http'
-
-  let hostname = ''
-  let port = ''
-  try {
-    const parsed = new URL(`${proto}://${host}`)
-    hostname = parsed.hostname
-    port = parsed.port
-  } catch {
-  }
-
-  // Acessado por domínio ou IP externo → esse endereço serve direto como URL pública
-  const domainUrl = hostname && !isLocalHostname(hostname)
-    ? `${proto}://${host}`
-    : null
-
-  // IPs da máquina onde o projeto roda, para acesso via rede local
-  const lanPort = port || process.env.PORT || '3080'
-  const lanUrls: string[] = []
-  for (const interfaces of Object.values(os.networkInterfaces())) {
-    for (const net of interfaces || []) {
-      if (net.family === 'IPv4' && !net.internal) {
-        lanUrls.push(`http://${net.address}:${lanPort}`)
-      }
-    }
-  }
-
-  return { domainUrl, lanUrls: lanUrls.slice(0, 3) }
 }
 
 function DownloadExtensionButton({

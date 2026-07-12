@@ -20,7 +20,7 @@ IA rodando em CPU, seus dados ficam com você.</samp>
 
 <br>
 
-<kbd><a href="#-instalação-rápida-para-produção-docker-compose">&nbsp;🚀 Instalar&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-quick-start">&nbsp;🛠️ Dev&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-features">&nbsp;✨ Features&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-benchmarks-em-cpu">&nbsp;📊 Benchmarks&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#%EF%B8%8F-arquitetura">&nbsp;🏗️ Arquitetura&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-documentação">&nbsp;📚 Docs&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-contribuindo">&nbsp;🤝 Contribuir&nbsp;</a></kbd>
+<kbd><a href="#-instalação-rápida-para-produção-docker">&nbsp;🚀 Instalar&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-quick-start">&nbsp;🛠️ Dev&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-features">&nbsp;✨ Features&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-benchmarks-em-cpu">&nbsp;📊 Benchmarks&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#%EF%B8%8F-arquitetura">&nbsp;🏗️ Arquitetura&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-documentação">&nbsp;📚 Docs&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-contribuindo">&nbsp;🤝 Contribuir&nbsp;</a></kbd>
 
 <br>
 <br>
@@ -47,9 +47,81 @@ IA rodando em CPU, seus dados ficam com você.</samp>
 
 O princípio central é **local-first**: processamento e armazenamento ficam sob controle do usuário (SQLite + arquivos em `storage/`). A única exceção são os provedores externos de tradução — Google Translate ou OpenRouter — quando selecionados.
 
-## 🚀 Instalação rápida para produção (Docker Compose)
+## 🚀 Instalação rápida para produção (Docker)
 
-Este é o caminho recomendado para **usar a aplicação pronta**, sem clonar o repositório, sem Dockerfile e sem build local. Crie uma pasta no servidor, salve o conteúdo abaixo como `docker-compose.yml` e suba o serviço.
+> **O que é isto?** O jeito mais fácil de colocar o Manga Translator Local para funcionar.
+> Não precisa baixar o código-fonte nem entender de programação: **um único comando** baixa a
+> aplicação pronta e a deixa rodando no seu computador ou servidor, disponível pelo navegador.
+
+**Único requisito:** ter o [Docker](https://docs.docker.com/get-started/get-docker/) instalado — um
+programa gratuito que baixa e executa aplicações prontas, como esta.
+
+### 1️⃣ &nbsp;Rode a aplicação
+
+Copie e cole no terminal:
+
+```bash
+mkdir -p manga-translator/storage
+cd manga-translator
+
+docker run -d \
+  --name manga-nextjs \
+  -p 3080:3080 \
+  -e NODE_ENV=production \
+  -e ALLOW_REMOTE_SETUP=1 \
+  -e SECTION_IMAGE_PROCESSING_CONCURRENCY=2 \
+  -v "$(pwd)/storage:/app/storage" \
+  --restart unless-stopped \
+  ghcr.io/marco0antonio0/translate-manga-br:latest
+```
+
+<sub>💡 Em palavras simples: cria uma pasta chamada `manga-translator`, baixa a aplicação pronta e a
+deixa rodando em segundo plano na porta 3080 — reiniciando sozinha se o computador for reiniciado.
+Tudo que a aplicação salvar fica na subpasta `storage/`.</sub>
+
+### 2️⃣ &nbsp;Abra no navegador
+
+| Onde a aplicação está rodando | Endereço para acessar |
+| --- | --- |
+| No seu próprio computador | `http://localhost:3080` |
+| Em outro computador/servidor | `http://IP_DO_SERVIDOR:3080` |
+
+### 3️⃣ &nbsp;Crie sua conta de administrador
+
+No primeiro acesso, entre em **`/setup`** e crie o usuário administrador. Pronto — já dá para
+enviar páginas de mangá e traduzir. 🎉
+
+> [!TIP]
+> **Quer usar a extensão do navegador?** Entre como administrador e abra a página **Extensão**:
+> um assistente guiado configura o endereço do servidor em um clique e libera o download para
+> todos os usuários.
+
+**Seus dados ficam com você:** a pasta `storage/` (criada ao lado, no passo 1) guarda o banco de
+dados, as imagens enviadas e tudo que for gerado. Faça backup dela e você faz backup de tudo.
+
+<details>
+<summary><b>🐳 Dia a dia — comandos úteis</b> <sub>(clique para abrir)</sub></summary>
+<br>
+
+| Quero... | Comando |
+| --- | --- |
+| Ver o que está acontecendo (logs) | `docker logs -f manga-nextjs` |
+| Parar a aplicação | `docker stop manga-nextjs` |
+| Ligar de novo | `docker start manga-nextjs` |
+| Atualizar para a versão mais nova | `docker pull ghcr.io/marco0antonio0/translate-manga-br:latest`<br>`docker rm -f manga-nextjs` e repita o passo 1️⃣ |
+| Remover (sem perder os dados) | `docker rm -f manga-nextjs` — a pasta `storage/` fica intacta |
+
+</details>
+
+<details>
+<summary><b>⚙️ Alternativa: Docker Compose</b> <sub>— a mesma instalação, salva em um arquivo (clique para abrir)</sub></summary>
+<br>
+
+**Para quem é?** Para quem prefere deixar a configuração registrada num arquivo em vez de digitar
+o comando longo — útil para versionar, repetir em outros servidores ou ajustar depois. O resultado
+final é idêntico ao do passo 1️⃣.
+
+**Passo A** — crie uma pasta e, dentro dela, um arquivo chamado `docker-compose.yml` com este conteúdo:
 
 ```yaml
 services:
@@ -73,22 +145,22 @@ services:
     restart: unless-stopped
 ```
 
-Suba a aplicação:
+**Passo B** — na mesma pasta, suba a aplicação com um comando:
 
 ```bash
-mkdir -p manga-translator
-cd manga-translator
-nano docker-compose.yml
 docker compose up -d
 ```
 
-Acesse:
+Depois é igual: abra o endereço no navegador e siga os passos 2️⃣ e 3️⃣ acima.
+A pasta `storage/` é criada automaticamente ao lado do arquivo e guarda todos os dados.
 
-```text
-http://IP_DO_SERVIDOR:3080
-```
+| Quero... | Comando |
+| --- | --- |
+| Parar tudo | `docker compose down` |
+| Ligar de novo | `docker compose up -d` |
+| Atualizar para a versão mais nova | `docker compose pull && docker compose up -d` |
 
-Na primeira execução, abra `/setup` para criar o administrador. O diretório `storage/` será criado ao lado do compose e guardará o SQLite, uploads, chaves locais da instância e arquivos gerados. Para liberar a extensão do navegador, entre como administrador e configure a URL pública em `/inicio/preferencias`, na aba **Extensão**.
+</details>
 
 ## 📊 Benchmarks em CPU
 
