@@ -20,7 +20,7 @@ IA rodando em CPU, seus dados ficam com você.</samp>
 
 <br>
 
-<kbd><a href="#-quick-start">&nbsp;🚀 Quick Start&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-features">&nbsp;✨ Features&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-benchmarks-em-cpu">&nbsp;📊 Benchmarks&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#%EF%B8%8F-arquitetura">&nbsp;🏗️ Arquitetura&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-documentação">&nbsp;📚 Docs&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-contribuindo">&nbsp;🤝 Contribuir&nbsp;</a></kbd>
+<kbd><a href="#-instalação-rápida-para-produção-docker-compose">&nbsp;🚀 Instalar&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-quick-start">&nbsp;🛠️ Dev&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-features">&nbsp;✨ Features&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-benchmarks-em-cpu">&nbsp;📊 Benchmarks&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#%EF%B8%8F-arquitetura">&nbsp;🏗️ Arquitetura&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-documentação">&nbsp;📚 Docs&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-contribuindo">&nbsp;🤝 Contribuir&nbsp;</a></kbd>
 
 <br>
 <br>
@@ -46,6 +46,54 @@ IA rodando em CPU, seus dados ficam com você.</samp>
 **Manga Translator Local** é uma aplicação full stack para traduzir páginas de mangá em ambiente local. O projeto combina painel web, detecção de balões de texto com YOLO, OCR com PaddleOCR, tradução e um leitor com overlay editável.
 
 O princípio central é **local-first**: processamento e armazenamento ficam sob controle do usuário (SQLite + arquivos em `storage/`). A única exceção são os provedores externos de tradução — Google Translate ou OpenRouter — quando selecionados.
+
+## 🚀 Instalação rápida para produção (Docker Compose)
+
+Este é o caminho recomendado para **usar a aplicação pronta**, sem clonar o repositório, sem Dockerfile e sem build local. Crie uma pasta no servidor, salve o conteúdo abaixo como `docker-compose.yml` e suba o serviço.
+
+```yaml
+services:
+  nextjs:
+    image: ${NEXTJS_IMAGE:-ghcr.io/marco0antonio0/translate-manga-br:latest}
+    container_name: manga-nextjs
+    ports:
+      - "${NEXTJS_PORT:-3080}:3080"
+    environment:
+      NODE_ENV: "production"
+      ALLOW_REMOTE_SETUP: "1"
+      SECTION_IMAGE_PROCESSING_CONCURRENCY: "2"
+      CHROME_EXTENSION_API_BASE_URL: "http://localhost:3080"
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3080"
+      SITE_URL: "http://localhost:3080"
+      APP_URL: "http://localhost:3080"
+      PUBLIC_URL: "http://localhost:3080"
+    volumes:
+      - "${MANGA_STORAGE_DIR:-./storage}:/app/storage"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3080/api/setup/status').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+```
+
+Suba a aplicação:
+
+```bash
+mkdir -p manga-translator
+cd manga-translator
+nano docker-compose.yml
+docker compose up -d
+```
+
+Acesse:
+
+```text
+http://IP_DO_SERVIDOR:3080
+```
+
+Na primeira execução, abra `/setup` para criar o administrador. O diretório `storage/` será criado ao lado do compose e guardará o SQLite, uploads, chaves locais da instância e arquivos gerados. Para usar outro domínio, troque as URLs em `CHROME_EXTENSION_API_BASE_URL`, `NEXT_PUBLIC_SITE_URL`, `SITE_URL`, `APP_URL` e `PUBLIC_URL` antes de subir.
 
 ## 📊 Benchmarks em CPU
 
@@ -148,9 +196,9 @@ docker compose down            # parar
 
 No Compose, há apenas o serviço Next.js. A detecção de balões, o OCR, a tradução, a persistência SQLite e a interface rodam no mesmo app.
 
-### Produção
+### Desenvolvimento com Docker Compose (build local)
 
-O `docker-compose.yml` atual faz build local da imagem Next.js e monta `./storage` como volume persistente:
+O `docker-compose.yml` do repositório é voltado para desenvolvimento/build local: ele constrói a imagem Next.js a partir do checkout e monta `./storage` como volume persistente.
 
 ```bash
 docker compose up -d --build
