@@ -70,9 +70,16 @@ interface SectionCategoriesLibraryResponse {
 }
 
 interface LibraryUsageSummary {
+  role: number | null
   limitInTenHours: number | null
   generatedInTenHours: number
   pageUploadLimit: number | null
+}
+
+interface PublicUrlStatusResponse {
+  configured?: boolean
+  message?: string
+  error?: string
 }
 
 const MOBILE_SECTIONS_PER_PAGE = 6
@@ -194,6 +201,8 @@ export function SectionsLibrary() {
   const [isLoadingSections, setIsLoadingSections] = useState(true)
   const [isLoadingUsageSummary, setIsLoadingUsageSummary] = useState(true)
   const [usageSummary, setUsageSummary] = useState<LibraryUsageSummary | null>(null)
+  const [isExtensionConfigured, setIsExtensionConfigured] = useState(false)
+  const [isExtensionStatusLoading, setIsExtensionStatusLoading] = useState(true)
   const [deletingSectionId, setDeletingSectionId] = useState<number | null>(null)
   const [sectionToDelete, setSectionToDelete] = useState<SectionListItem | null>(null)
   const [error, setError] = useState('')
@@ -365,6 +374,7 @@ export function SectionsLibrary() {
       }
 
       setUsageSummary({
+        role: toFiniteNumber(data.role),
         limitInTenHours: toFiniteNumber(data.limite),
         generatedInTenHours: toFiniteNumber(data.gerado) ?? 0,
         pageUploadLimit: toFiniteNumber(data.limit_page_upload),
@@ -373,6 +383,28 @@ export function SectionsLibrary() {
       setUsageSummary(null)
     } finally {
       setIsLoadingUsageSummary(false)
+    }
+  }, [handleUnauthorized])
+
+  const fetchExtensionConfigStatus = useCallback(async () => {
+    try {
+      const response = await fetch('/api/public-url', { cache: 'no-store' })
+      const data = (await response.json()) as PublicUrlStatusResponse
+
+      if (response.status === 401) {
+        handleUnauthorized()
+        return
+      }
+
+      if (!response.ok) {
+        throw new Error(toErrorMessage(data, 'Não foi possível carregar configuração da extensão.'))
+      }
+
+      setIsExtensionConfigured(Boolean(data.configured))
+    } catch {
+      setIsExtensionConfigured(false)
+    } finally {
+      setIsExtensionStatusLoading(false)
     }
   }, [handleUnauthorized])
 
@@ -425,7 +457,8 @@ export function SectionsLibrary() {
 
   useEffect(() => {
     void fetchUsageSummary()
-  }, [fetchUsageSummary])
+    void fetchExtensionConfigStatus()
+  }, [fetchExtensionConfigStatus, fetchUsageSummary])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -684,6 +717,7 @@ export function SectionsLibrary() {
     sectionsPagination.mode === 'server'
       ? Boolean(sectionsPagination.links?.next ?? (safeCurrentPage < totalPages))
       : safeCurrentPage < totalPages
+  const shouldShowExtensionCard = usageSummary?.role === 4 || isExtensionConfigured
 
   const goToPage = (page: number) => {
     const nextPage = clampPage(page, totalPages)
@@ -784,48 +818,76 @@ export function SectionsLibrary() {
         </div>
       </Link>
 
-      {}
-      <div className="pt-4 pb-2 sm:pt-6 sm:pb-3">
-      <Link href="/extensao" className="block">
-        <div className="relative cursor-pointer rounded-xl overflow-hidden border border-primary/30 hover:border-primary/70 transition-all duration-300 group bg-card hover:shadow-[0_0_30px_-6px_color-mix(in_oklch,var(--primary)_45%,transparent)]">
-          <div className="h-0.75 w-full bg-linear-to-r from-accent via-primary to-accent" />
-          <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-          <div className="absolute -right-20 -top-20 h-44 w-44 rounded-full bg-primary/15 blur-3xl opacity-60 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+      {shouldShowExtensionCard ? (
+        <div className="pt-4 pb-2 sm:pt-6 sm:pb-3">
+          <Link href="/extensao" className="block">
+            <div className="relative cursor-pointer rounded-xl overflow-hidden border border-primary/30 hover:border-primary/70 transition-all duration-300 group bg-card hover:shadow-[0_0_30px_-6px_color-mix(in_oklch,var(--primary)_45%,transparent)]">
+              <div className="h-0.75 w-full bg-linear-to-r from-accent via-primary to-accent" />
+              <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+              <div className="absolute -right-20 -top-20 h-44 w-44 rounded-full bg-primary/15 blur-3xl opacity-60 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
-          <div className="relative px-4 py-4 sm:px-7 sm:py-6 flex items-center gap-3 sm:gap-6">
-            <div className="relative shrink-0">
-              <div className="rounded-xl sm:rounded-2xl bg-linear-to-br from-primary/25 to-accent/20 group-hover:from-primary/40 group-hover:to-accent/30 p-2.5 sm:p-4 ring-1 ring-primary/30 group-hover:ring-primary/60 transition-all duration-300 group-hover:shadow-[0_0_20px_-2px_color-mix(in_oklch,var(--primary)_55%,transparent)]">
-                <Chrome className="h-5 w-5 sm:h-6 sm:w-6 text-primary group-hover:scale-110 transition-transform duration-300" />
+              <div className="relative px-4 py-4 sm:px-7 sm:py-6 flex items-center gap-3 sm:gap-6">
+                <div className="relative shrink-0">
+                  <div className="rounded-xl sm:rounded-2xl bg-linear-to-br from-primary/25 to-accent/20 group-hover:from-primary/40 group-hover:to-accent/30 p-2.5 sm:p-4 ring-1 ring-primary/30 group-hover:ring-primary/60 transition-all duration-300 group-hover:shadow-[0_0_20px_-2px_color-mix(in_oklch,var(--primary)_55%,transparent)]">
+                    <Chrome className="h-5 w-5 sm:h-6 sm:w-6 text-primary group-hover:scale-110 transition-transform duration-300" />
+                  </div>
+                  <Sparkles className="anime-twinkle absolute -right-1.5 -top-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent drop-shadow-[0_0_6px_color-mix(in_oklch,var(--accent)_70%,transparent)]" />
+                </div>
+
+                <div className="flex-1 min-w-0 space-y-1 sm:space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                    <span className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors duration-200">
+                      Extensão para o navegador
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-linear-to-r from-primary to-accent px-1.5 py-0.5 text-[10px] sm:px-2 sm:text-[11px] font-semibold text-primary-foreground shadow-sm">
+                      <Sparkles className="h-3 w-3" />
+                      Novo
+                    </span>
+                  </div>
+                  <p className="text-sm leading-relaxed text-muted-foreground hidden sm:block">
+                    Traduza mangá direto de qualquer site com o leitor integrado — no PC e no celular.
+                  </p>
+                  <p className="text-xs leading-snug text-muted-foreground sm:hidden">
+                    Traduza direto do navegador, no PC e no celular.
+                  </p>
+                </div>
+
+                <div className="relative shrink-0 flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-2 sm:px-4 sm:py-2.5 text-sm font-semibold text-primary group-hover:bg-linear-to-r group-hover:from-primary group-hover:to-accent group-hover:text-primary-foreground group-hover:border-transparent transition-all duration-200">
+                  <span className="hidden sm:inline">Conhecer</span>
+                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
+                </div>
               </div>
-              <Sparkles className="anime-twinkle absolute -right-1.5 -top-1.5 h-3.5 w-3.5 sm:h-4 sm:w-4 text-accent drop-shadow-[0_0_6px_color-mix(in_oklch,var(--accent)_70%,transparent)]" />
             </div>
-
-            <div className="flex-1 min-w-0 space-y-1 sm:space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
-                <span className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors duration-200">
-                  Extensão para o navegador
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-linear-to-r from-primary to-accent px-1.5 py-0.5 text-[10px] sm:px-2 sm:text-[11px] font-semibold text-primary-foreground shadow-sm">
-                  <Sparkles className="h-3 w-3" />
-                  Novo
-                </span>
+          </Link>
+        </div>
+      ) : !isExtensionStatusLoading && !isLoadingUsageSummary ? (
+        <div className="pt-4 pb-2 sm:pt-6 sm:pb-3">
+          <div className="relative rounded-xl overflow-hidden border border-border bg-card/60">
+            <div className="h-0.75 w-full bg-linear-to-r from-muted via-border to-muted" />
+            <div className="relative px-4 py-4 sm:px-7 sm:py-6 flex items-center gap-3 sm:gap-6">
+              <div className="shrink-0 rounded-xl sm:rounded-2xl bg-muted/60 p-2.5 sm:p-4 ring-1 ring-border">
+                <Chrome className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
               </div>
-              <p className="text-sm leading-relaxed text-muted-foreground hidden sm:block">
-                Traduza mangá direto de qualquer site com o leitor integrado — no PC e no celular.
-              </p>
-              <p className="text-xs leading-snug text-muted-foreground sm:hidden">
-                Traduza direto do navegador, no PC e no celular.
-              </p>
-            </div>
 
-            <div className="relative shrink-0 flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-2 sm:px-4 sm:py-2.5 text-sm font-semibold text-primary group-hover:bg-linear-to-r group-hover:from-primary group-hover:to-accent group-hover:text-primary-foreground group-hover:border-transparent transition-all duration-200">
-              <span className="hidden sm:inline">Conhecer</span>
-              <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" />
+              <div className="flex-1 min-w-0 space-y-1 sm:space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+                  <span className="text-sm sm:text-base font-semibold text-muted-foreground">
+                    Extensão para o navegador
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] sm:px-2 sm:text-[11px] font-semibold text-muted-foreground">
+                    <Sparkles className="h-3 w-3" />
+                    Em breve
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm leading-snug sm:leading-relaxed text-muted-foreground">
+                  Estamos quase lá! Assim que o administrador terminar de configurar, você vai poder
+                  traduzir mangá direto do navegador — no PC e no celular. ✨
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </Link>
-      </div>
+      ) : null}
 
       {hasReachedGenerationLimit && usageSummary && (
         <Card className="relative overflow-hidden border-border bg-card p-4 sm:p-5 shadow-sm">

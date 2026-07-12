@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { z } from 'zod'
 import { validationErrorResponse } from '@/app/api/_shared/validation'
-import { authController } from '@/lib/backend/auth/auth.module'
+import { requireUser } from '@/app/api/_shared/proxy'
 import { sectionsController } from '@/lib/backend/sections/sections.module'
 
-const AUTH_TOKEN_COOKIE = 'manga-access-token'
 const sectionsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   per_page: z.coerce.number().int().min(1).max(100).default(12),
@@ -19,9 +17,7 @@ function unauthorized() {
 }
 
 export async function GET(request: Request) {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value
-  const user = authController.getUserFromToken(token)
+  const user = await requireUser(request)
   if (!user) return unauthorized()
 
   const { searchParams } = new URL(request.url)
@@ -59,9 +55,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value
-  const user = authController.getUserFromToken(token)
+  const user = await requireUser(request)
   if (!user) return unauthorized()
 
   try {

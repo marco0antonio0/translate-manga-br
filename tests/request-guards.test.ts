@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   isExtensionOrigin,
+  isIpHostname,
   isStateChangingMethod,
   isTrustedOrigin,
   isTrustedOriginOrExtension,
+  requestTargetsIpAddress,
 } from '../lib/security/request-guards'
 
 function requestWithHeaders(headers: HeadersInit, url = 'http://localhost:3080/api/example') {
@@ -38,6 +40,31 @@ describe('request origin guards', () => {
     })
 
     expect(isTrustedOrigin(request)).toBe(true)
+  })
+
+  it('detects IP hostnames without treating domains as IP', () => {
+    expect(isIpHostname('192.168.1.50')).toBe(true)
+    expect(isIpHostname('192.168.1.50:3080')).toBe(true)
+    expect(isIpHostname('[2001:db8::1]:3080')).toBe(true)
+    expect(isIpHostname('open-manga.example.com')).toBe(false)
+    expect(isIpHostname('localhost')).toBe(false)
+  })
+
+  it('detects requests targeting an IP address', () => {
+    expect(requestTargetsIpAddress(requestWithHeaders({
+      origin: 'chrome-extension://abc123',
+      host: '192.168.1.50:3080',
+    }, 'http://192.168.1.50:3080/api/auth/login'))).toBe(true)
+    expect(requestTargetsIpAddress(requestWithHeaders({
+      origin: 'http://192.168.0.130:3080',
+      host: '192.168.0.130:3080',
+    }, 'http://192.168.0.130:3080/api/auth/login'))).toBe(true)
+
+    expect(requestTargetsIpAddress(requestWithHeaders({
+      origin: 'chrome-extension://abc123',
+      host: '127.0.0.1:3080',
+      'x-forwarded-host': 'open-manga.example.com',
+    }, 'http://127.0.0.1:3080/api/auth/login'))).toBe(false)
   })
 
   it('rejects cross-origin browser requests by default', () => {

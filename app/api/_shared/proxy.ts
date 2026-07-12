@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { authController } from '@/lib/backend/auth/auth.module'
 
 export const AUTH_TOKEN_COOKIE = 'manga-access-token'
@@ -12,9 +12,26 @@ export function unauthorizedResponse() {
   return NextResponse.json(unauthorizedPayload(), { status: 401 })
 }
 
-export async function requireUser() {
+export function getBearerToken(request: Request | null | undefined) {
+  const authorization = request?.headers.get('authorization') || ''
+  const match = authorization.match(/^Bearer\s+(.+)$/i)
+  return match?.[1]?.trim() || null
+}
+
+export async function getRequestAuthToken(request?: Request) {
   const cookieStore = await cookies()
-  const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value
+  let bearerToken = getBearerToken(request)
+  if (!bearerToken) {
+    const headerStore = await headers()
+    const authorization = headerStore.get('authorization') || ''
+    bearerToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || null
+  }
+  const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value || bearerToken
+  return token || null
+}
+
+export async function requireUser(request?: Request) {
+  const token = await getRequestAuthToken(request)
   return authController.getUserFromToken(token)
 }
 

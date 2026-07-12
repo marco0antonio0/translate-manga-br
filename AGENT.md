@@ -6,8 +6,8 @@ Snapshot técnico para orientar agentes de IA trabalhando neste repositório:
 
 - **Arquitetura**: aplicação única Next.js 16 (App Router) — frontend, backend (route handlers em `app/api/*`) e inferência ONNX no mesmo processo Node. **Não existe mais serviço Python**; o pipeline de detecção (YOLO) e OCR (PaddleOCR v5) roda em `lib/server/manga-ocr-node.ts` via `onnxruntime-node` + `sharp`, com modelos em `models/` (versionados via Git LFS).
 - **Domínio**: `lib/backend/*` (controller/service/repository) com persistência SQLite (`better-sqlite3`) em `storage/local.sqlite`; migrações em `lib/backend/shared/migrations/`.
-- **Extensão** (`chrome-extension/`): Chrome MV3 + Firefox MV2. Exige login; o site processa e a extensão consome os resultados via polling de `GET /api/sections/{id}`. A URL do backend é gerada em `chrome-extension/config.js` pelo script `scripts/generate-extension-config.mjs` (roda nos hooks `predev`/`prebuild`/`prestart`).
-- **Deploy**: `docker-compose.yml` com um único serviço (`nextjs`), volume `./storage`, porta 3080. `CHROME_EXTENSION_API_BASE_URL` precisa existir no build **e** no runtime (o `prestart` regenera o config).
+- **Extensão** (`chrome-extension/`): Chrome MV3 + Firefox MV2. Exige login; o site processa e a extensão consome os resultados via polling de `GET /api/sections/{id}`. Em produção, a URL pública da extensão é salva pelo admin em `/inicio/preferencias` e injetada no ZIP baixado em runtime.
+- **Deploy**: `docker-compose.yml` com um único serviço (`nextjs`), volume `./storage`, porta 3080. O compose de imagem pronta não precisa declarar variáveis de URL pública da extensão.
 - **Cuidados recorrentes**: o build do Next ignora erros TS — use `npx tsc --noEmit` como verificação real; use `npm` (não pnpm/bun) para reproduzir Docker/CI; nunca commitar `storage/` ou segredos; cookie de sessão da extensão é `SameSite=None; Secure` (emitido no login quando a origem é de extensão).
 - **Docs relacionadas**: `README.md` (visão geral), `CONTRIBUTING.md` (fluxo de PR), `chrome-extension/README.md` (extensão), `SECURITY.md` (vulnerabilidades).
 

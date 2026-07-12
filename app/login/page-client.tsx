@@ -19,6 +19,7 @@ export default function LoginPageClient() {
   const [showExpiredModal, setShowExpiredModal] = useState(false)
 
   const sessionExpired = searchParams.get('expired') === '1'
+  const loginErrorParam = searchParams.get('error')
   const redirectParam = searchParams.get('redirect')
   const loginRedirectTarget = useMemo(() => {
     if (!redirectParam) return '/inicio'
@@ -76,7 +77,25 @@ export default function LoginPageClient() {
         </DialogContent>
       </Dialog>
       <LoginForm
-        onLogin={() => router.replace(loginRedirectTarget)}
+        initialError={
+          loginErrorParam === 'invalid_credentials'
+            ? 'Email ou senha incorretos.'
+            : loginErrorParam === 'rate_limit'
+              ? 'Muitas tentativas. Tente novamente em instantes.'
+              : loginErrorParam === 'invalid_form'
+                ? 'Informe email e senha válidos.'
+                : ''
+        }
+        onLogin={async () => {
+          const response = await fetch('/api/auth/check', { cache: 'no-store' })
+          const data = await response.json().catch(() => null)
+          if (!response.ok || data?.authenticated !== true) {
+            window.location.assign(loginRedirectTarget)
+            return
+          }
+          router.replace(loginRedirectTarget)
+          router.refresh()
+        }}
       />
     </>
   )

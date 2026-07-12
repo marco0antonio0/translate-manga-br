@@ -62,11 +62,6 @@ services:
       NODE_ENV: "production"
       ALLOW_REMOTE_SETUP: "1"
       SECTION_IMAGE_PROCESSING_CONCURRENCY: "2"
-      CHROME_EXTENSION_API_BASE_URL: "http://localhost:3080"
-      NEXT_PUBLIC_SITE_URL: "http://localhost:3080"
-      SITE_URL: "http://localhost:3080"
-      APP_URL: "http://localhost:3080"
-      PUBLIC_URL: "http://localhost:3080"
     volumes:
       - "${MANGA_STORAGE_DIR:-./storage}:/app/storage"
     healthcheck:
@@ -93,7 +88,7 @@ Acesse:
 http://IP_DO_SERVIDOR:3080
 ```
 
-Na primeira execução, abra `/setup` para criar o administrador. O diretório `storage/` será criado ao lado do compose e guardará o SQLite, uploads, chaves locais da instância e arquivos gerados. Para usar outro domínio, troque as URLs em `CHROME_EXTENSION_API_BASE_URL`, `NEXT_PUBLIC_SITE_URL`, `SITE_URL`, `APP_URL` e `PUBLIC_URL` antes de subir.
+Na primeira execução, abra `/setup` para criar o administrador. O diretório `storage/` será criado ao lado do compose e guardará o SQLite, uploads, chaves locais da instância e arquivos gerados. Para liberar a extensão do navegador, entre como administrador e configure a URL pública em `/inicio/preferencias`, na aba **Extensão**.
 
 ## 📊 Benchmarks em CPU
 
@@ -223,25 +218,7 @@ Os dados de usuário, banco SQLite, imagens enviadas e artefatos gerados ficam e
 
 A extensão fica em `chrome-extension/` (Chrome/Chromium MV3, incluindo Kiwi Browser no Android) e abre um modo leitura em qualquer página de mangá. Ela exige **login** com um usuário do sistema e usa o site como fonte única de processamento: cria a seção, o backend processa (YOLO + OCR + tradução) e a extensão acompanha o progresso exibindo o overlay traduzido. Detalhes em [chrome-extension/README.md](chrome-extension/README.md).
 
-A URL do backend é gerada em `chrome-extension/config.js`.
-
-Em desenvolvimento, `npm run dev` usa:
-
-```bash
-CHROME_EXTENSION_API_BASE_URL=http://localhost:3080
-```
-
-No Docker Compose, a URL padrão configurada é:
-
-```bash
-CHROME_EXTENSION_API_BASE_URL=https://open-manga.agevon.com
-```
-
-Para trocar a URL da extensão em outro ambiente, defina `CHROME_EXTENSION_API_BASE_URL` antes do build/start.
-
-```bash
-CHROME_EXTENSION_API_BASE_URL=https://seu-dominio.example.com npm run build
-```
+A URL pública usada pelo ZIP da extensão é configurada dentro do sistema por um administrador em `/inicio/preferencias`, na aba **Extensão**. Em desenvolvimento, `chrome-extension/config.js` continua apontando para `http://localhost:3080` como fallback local.
 
 Depois, baixe a extensão pela rota:
 
@@ -372,7 +349,6 @@ O build standalone do Next inclui `models/**/*` via `outputFileTracingIncludes` 
 | --- | --- |
 | `ALLOW_REMOTE_SETUP` | Permite setup inicial remoto quando definido como `1` |
 | `SKIP_DB_BOOTSTRAP` | Pula bootstrap/migrações SQLite em cenários controlados |
-| `CHROME_EXTENSION_API_BASE_URL` | URL gravada no `chrome-extension/config.js` durante dev/build/start |
 | `EXTENSION_ALLOWED_ORIGINS` | Lista (separada por vírgula) de origens `chrome-extension://<id>` autorizadas nas rotas de login/logout, além das detectadas automaticamente |
 | `NODE_OCR_INTRA_OP_THREADS` | Quantidade de threads internas do ONNX Runtime para OCR/detecção. Padrão: automático |
 | `SECTION_IMAGE_PROCESSING_CONCURRENCY` | Quantidade de páginas/imagens processadas em paralelo por seção. Padrão local: `2` |
@@ -387,9 +363,6 @@ Exemplos:
 ```bash
 # desenvolvimento local
 SECTION_IMAGE_PROCESSING_CONCURRENCY=5 npm run dev
-
-# URL da extensão em desenvolvimento
-CHROME_EXTENSION_API_BASE_URL=http://localhost:3080 npm run dev
 
 # Docker Compose
 SECTION_IMAGE_PROCESSING_CONCURRENCY=5 docker compose up -d --build

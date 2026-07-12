@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS = {
 const IMAGE_CACHE_PREFIX = 'reader:image:'
 const LOG_STORAGE_KEY = 'mtl:extension-logs'
 const NETWORK_LOG_STORAGE_KEY = 'mtl:extension-network-logs'
+const IP_SESSION_TOKEN_STORAGE_KEY = 'mtl:ip-session-token'
 const LOG_LIMIT = 200
 const LOG_PREVIEW_LIMIT = 4000
 
@@ -304,6 +305,11 @@ async function login(rawPayload) {
     if (!response.ok) {
       throw new Error(toErrorMessage(body, `Falha ao entrar (HTTP ${response.status}).`))
     }
+    if (shouldUseIpSessionToken(settings.apiBaseUrl) && typeof body?.sessionToken === 'string' && body.sessionToken.trim()) {
+      await chrome.storage.local.set({ [IP_SESSION_TOKEN_STORAGE_KEY]: body.sessionToken.trim() })
+    } else {
+      await chrome.storage.local.remove(IP_SESSION_TOKEN_STORAGE_KEY)
+    }
 
     const sessionResponse = await checkSession(payload)
     if (!sessionResponse?.ok || !sessionResponse.authenticated) {
@@ -328,6 +334,7 @@ async function logout(rawPayload) {
       const body = await readJson(response)
       throw new Error(toErrorMessage(body, `Falha ao sair (HTTP ${response.status}).`))
     }
+    await chrome.storage.local.remove(IP_SESSION_TOKEN_STORAGE_KEY)
     return { ok: true }
   } catch (error) {
     return networkErrorResult('Não foi possível sair.', error)
@@ -621,6 +628,37 @@ function normalizeLang(value, fallback) {
 
 function buildApiUrl(apiBaseUrl, path) {
   return `${normalizeBaseUrl(apiBaseUrl, DEFAULT_SETTINGS.apiBaseUrl)}${path}`
+}
+
+function isIpHostname(hostname) {
+  const value = String(hostname || '').trim()
+  if (!value) return false
+  if (/^(?:\d{1,3}\.){3}\d{1,3}$/.test(value)) {
+    return value.split('.').every((part) => {
+      const octet = Number(part)
+      return Number.isInteger(octet) && octet >= 0 && octet <= 255
+    })
+  }
+  return value.includes(':') && /^[0-9a-f:]+$/i.test(value)
+}
+
+function shouldUseIpSessionToken(apiBaseUrl) {
+  try {
+    const url = new URL(normalizeBaseUrl(apiBaseUrl, DEFAULT_SETTINGS.apiBaseUrl))
+    return url.protocol === 'http:' && isIpHostname(url.hostname)
+  } catch {
+    return false
+  }
+}
+
+function isConfiguredApiRequest(input) {
+  try {
+    const targetUrl = new URL(input instanceof Request ? input.url : String(input || ''))
+    const apiUrl = new URL(normalizeBaseUrl(DEFAULT_SETTINGS.apiBaseUrl, DEFAULT_SETTINGS.apiBaseUrl))
+    return targetUrl.origin === apiUrl.origin && shouldUseIpSessionToken(apiUrl.toString())
+  } catch {
+    return false
+  }
 }
 
 async function extractAndTranslateImage(rawPayload) {
@@ -980,9 +1018,10 @@ function normalizeLogLevel(value) {
 
 async function trackedFetch(input, init = {}, context = {}) {
   const startedAt = Date.now()
-  const request = describeFetchRequest(input, init)
+  const nextInit = await withIpSessionAuthorization(input, init)
+  const request = describeFetchRequest(input, nextInit)
   try {
-    const response = await fetch(input, init)
+    const response = await fetch(input, nextInit)
     const responseBody = await readResponsePreview(response)
     await addNetworkLog({
       ...request,
@@ -1007,6 +1046,26 @@ async function trackedFetch(input, init = {}, context = {}) {
       errorStack: error instanceof Error ? String(error.stack || '') : '',
     })
     throw error
+  }
+}
+
+async function withIpSessionAuthorization(input, init = {}) {
+  if (!isConfiguredApiRequest(input)) return init
+
+  try {
+    const stored = await chrome.storage.local.get(IP_SESSION_TOKEN_STORAGE_KEY)
+    const token = typeof stored[IP_SESSION_TOKEN_STORAGE_KEY] === 'string'
+      ? stored[IP_SESSION_TOKEN_STORAGE_KEY].trim()
+      : ''
+    if (!token) return init
+
+    const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined))
+    if (!headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token}`)
+    }
+    return { ...init, headers }
+  } catch {
+    return init
   }
 }
 
@@ -1091,7 +1150,7 @@ async function readResponsePreview(response) {
     return `[body not previewed; content-type=${contentType || 'unknown'}; content-length=${contentLength || 'unknown'}]`
   }
   try {
-    return limitText(await response.clone().text(), LOG_PREVIEW_LIMIT)
+    return redactText(await response.clone().text())
   } catch {
     return ''
   }

@@ -11,11 +11,6 @@ services:
       NODE_ENV: "production"
       ALLOW_REMOTE_SETUP: "1"
       SECTION_IMAGE_PROCESSING_CONCURRENCY: "2"
-      CHROME_EXTENSION_API_BASE_URL: "https://open-manga.agevon.com"
-      NEXT_PUBLIC_SITE_URL: "https://open-manga.agevon.com"
-      SITE_URL: "https://open-manga.agevon.com"
-      APP_URL: "https://open-manga.agevon.com"
-      PUBLIC_URL: "https://open-manga.agevon.com"
     volumes:
       - "${MANGA_STORAGE_DIR:-./storage}:/app/storage"
     healthcheck:

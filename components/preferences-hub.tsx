@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
 import { readAutoProcessingEnabledPreference, writeAutoProcessingEnabledPreference } from '@/lib/user-preferences'
-import { Camera, CircleHelp, FolderTree, Loader2, Plus, RotateCcw, Save, Trash2, UserRound } from 'lucide-react'
+import { Camera, Chrome, CircleHelp, FolderTree, Loader2, Plus, RotateCcw, Save, Trash2, UserRound } from 'lucide-react'
 
 type ProfilePayload = {
   idUser?: number
@@ -42,6 +42,13 @@ type OpenRouterPayload = {
   isValid?: boolean
   availableModels?: string[]
   selectedModel?: string | null
+  message?: string
+  error?: string
+}
+
+type PublicUrlPayload = {
+  configured?: boolean
+  publicUrl?: string | null
   message?: string
   error?: string
 }
@@ -330,6 +337,9 @@ export function PreferencesHub() {
   const [isSavingOpenRouterModel, setIsSavingOpenRouterModel] = useState(false)
   const [isDeletingOpenRouterKey, setIsDeletingOpenRouterKey] = useState(false)
   const [isDeleteOpenRouterDialogOpen, setIsDeleteOpenRouterDialogOpen] = useState(false)
+  const [publicUrl, setPublicUrl] = useState('')
+  const [isSavingPublicUrl, setIsSavingPublicUrl] = useState(false)
+  const [isClearingPublicUrl, setIsClearingPublicUrl] = useState(false)
 
   const [categories, setCategories] = useState<CategoryItem[]>([])
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
@@ -398,6 +408,16 @@ export function PreferencesHub() {
     setSelectedOpenRouterModel(selectedModel && models.includes(selectedModel) ? selectedModel : (models[0] ?? ''))
   }
 
+  const loadPublicUrlSettings = async () => {
+    const response = await fetch('/api/public-url', { cache: 'no-store' })
+    const data = await response.json() as PublicUrlPayload
+    if (!response.ok) {
+      throw new Error(data.message || 'Não foi possível carregar configuração da extensão.')
+    }
+
+    setPublicUrl(typeof data.publicUrl === 'string' ? data.publicUrl : '')
+  }
+
   const loadCategories = async () => {
     const response = await fetch('/api/sections/categories', { cache: 'no-store' })
     const data = (await response.json()) as CategoriesPayload
@@ -441,7 +461,10 @@ export function PreferencesHub() {
         const role = await loadProfile()
         await loadCategories()
         if (role === 4) {
-          await loadOpenRouterSettings()
+          await Promise.all([
+            loadOpenRouterSettings(),
+            loadPublicUrlSettings(),
+          ])
         }
       } catch (err) {
         if (!cancelled) {
@@ -632,6 +655,55 @@ export function PreferencesHub() {
     }
   }
 
+  const handleSavePublicUrl = async () => {
+    if (isSavingPublicUrl || !canRunAction('save-public-url')) return
+    const nextPublicUrl = publicUrl.trim()
+    if (!nextPublicUrl) {
+      toast.error('Informe a URL pública do servidor.')
+      return
+    }
+
+    setIsSavingPublicUrl(true)
+    try {
+      const response = await fetch('/api/public-url', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ publicUrl: nextPublicUrl }),
+      })
+      const data = await response.json() as PublicUrlPayload
+      if (!response.ok) throw new Error(data.message || 'Não foi possível salvar URL pública.')
+
+      setPublicUrl(typeof data.publicUrl === 'string' ? data.publicUrl : nextPublicUrl)
+      toast.success(data.message || 'URL pública salva.')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao salvar URL pública.')
+    } finally {
+      setIsSavingPublicUrl(false)
+    }
+  }
+
+  const handleClearPublicUrl = async () => {
+    if (isClearingPublicUrl || !canRunAction('clear-public-url')) return
+    if (!publicUrl.trim()) {
+      toast.error('Não há URL pública salva para remover.')
+      return
+    }
+
+    setIsClearingPublicUrl(true)
+    try {
+      const response = await fetch('/api/public-url', { method: 'DELETE' })
+      const data = await response.json() as PublicUrlPayload
+      if (!response.ok) throw new Error(data.message || 'Não foi possível remover URL pública.')
+
+      setPublicUrl('')
+      toast.success(data.message || 'URL pública removida.')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao remover URL pública.')
+    } finally {
+      setIsClearingPublicUrl(false)
+    }
+  }
+
   const handleCreateCategory = async () => {
     if (isSavingCategory || !canRunAction('create-category')) return
     const category = newCategoryName.trim()
@@ -790,7 +862,7 @@ export function PreferencesHub() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-4">
-        <TabsList className={cn('grid w-full md:w-fit', userRole === 4 ? 'grid-cols-3' : 'grid-cols-2')}>
+        <TabsList className={cn('grid w-full md:w-fit', userRole === 4 ? 'grid-cols-4' : 'grid-cols-2')}>
           <TabsTrigger value="profile" className="gap-2">
             <UserRound className="h-4 w-4" />
             Perfil
@@ -800,9 +872,15 @@ export function PreferencesHub() {
             Categorias
           </TabsTrigger>
           {userRole === 4 ? (
-            <TabsTrigger value="openrouter" className="gap-2">
-              OpenRouter
-            </TabsTrigger>
+            <>
+              <TabsTrigger value="extension" className="gap-2">
+                <Chrome className="h-4 w-4" />
+                Extensão
+              </TabsTrigger>
+              <TabsTrigger value="openrouter" className="gap-2">
+                OpenRouter
+              </TabsTrigger>
+            </>
           ) : null}
         </TabsList>
 
@@ -907,6 +985,64 @@ export function PreferencesHub() {
             </div>
           </Card>
         </TabsContent>
+
+        {userRole === 4 ? (
+          <TabsContent value="extension" className="space-y-4">
+            <Card className="space-y-4 p-4 md:p-6">
+              <div>
+                <h2 className="text-base font-semibold">Extensão</h2>
+                <p className="text-sm text-muted-foreground">
+                  Defina a URL pública usada pelo ZIP baixado em /extensao.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="extension-public-url">URL pública do servidor</Label>
+                <Input
+                  id="extension-public-url"
+                  type="url"
+                  inputMode="url"
+                  placeholder="https://seu-dominio.com"
+                  value={publicUrl}
+                  onChange={(event) => setPublicUrl(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault()
+                      void handleSavePublicUrl()
+                    }
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {publicUrl.trim()
+                    ? 'Usuários comuns verão a página da extensão e o download usará esta URL.'
+                    : 'Enquanto não houver URL salva, usuários comuns não verão a página da extensão.'}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  className="gap-2"
+                  onClick={() => void handleSavePublicUrl()}
+                  disabled={isSavingPublicUrl || isClearingPublicUrl}
+                >
+                  {isSavingPublicUrl ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  {isSavingPublicUrl ? 'Salvando...' : 'Salvar URL'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => void handleClearPublicUrl()}
+                  disabled={!publicUrl.trim() || isSavingPublicUrl || isClearingPublicUrl}
+                >
+                  {isClearingPublicUrl ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  {isClearingPublicUrl ? 'Removendo...' : 'Remover URL'}
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+        ) : null}
 
         {userRole === 4 ? (
           <TabsContent value="openrouter" className="space-y-4">

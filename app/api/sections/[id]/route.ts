@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { z } from 'zod'
 import { parseParams } from '@/app/api/_shared/validation'
-import { authController } from '@/lib/backend/auth/auth.module'
+import { requireUser } from '@/app/api/_shared/proxy'
 import { sectionsController } from '@/lib/backend/sections/sections.module'
 
-const AUTH_TOKEN_COOKIE = 'manga-access-token'
 type RouteParams = { params: Promise<{ id: string }> }
 const sectionParamsSchema = z.object({
   id: z.coerce.number().int().positive('ID inválido'),
@@ -18,10 +16,8 @@ function unauthorized() {
   )
 }
 
-export async function GET(_: Request, { params }: RouteParams) {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value
-  const user = authController.getUserFromToken(token)
+export async function GET(request: Request, { params }: RouteParams) {
+  const user = await requireUser(request)
   if (!user) return unauthorized()
 
   const parsedParams = parseParams(await params, sectionParamsSchema)
@@ -36,10 +32,8 @@ export async function GET(_: Request, { params }: RouteParams) {
   return NextResponse.json(section)
 }
 
-export async function DELETE(_: Request, { params }: RouteParams) {
-  const cookieStore = await cookies()
-  const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value
-  const user = authController.getUserFromToken(token)
+export async function DELETE(request: Request, { params }: RouteParams) {
+  const user = await requireUser(request)
   if (!user) return unauthorized()
 
   const parsedParams = parseParams(await params, sectionParamsSchema)

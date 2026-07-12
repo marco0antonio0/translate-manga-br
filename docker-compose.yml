@@ -5,11 +5,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        # URL gravada em chrome-extension/config.js durante o build.
-        # Com o runner standalone o valor é fixado aqui (não há regeneração
-        # em runtime) — mudou a URL? rode `docker compose up -d --build`.
-        CHROME_EXTENSION_API_BASE_URL: "https://open-manga.agevon.com"
     container_name: manga-nextjs
     ports:
       - "3080:3080"

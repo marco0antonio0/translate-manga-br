@@ -1,7 +1,14 @@
+import os from 'node:os'
 import { Metadata } from 'next'
+import { cookies, headers } from 'next/headers'
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { authController } from '@/lib/backend/auth/auth.module'
+import { AUTH_TOKEN_COOKIE } from '@/app/api/_shared/proxy'
+import { publicUrlService } from '@/lib/backend/public-url/public-url.service'
+import { ExtensionPublicUrlSetup } from '@/components/extension-public-url-setup'
 import {
   BookOpen,
   Chrome,
@@ -20,6 +27,84 @@ export const metadata: Metadata = {
 
 const KIWI_APK_URL = 'https://pub-f819838a77944f35a4edc23737502f27.r2.dev/kiwi-browser/com.kiwibrowser.browser-arm64-14310011181-github.apk'
 const CHROME_EXTENSION_DOWNLOAD_URL = '/download-extensao?target=chrome'
+
+async function getCurrentUser() {
+  const cookieStore = await cookies()
+  const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value
+  return authController.getUserFromToken(token)
+}
+
+interface PublicUrlSuggestions {
+  domainUrl: string | null
+  lanUrls: string[]
+}
+
+function isLocalHostname(hostname: string) {
+  return ['localhost', '127.0.0.1', '::1', '[::1]'].includes(hostname.toLowerCase())
+}
+
+async function getPublicUrlSuggestions(): Promise<PublicUrlSuggestions> {
+  const headerList = await headers()
+  const host = headerList.get('x-forwarded-host') || headerList.get('host') || ''
+  const proto = headerList.get('x-forwarded-proto') || 'http'
+
+  let hostname = ''
+  let port = ''
+  try {
+    const parsed = new URL(`${proto}://${host}`)
+    hostname = parsed.hostname
+    port = parsed.port
+  } catch {
+  }
+
+  // Acessado por domínio ou IP externo → esse endereço serve direto como URL pública
+  const domainUrl = hostname && !isLocalHostname(hostname)
+    ? `${proto}://${host}`
+    : null
+
+  // IPs da máquina onde o projeto roda, para acesso via rede local
+  const lanPort = port || process.env.PORT || '3080'
+  const lanUrls: string[] = []
+  for (const interfaces of Object.values(os.networkInterfaces())) {
+    for (const net of interfaces || []) {
+      if (net.family === 'IPv4' && !net.internal) {
+        lanUrls.push(`http://${net.address}:${lanPort}`)
+      }
+    }
+  }
+
+  return { domainUrl, lanUrls: lanUrls.slice(0, 3) }
+}
+
+function DownloadExtensionButton({
+  canDownload,
+  className,
+  size = 'lg',
+  variant = 'default',
+}: {
+  canDownload: boolean
+  className?: string
+  size?: 'default' | 'sm' | 'lg' | 'icon'
+  variant?: 'default' | 'outline'
+}) {
+  if (!canDownload) {
+    return (
+      <Button disabled size={size} variant={variant} className={className}>
+        <Download className={size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'} />
+        URL pública pendente
+      </Button>
+    )
+  }
+
+  return (
+    <Button asChild size={size} variant={variant} className={className}>
+      <a href={CHROME_EXTENSION_DOWNLOAD_URL} download="manga-translator-extension-chrome.zip">
+        <Download className={size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'} />
+        Baixar extensão (.zip)
+      </a>
+    </Button>
+  )
+}
 
 function StepCard({ step, title, children }: { step: string; title: string; children: React.ReactNode }) {
   return (
@@ -90,7 +175,61 @@ function KiwiExtensionsMock() {
   )
 }
 
-export default function ExtensaoPage() {
+export default async function ExtensaoPage() {
+  const user = await getCurrentUser()
+  if (!user) redirect('/login?redirect=/extensao')
+
+  const publicUrlStatus = publicUrlService.getStatus()
+  const isAdmin = user.role === 4
+  const canDownload = publicUrlStatus.configured
+  if (!canDownload && !isAdmin) redirect('/inicio/secoes')
+
+  // Sem URL configurada, o admin vê apenas o assistente de configuração —
+  // downloads e tutoriais só aparecem depois que a extensão estiver ativa.
+  if (!canDownload) {
+    const urlSuggestions = await getPublicUrlSuggestions()
+    return (
+      <div className="min-h-screen bg-linear-to-br from-background via-background to-primary/5">
+        <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <Link href="/inicio/secoes" className="flex items-center gap-2 font-bold text-lg hover:opacity-80 transition">
+              <span>← Voltar</span>
+            </Link>
+            <div className="flex items-center gap-2 text-primary">
+              <Chrome className="w-5 h-5" />
+              <span className="font-semibold">Extensão do navegador</span>
+            </div>
+          </div>
+        </header>
+
+        <main className="container mx-auto px-4 py-14 sm:py-16 space-y-10">
+          <section className="relative text-center space-y-5 max-w-2xl mx-auto">
+            <div className="pointer-events-none absolute -top-10 left-1/2 h-56 w-56 -translate-x-1/2 rounded-full bg-primary/15 blur-3xl" aria-hidden />
+            <div className="relative flex justify-center">
+              <div className="relative p-4 rounded-2xl bg-linear-to-br from-primary/25 to-accent/15 border border-primary/30 shadow-[0_0_30px_-8px_color-mix(in_oklch,var(--primary)_60%,transparent)]">
+                <Chrome className="w-12 h-12 text-primary" />
+                <Sparkles className="absolute -right-2 -top-2 h-5 w-5 text-accent" />
+              </div>
+            </div>
+            <h1 className="relative text-3xl md:text-4xl font-bold tracking-tight">
+              Ative a extensão para{' '}
+              <span className="bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">seus usuários</span>
+            </h1>
+            <p className="relative text-base sm:text-lg text-muted-foreground">
+              Falta só um passo: informe o endereço deste servidor. Depois disso, o download da
+              extensão e os tutoriais de instalação ficam disponíveis para todo mundo.
+            </p>
+          </section>
+
+          <ExtensionPublicUrlSetup
+            lanUrls={urlSuggestions.lanUrls}
+            domainUrl={urlSuggestions.domainUrl}
+          />
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-linear-to-br from-background via-background to-primary/5">
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
@@ -123,12 +262,10 @@ export default function ExtensaoPage() {
             OCR com IA e overlay editável — no desktop e no celular.
           </p>
           <div className="relative flex flex-col sm:flex-row gap-3 justify-center pt-2">
-            <Button asChild size="lg" className="w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90 shadow-[0_8px_24px_-8px_color-mix(in_oklch,var(--primary)_80%,transparent)]">
-              <a href={CHROME_EXTENSION_DOWNLOAD_URL} download="manga-translator-extension-chrome.zip">
-                <Download className="w-5 h-5" />
-                Baixar extensão (.zip)
-              </a>
-            </Button>
+            <DownloadExtensionButton
+              canDownload={canDownload}
+              className="w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90 shadow-[0_8px_24px_-8px_color-mix(in_oklch,var(--primary)_80%,transparent)]"
+            />
             <Link href="#tutorial-desktop">
               <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2">
                 <Monitor className="w-5 h-5" />
@@ -250,12 +387,12 @@ export default function ExtensaoPage() {
               <p>
                 Ainda no celular, baixe o pacote da extensão — não precisa extrair:
               </p>
-              <Button asChild variant="outline" size="sm" className="mt-3 gap-2 border-primary/40 text-primary hover:bg-primary/10">
-                <a href={CHROME_EXTENSION_DOWNLOAD_URL} download="manga-translator-extension-chrome.zip">
-                  <Download className="w-4 h-4" />
-                  Baixar extensão(.zip)
-                </a>
-              </Button>
+              <DownloadExtensionButton
+                canDownload={canDownload}
+                variant="outline"
+                size="sm"
+                className="mt-3 gap-2 border-primary/40 text-primary hover:bg-primary/10"
+              />
             </StepCard>
             <StepCard step="3" title="Abra a tela de extensões do Kiwi">
               Digite <code className="bg-muted px-2 py-0.5 rounded text-xs">chrome://extensions</code> na barra de
@@ -319,7 +456,7 @@ export default function ExtensaoPage() {
                 <span className="group-open:rotate-180 transition">▼</span>
               </summary>
               <p className="text-muted-foreground mt-3">
-                Sim. A extensão conecta ao servidor Next.js em http://localhost:3080 para fazer OCR, tradução e verificar sessão. A URL é gerada pelo build/dev a partir das variáveis de ambiente.
+                Sim. A extensão conecta ao servidor Next.js configurado pelo administrador para fazer OCR, tradução e verificar sessão.
               </p>
             </details>
 
@@ -365,7 +502,7 @@ export default function ExtensaoPage() {
                 <span className="group-open:rotate-180 transition">▼</span>
               </summary>
               <p className="text-muted-foreground mt-3">
-                Defina a URL via ambiente antes de rodar dev/build, por exemplo <code className="bg-muted px-2 py-1 rounded text-sm">CHROME_EXTENSION_API_BASE_URL=https://seu-dominio</code>. O modal do leitor apenas exibe a URL gerada.
+                Entre como administrador e salve a URL em <strong className="text-foreground">Preferências</strong>, na aba <strong className="text-foreground">Extensão</strong>. O ZIP baixado passa a carregar essa URL automaticamente.
               </p>
             </details>
           </div>
@@ -379,12 +516,10 @@ export default function ExtensaoPage() {
             Baixe a extensão agora e comece a traduzir mangá com facilidade — no PC ou no celular.
           </p>
           <div className="relative flex flex-col sm:flex-row gap-3 justify-center">
-            <Button asChild size="lg" className="w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90">
-              <a href={CHROME_EXTENSION_DOWNLOAD_URL} download="manga-translator-extension-chrome.zip">
-                <Download className="w-5 h-5" />
-                Baixar extensão (.zip)
-              </a>
-            </Button>
+            <DownloadExtensionButton
+              canDownload={canDownload}
+              className="w-full sm:w-auto gap-2 bg-primary hover:bg-primary/90"
+            />
             <a href={KIWI_APK_URL} rel="noopener noreferrer">
               <Button size="lg" variant="outline" className="w-full sm:w-auto gap-2">
                 <Smartphone className="w-5 h-5" />

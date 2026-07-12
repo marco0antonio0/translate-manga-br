@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { FormEvent, useState } from 'react'
 import Link from 'next/link'
 import { Bot, FileText, Languages, Loader2, ScanText, Sparkles, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -30,7 +30,7 @@ const features = [
 ]
 
 interface LoginFormProps {
-  onLogin: () => void
+  onLogin: () => void | Promise<void>
   initialError?: string
 }
 
@@ -40,7 +40,8 @@ export function LoginForm({ onLogin, initialError = '' }: LoginFormProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  const handleLogin = async () => {
+  const handleLogin = async (event?: FormEvent<HTMLFormElement>) => {
+    event?.preventDefault()
     if (isLoading) return
 
     const normalizedEmail = email.trim()
@@ -64,7 +65,7 @@ export function LoginForm({ onLogin, initialError = '' }: LoginFormProps) {
         throw new Error(data.error || 'Falha ao entrar com email e senha.')
       }
 
-      onLogin()
+      await onLogin()
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Erro ao fazer login. Tente novamente.')
     } finally {
@@ -165,36 +166,35 @@ export function LoginForm({ onLogin, initialError = '' }: LoginFormProps) {
             </div>
           )}
 
-          <div className="space-y-3">
-            <Input
-              type="email"
-              placeholder="seu@email.com"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              disabled={isLoading}
-            />
-            <Input
-              type="password"
-              placeholder="Sua senha"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              disabled={isLoading}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  void handleLogin()
-                }
-              }}
-            />
-          </div>
+          <form action="/api/auth/login" method="post" onSubmit={(event) => void handleLogin(event)}>
+            <div className="space-y-3">
+              <Input
+                name="email"
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                disabled={isLoading}
+              />
+              <Input
+                name="password"
+                type="password"
+                placeholder="Sua senha"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                disabled={isLoading}
+              />
+            </div>
 
-          <Button
-            onClick={() => void handleLogin()}
-            disabled={isLoading}
-            className="mt-4 w-full h-12 text-sm font-medium gap-3"
-          >
-            {isLoading ? <Loader2 className="h-5 w-5 animate-spin shrink-0" /> : null}
-            {isLoading ? 'Entrando...' : 'Entrar'}
-          </Button>
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="mt-4 w-full h-12 text-sm font-medium gap-3"
+            >
+              {isLoading ? <Loader2 className="h-5 w-5 animate-spin shrink-0" /> : null}
+              {isLoading ? 'Entrando...' : 'Entrar'}
+            </Button>
+          </form>
 
           <p className="mt-3 text-xs text-center text-muted-foreground leading-relaxed">
             Ao continuar, você concorda com os{' '}

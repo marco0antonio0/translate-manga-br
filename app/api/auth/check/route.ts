@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { authController } from '@/lib/backend/auth/auth.module'
+import { requireUser } from '@/app/api/_shared/proxy'
 
 const AUTH_TOKEN_COOKIE = 'manga-access-token'
 
-export async function GET() {
+export async function GET(request: Request) {
   const cookieStore = await cookies()
-  const token = cookieStore.get(AUTH_TOKEN_COOKIE)?.value
-  const user = authController.getUserFromToken(token)
+  const user = await requireUser(request)
 
   if (!user) {
     cookieStore.delete(AUTH_TOKEN_COOKIE)

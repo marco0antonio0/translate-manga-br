@@ -3,6 +3,10 @@ import type { NextRequest } from 'next/server'
 
 const AUTH_TOKEN_COOKIE = 'manga-access-token'
 
+function hasBearerToken(request: NextRequest) {
+  return /^Bearer\s+\S+/i.test(request.headers.get('authorization') || '')
+}
+
 function withCorsHeaders(response: NextResponse) {
   response.headers.set('Access-Control-Allow-Origin', '*')
   response.headers.set('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS')
@@ -12,6 +16,27 @@ function withCorsHeaders(response: NextResponse) {
   )
   response.headers.set('Access-Control-Max-Age', '86400')
   return response
+}
+
+function buildContentSecurityPolicy() {
+  const scriptSrc = process.env.NODE_ENV === 'production'
+    ? "'self' 'unsafe-inline'"
+    : "'self' 'unsafe-inline' 'unsafe-eval'"
+  const connectSrc = process.env.NODE_ENV === 'production'
+    ? "'self' https://openrouter.ai"
+    : "'self' https://openrouter.ai ws: wss:"
+
+  return [
+    "default-src 'self'",
+    `script-src ${scriptSrc}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    `connect-src ${connectSrc}`,
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join('; ')
 }
 
 export function proxy(request: NextRequest) {
@@ -26,10 +51,7 @@ export function proxy(request: NextRequest) {
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-  response.headers.set(
-    'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://openrouter.ai; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
-  )
+  response.headers.set('Content-Security-Policy', buildContentSecurityPolicy())
 
   // Rotas de autenticação são tratadas pelas APIs /api/auth/*
   if (pathname.startsWith('/api/auth/')) {
@@ -55,7 +77,7 @@ export function proxy(request: NextRequest) {
   if (pathname.startsWith('/api/')) {
     const token = request.cookies.get(AUTH_TOKEN_COOKIE)
 
-    if (!token) {
+    if (!token && !hasBearerToken(request)) {
       return withCorsHeaders(
         NextResponse.json(
           {

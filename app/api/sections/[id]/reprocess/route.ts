@@ -4,8 +4,8 @@ import { sectionsController } from '@/lib/backend/sections/sections.module'
 
 type RouteParams = { params: Promise<{ id: string }> }
 
-export async function POST(_: Request, { params }: RouteParams) {
-  const user = await requireUser()
+export async function POST(request: Request, { params }: RouteParams) {
+  const user = await requireUser(request)
   if (!user) return unauthorizedResponse()
 
   const { id } = await params

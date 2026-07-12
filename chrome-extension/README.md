@@ -39,24 +39,11 @@ Esse modal usa os cookies do backend com `credentials: 'include'`. Em produção
 
 ## URL do backend
 
-Por padrão, a extensão aponta para `http://localhost:3080` no desenvolvimento local. No Docker Compose, o build usa `https://open-manga.agevon.com` como URL padrão. A URL não é editável no modal: ela é gerada em `chrome-extension/config.js` quando você roda `npm run dev`, `npm run build` ou `npm run start`.
+Por padrão, a pasta local `chrome-extension/` aponta para `http://localhost:3080` no desenvolvimento. Em produção, o administrador configura a URL pública dentro do sistema em `/inicio/preferencias`, na aba **Extensão**.
 
-Para apontar a extensão para outro host, defina uma destas variáveis antes do comando:
+O ZIP baixado em `/extensao` ou `/download-extensao` recebe um `config.js` gerado no momento do download com a URL pública salva no banco. Enquanto essa URL não estiver configurada, usuários comuns não veem a página da extensão e o download não é liberado.
 
-```bash
-CHROME_EXTENSION_API_BASE_URL=https://seu-dominio.exemplo npm run build
-```
-
-A ordem de resolução é:
-
-1. `CHROME_EXTENSION_API_BASE_URL`
-2. `NEXT_PUBLIC_SITE_URL`
-3. `SITE_URL`
-4. `APP_URL`
-5. `PUBLIC_URL`
-6. `http://localhost:${NEXT_PORT:-3080}`
-
-No Docker Compose, `CHROME_EXTENSION_API_BASE_URL` é definida como build arg **e** como variável de runtime (o `prestart` regenera o `config.js` ao subir o container).
+Quando a URL configurada for um IP em HTTP, como `http://192.168.0.10:3080`, a extensão usa um token local para contornar a limitação de cookie seguro em HTTP. Quando a URL for domínio, use HTTPS; nesse caso o login continua usando cookie `SameSite=None; Secure`.
 
 ## Como funciona a tradução
 

@@ -2,12 +2,21 @@ import { NextResponse } from 'next/server'
 import { readdir, readFile } from 'fs/promises'
 import { join } from 'path'
 import AdmZip from 'adm-zip'
+import { publicUrlService } from '@/lib/backend/public-url/public-url.service'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
+    const publicUrl = publicUrlService.getPublicUrl()
+    if (!publicUrl) {
+      return NextResponse.json(
+        { error: 'URL pública da extensão não configurada.' },
+        { status: 404 }
+      )
+    }
+
     const extensionDir = join(process.cwd(), 'chrome-extension')
     const zip = new AdmZip()
     const filename = 'manga-translator-extension-chrome.zip'
@@ -17,7 +26,9 @@ export async function GET() {
     for (const file of files) {
       const filePath = join(extensionDir, file.name)
       if (file.isFile()) {
-        const content = await readFile(filePath)
+        const content = file.name === 'config.js'
+          ? Buffer.from(publicUrlService.buildExtensionConfig(publicUrl), 'utf8')
+          : await readFile(filePath)
         zip.addFile(file.name, content)
       }
     }

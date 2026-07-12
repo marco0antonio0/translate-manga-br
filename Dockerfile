@@ -15,17 +15,7 @@ COPY --link package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm,sharing=locked \
   npm ci --prefer-offline --no-audit --fund=false --progress=false
 
-ARG CHROME_EXTENSION_API_BASE_URL
-ARG NEXT_PUBLIC_SITE_URL
-ARG SITE_URL
-ARG APP_URL
-ARG PUBLIC_URL
 ENV SKIP_DB_BOOTSTRAP=1
-ENV CHROME_EXTENSION_API_BASE_URL=$CHROME_EXTENSION_API_BASE_URL
-ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
-ENV SITE_URL=$SITE_URL
-ENV APP_URL=$APP_URL
-ENV PUBLIC_URL=$PUBLIC_URL
 
 COPY --link . .
 RUN --mount=type=cache,target=/app/.next/cache,sharing=locked \
