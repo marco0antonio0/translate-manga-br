@@ -3,12 +3,19 @@
 .gitignore
 .gitattributes
 .next
+.docker-cache
 node_modules
 tsconfig.tsbuildinfo
 *.log
+coverage
+dist
+build
 
 # Dados de runtime (montados como volume)
 storage
+*.sqlite
+*.sqlite-*
+*.db
 
 # Lockfiles alternativos (o build usa npm + package-lock.json)
 pnpm-lock.yaml
@@ -18,6 +25,10 @@ bun.lock
 images
 docs
 test
+tests
+examples
+benchmarks
+paper
 *.md
 LICENSE.md
 # O README da extensão é distribuído dentro do zip de /download-extensao
@@ -30,3 +41,14 @@ LICENSE.md
 .agents
 .env
 .env.*
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+known_hosts
+credentials
+credentials.*
+secrets
+secrets.*

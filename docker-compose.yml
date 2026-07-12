@@ -1,3 +1,5 @@
+# Compose de desenvolvimento local: constroi a imagem a partir do checkout e
+# usa ./storage como bind mount para facilitar inspecao/backup durante dev.
 services:
   nextjs:
     build:

@@ -1,0 +1,27 @@
+# Compose de imagem pronta: use este arquivo no servidor para rodar sem
+# Dockerfile, codigo-fonte ou build local. O unico bind mount e o storage,
+# criado no host para persistir SQLite/uploads entre recriacoes do container.
+services:
+  nextjs:
+    image: ${NEXTJS_IMAGE:-ghcr.io/marco0antonio0/translate-manga-br:latest}
+    container_name: manga-nextjs
+    ports:
+      - "${NEXTJS_PORT:-3080}:3080"
+    environment:
+      NODE_ENV: "production"
+      ALLOW_REMOTE_SETUP: "1"
+      SECTION_IMAGE_PROCESSING_CONCURRENCY: "2"
+      CHROME_EXTENSION_API_BASE_URL: "https://open-manga.agevon.com"
+      NEXT_PUBLIC_SITE_URL: "https://open-manga.agevon.com"
+      SITE_URL: "https://open-manga.agevon.com"
+      APP_URL: "https://open-manga.agevon.com"
+      PUBLIC_URL: "https://open-manga.agevon.com"
+    volumes:
+      - "${MANGA_STORAGE_DIR:-./storage}:/app/storage"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3080/api/setup/status').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped

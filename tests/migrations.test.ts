@@ -41,10 +41,17 @@ describe('SQLite migrations', () => {
     )
 
     const applied = db.prepare('SELECT version, name FROM schema_migrations').all()
-    expect(applied).toEqual([
-      { version: 1, name: '001_initial_schema' },
-      { version: 2, name: '002_translation_reports' },
-    ])
+    expect(applied).toEqual(
+      SQLITE_MIGRATIONS.map(({ version, name }) => ({ version, name }))
+    )
+
+    const translationReportColumns = db
+      .prepare('PRAGMA table_info(translation_reports)')
+      .all() as Array<{ name: string }>
+
+    expect(translationReportColumns.map((column) => column.name)).toEqual(
+      expect.arrayContaining(['image_crop', 'corrected_text'])
+    )
     db.close()
   })
 })
