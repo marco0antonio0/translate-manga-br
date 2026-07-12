@@ -78,6 +78,7 @@ A carga privada é mantida apenas como evidência operacional agregada/anônima.
 ### Pré-requisitos
 
 - **Node.js 20+** (`.nvmrc` aponta 22 para desenvolvimento local; Docker usa Node 20)
+- **Git LFS** (necessário para baixar os modelos ONNX em `models/`)
 - **Docker + Docker Compose** (opcional, para execução conteinerizada)
 
 ### Desenvolvimento local
@@ -85,6 +86,8 @@ A carga privada é mantida apenas como evidência operacional agregada/anônima.
 ```bash
 git clone https://github.com/marco0antonio0/translate-manga-br.git
 cd translate-manga-br
+git lfs install
+git lfs pull
 npm install
 npm run dev
 ```
@@ -95,6 +98,46 @@ npm run dev
 
 > [!TIP]
 > Na primeira execução, acesse **`/setup`** para criar o usuário administrador.
+
+### Preparar servidor Ubuntu
+
+Em um servidor Ubuntu limpo, instale Docker, Docker Compose e Git LFS antes de clonar/subir o projeto:
+
+```bash
+apt-get update
+apt-get install -y ca-certificates curl gnupg git git-lfs
+
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+chmod a+r /etc/apt/keyrings/docker.asc
+
+. /etc/os-release
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu ${VERSION_CODENAME} stable" > /etc/apt/sources.list.d/docker.list
+
+apt-get update
+apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+systemctl enable --now docker
+
+git lfs install
+```
+
+Depois clone o repositório e baixe os arquivos grandes versionados via LFS:
+
+```bash
+mkdir -p ~/workspace
+cd ~/workspace
+git clone https://github.com/marco0antonio0/translate-manga-br.git
+cd translate-manga-br
+git lfs pull
+```
+
+Validação rápida:
+
+```bash
+docker --version
+docker compose version
+git lfs version
+```
 
 ### Docker Compose
 
