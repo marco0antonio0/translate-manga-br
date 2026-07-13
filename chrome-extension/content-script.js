@@ -394,6 +394,95 @@ async function mtlMarkTermsAccepted() {
   }
 }
 
+const MTL_GITHUB_STAR_STORAGE_KEY = 'manga-github-star-v1'
+const MTL_GITHUB_REPO_URL = 'https://github.com/marco0antonio0/translate-manga-br'
+
+async function mtlHasSeenGithubStar() {
+  try {
+    const stored = await chrome.storage.local.get(MTL_GITHUB_STAR_STORAGE_KEY)
+    return stored[MTL_GITHUB_STAR_STORAGE_KEY] === 'seen'
+  } catch {
+    return true
+  }
+}
+
+async function mtlMarkGithubStarSeen() {
+  try {
+    await chrome.storage.local.set({ [MTL_GITHUB_STAR_STORAGE_KEY]: 'seen' })
+  } catch {
+  }
+}
+
+function buildSupportOverlayMarkup() {
+  return `
+    <div class="mtl-support-overlay" hidden>
+      <div class="mtl-auth-backdrop"></div>
+      <div class="mtl-auth-modal" role="dialog" aria-modal="true" aria-label="Apoie o projeto">
+        <div class="mtl-auth-topstrip" aria-hidden="true"></div>
+        <button type="button" class="mtl-auth-close" data-role="support-close" title="Fechar" aria-label="Fechar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+
+        <div class="mtl-support-body">
+          <div class="mtl-support-mark">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="none" d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55 0-.27-.01-1.17-.02-2.12-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.75 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.53-2.55-.29-5.23-1.28-5.23-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11.1 11.1 0 0 1 2.89-.39c.98 0 1.97.13 2.89.39 2.2-1.49 3.16-1.18 3.16-1.18.63 1.59.24 2.76.12 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.25 5.67.41.35.77 1.05.77 2.12 0 1.53-.01 2.76-.01 3.14 0 .3.2.66.8.55A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg>
+            <span class="mtl-support-star" aria-hidden="true">★</span>
+          </div>
+
+          <h2>Gostou do projeto?</h2>
+          <p>
+            O Manga Translator Local é <strong>gratuito e de código aberto</strong>, feito para a
+            comunidade. Se esta extensão for útil para você, considere deixar uma
+            <strong> estrela no GitHub</strong> — é rápido, não custa nada e ajuda mais pessoas a
+            descobrirem o projeto.
+          </p>
+
+          <a class="mtl-support-repo" data-role="support-repo" href="${MTL_GITHUB_REPO_URL}" target="_blank" rel="noopener noreferrer">
+            <span class="mtl-support-repo-name">marco0antonio0/translate-manga-br</span>
+            <span class="mtl-support-repo-hint">Ver o repositório no GitHub</span>
+          </a>
+
+          <a class="mtl-primary mtl-support-star-button" data-role="support-star" href="${MTL_GITHUB_REPO_URL}" target="_blank" rel="noopener noreferrer">
+            ★ Dar uma estrela no GitHub
+          </a>
+          <button type="button" class="mtl-support-later" data-role="support-later">Agora não</button>
+        </div>
+      </div>
+    </div>
+  `
+}
+
+function mountSupportOverlay(shadow) {
+  let overlay = shadow.querySelector('.mtl-support-overlay')
+  if (overlay) return overlay
+
+  const wrapper = document.createElement('div')
+  wrapper.innerHTML = buildSupportOverlayMarkup().trim()
+  overlay = wrapper.firstElementChild
+  shadow.querySelector('.mtl-reader').appendChild(overlay)
+
+  const dismiss = () => {
+    void mtlMarkGithubStarSeen()
+    overlay.hidden = true
+  }
+  overlay.querySelector('[data-role="support-close"]').addEventListener('click', dismiss)
+  overlay.querySelector('[data-role="support-later"]').addEventListener('click', dismiss)
+  overlay.querySelector('[data-role="support-repo"]').addEventListener('click', dismiss)
+  overlay.querySelector('[data-role="support-star"]').addEventListener('click', dismiss)
+  overlay.addEventListener('pointerdown', (event) => event.stopPropagation())
+  overlay.addEventListener('click', (event) => event.stopPropagation())
+  return overlay
+}
+
+async function maybeShowSupportOverlay(shadow) {
+  try {
+    if (await mtlHasSeenGithubStar()) return
+    const overlay = mountSupportOverlay(shadow)
+    overlay.hidden = false
+  } catch {
+  }
+}
+
 function buildAuthOverlayMarkup() {
   return `
     <div class="mtl-auth-overlay" hidden>
@@ -716,6 +805,7 @@ function bindAuthOverlay(overlay) {
         return
       }
       overlay.hidden = true
+      void maybeShowSupportOverlay(overlay.getRootNode())
     } finally {
       mtlSetAuthBusy(els, false)
     }
@@ -3854,6 +3944,116 @@ function readerCss() {
       padding: 16px;
     }
     .mtl-auth-overlay[hidden] { display: none; }
+    .mtl-support-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 510;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .mtl-support-overlay[hidden] { display: none; }
+    .mtl-support-body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      text-align: center;
+    }
+    .mtl-support-mark {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      background: color-mix(in oklch, var(--primary) 12%, transparent);
+      color: var(--foreground);
+    }
+    .mtl-support-mark svg {
+      width: 36px;
+      height: 36px;
+      stroke: none;
+    }
+    .mtl-support-star {
+      position: absolute;
+      top: -9px;
+      right: -7px;
+      font-size: 17px;
+      color: #fbbf24;
+      text-shadow: 0 0 8px rgb(251 191 36 / 70%);
+    }
+    .mtl-support-body h2 {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--foreground);
+    }
+    .mtl-support-body p {
+      margin: 0;
+      color: var(--muted-foreground);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .mtl-support-body p strong {
+      color: var(--foreground);
+    }
+    .mtl-support-repo {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: color-mix(in oklch, var(--muted) 35%, transparent);
+      padding: 10px 12px;
+      text-decoration: none;
+      text-align: left;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .mtl-support-repo:hover {
+      border-color: color-mix(in oklch, var(--primary) 55%, var(--border));
+      background: color-mix(in oklch, var(--muted) 55%, transparent);
+    }
+    .mtl-support-repo-name {
+      color: var(--foreground);
+      font-size: 13px;
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .mtl-support-repo-hint {
+      color: var(--muted-foreground);
+      font-size: 11px;
+    }
+    .mtl-support-star-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid var(--primary);
+      border-radius: calc(var(--radius) - 2px);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .mtl-support-later {
+      width: 100%;
+      min-height: 34px;
+      border-color: transparent;
+      background: transparent;
+      color: var(--muted-foreground);
+      font-size: 13px;
+    }
+    .mtl-support-later:hover {
+      color: var(--foreground);
+      background: color-mix(in oklch, var(--muted) 55%, transparent);
+    }
     .mtl-auth-backdrop {
       position: absolute;
       inset: 0;
