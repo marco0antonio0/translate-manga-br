@@ -17,6 +17,7 @@ const NETWORK_LOG_STORAGE_KEY = 'mtl:extension-network-logs'
 const IP_SESSION_TOKEN_STORAGE_KEY = 'mtl:ip-session-token'
 const LOG_LIMIT = 200
 const LOG_PREVIEW_LIMIT = 4000
+const SECTION_UPLOAD_CHUNK_MAX_BYTES = 40 * 1024 * 1024
 
 function resolveConfiguredApiBaseUrl() {
   const config = globalThis.MTL_EXTENSION_CONFIG && typeof globalThis.MTL_EXTENSION_CONFIG === 'object'
@@ -388,16 +389,13 @@ async function createSectionFromPages(rawPayload) {
     const pageUrl = typeof payload.pageUrl === 'string' ? payload.pageUrl : ''
     if (pages.length === 0) throw new Error('Nenhuma imagem encontrada para criar a seção.')
 
-    const formData = new FormData()
-    formData.append('name', title)
-    formData.append('priority', '10')
-    formData.append('source_lang', settings.sourceLang)
-    formData.append('target_lang', settings.targetLang)
-    formData.append('provider_lang', settings.providerLang)
-
     let appendedCount = 0
     let skippedCount = 0
     const uploadedUrls = []
+    const chunks = []
+    let currentChunk = []
+    let currentChunkBytes = 0
+
     for (let index = 0; index < pages.length; index += 1) {
       const page = pages[index] && typeof pages[index] === 'object' ? pages[index] : {}
       const imageUrl = typeof page.url === 'string' ? page.url : ''
@@ -409,7 +407,18 @@ async function createSectionFromPages(rawPayload) {
       try {
         const blob = await downloadImageForSection(imageUrl, pageUrl)
         const fileName = sectionImageFileName(page, imageUrl, appendedCount)
-        formData.append('files', blob, fileName)
+        const file = { blob, fileName, imageUrl }
+        const fileSize = Math.max(0, Number(blob.size) || 0)
+        if (
+          currentChunk.length > 0
+          && currentChunkBytes + fileSize > SECTION_UPLOAD_CHUNK_MAX_BYTES
+        ) {
+          chunks.push(currentChunk)
+          currentChunk = []
+          currentChunkBytes = 0
+        }
+        currentChunk.push(file)
+        currentChunkBytes += fileSize
         uploadedUrls.push(imageUrl)
         appendedCount += 1
       } catch {
@@ -421,20 +430,56 @@ async function createSectionFromPages(rawPayload) {
       throw new Error('Não foi possível baixar nenhuma imagem para criar a seção.')
     }
 
-    const response = await trackedFetch(buildApiUrl(settings.apiBaseUrl, '/api/sections'), {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    }, { label: 'Criar seção', pageCount: pages.length, uploadedCount: appendedCount, skippedCount })
-    const body = await readJson(response)
-    if (!response.ok) {
-      throw new Error(toErrorMessage(body, `Falha ao criar seção (HTTP ${response.status}).`))
+    if (currentChunk.length > 0) chunks.push(currentChunk)
+
+    const useChunkedUpload = chunks.length > 1
+    let sectionId = null
+    for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex += 1) {
+      const chunk = chunks[chunkIndex]
+      const isFirstChunk = chunkIndex === 0
+      const isLastChunk = chunkIndex === chunks.length - 1
+      const formData = new FormData()
+      if (isFirstChunk) {
+        appendSectionCreateFields(formData, title, settings)
+        if (useChunkedUpload) formData.append('defer_processing', '1')
+      } else {
+        formData.append('start_processing', isLastChunk ? '1' : '0')
+      }
+      for (const file of chunk) {
+        formData.append('files', file.blob, file.fileName)
+      }
+
+      const url = isFirstChunk
+        ? buildApiUrl(settings.apiBaseUrl, '/api/sections')
+        : buildApiUrl(settings.apiBaseUrl, `/api/sections/${sectionId}/images`)
+      const response = await trackedFetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      }, {
+        label: isFirstChunk ? 'Criar seção' : 'Adicionar imagens à seção',
+        chunkIndex: chunkIndex + 1,
+        chunkCount: chunks.length,
+        chunkBytes: chunk.reduce((total, file) => total + (Number(file.blob.size) || 0), 0),
+        pageCount: pages.length,
+        uploadedCount: appendedCount,
+        skippedCount,
+      })
+      const body = await readJson(response)
+      if (!response.ok) {
+        throw new Error(toErrorMessage(body, `Falha ao criar seção (HTTP ${response.status}).`))
+      }
+
+      if (isFirstChunk) {
+        const parsedSectionId = Number(body?.section?.id || body?.id)
+        sectionId = Number.isFinite(parsedSectionId) && parsedSectionId > 0 ? parsedSectionId : null
+        if (!sectionId) throw new Error('O servidor não retornou o ID da seção criada.')
+      }
     }
 
-    const sectionId = Number(body?.section?.id || body?.id)
     return {
       ok: true,
-      sectionId: Number.isFinite(sectionId) && sectionId > 0 ? sectionId : null,
+      sectionId,
       uploadedCount: appendedCount,
       skippedCount,
       uploadedUrls,
@@ -442,6 +487,14 @@ async function createSectionFromPages(rawPayload) {
   } catch (error) {
     return { ok: false, error: toErrorMessage(error, 'Não foi possível criar a seção no site.') }
   }
+}
+
+function appendSectionCreateFields(formData, title, settings) {
+  formData.append('name', title)
+  formData.append('priority', '10')
+  formData.append('source_lang', settings.sourceLang)
+  formData.append('target_lang', settings.targetLang)
+  formData.append('provider_lang', settings.providerLang)
 }
 
 async function reprocessSection(rawPayload) {

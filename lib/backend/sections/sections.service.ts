@@ -12,15 +12,12 @@ export class SectionsService {
     return this.repository.listSections(userId)
   }
 
-  async createSectionFromFormData(userId: number, formData: FormData) {
-    const nameRaw = String(formData.get('name') ?? '').trim()
-    const data = {
-      name: nameRaw || `Secao ${new Date().toLocaleString('pt-BR')}`,
-      sourceLang: String(formData.get('source_lang') ?? 'auto').trim() || 'auto',
-      targetLang: String(formData.get('target_lang') ?? 'pt-BR').trim() || 'pt-BR',
-      providerLang: String(formData.get('provider_lang') ?? 'google').trim() || 'google',
-    }
+  private formDataFlag(formData: FormData, key: string) {
+    const value = String(formData.get(key) ?? '').trim().toLowerCase()
+    return value === '1' || value === 'true' || value === 'yes' || value === 'on'
+  }
 
+  private async filesFromFormData(formData: FormData) {
     const rawFiles = formData.getAll('files').filter((x): x is File => x instanceof File)
     if (rawFiles.length === 0) {
       throw new Error('Envie ao menos um arquivo de imagem.')
@@ -34,12 +31,45 @@ export class SectionsService {
         buffer: Buffer.from(await file.arrayBuffer()),
       })
     }
+    return files
+  }
+
+  async createSectionFromFormData(userId: number, formData: FormData) {
+    const nameRaw = String(formData.get('name') ?? '').trim()
+    const data = {
+      name: nameRaw || `Secao ${new Date().toLocaleString('pt-BR')}`,
+      sourceLang: String(formData.get('source_lang') ?? 'auto').trim() || 'auto',
+      targetLang: String(formData.get('target_lang') ?? 'pt-BR').trim() || 'pt-BR',
+      providerLang: String(formData.get('provider_lang') ?? 'google').trim() || 'google',
+    }
+
+    const files = await this.filesFromFormData(formData)
+    const deferProcessing = this.formDataFlag(formData, 'defer_processing')
 
     const sectionId = this.repository.createSectionWithImages(userId, data, files)
 
-    void this.processing.processSection(sectionId, data)
+    if (!deferProcessing) {
+      void this.processing.processSection(sectionId, data)
+    }
 
     return sectionId
+  }
+
+  async appendSectionImagesFromFormData(userId: number, sectionId: number, formData: FormData) {
+    const files = await this.filesFromFormData(formData)
+    const startProcessing = this.formDataFlag(formData, 'start_processing')
+    const result = this.repository.appendImagesToSection(userId, sectionId, files)
+    if (!result) return null
+
+    if (startProcessing) {
+      void this.processing.processSection(sectionId, result.langs)
+    }
+
+    return {
+      appended: result.appended,
+      totalImages: result.totalImages,
+      processing: startProcessing,
+    }
   }
 
   getSectionDetail(sectionId: number, userId: number) {

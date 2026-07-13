@@ -24,6 +24,7 @@ import {
   Settings2,
 } from 'lucide-react'
 import { TermsModal, hasAcceptedTerms } from '@/components/terms-modal'
+import { GithubStarModal, hasSeenGithubStarModal } from '@/components/github-star-modal'
 import { SiteFooter } from '@/components/site-footer'
 
 type NavItem = {
@@ -86,10 +87,15 @@ export function InicioLayoutShell({
   const router = useRouter()
   const pathname = usePathname()
   const [isTermsOpen, setIsTermsOpen] = useState(false)
+  const [isGithubStarOpen, setIsGithubStarOpen] = useState(false)
 
   useEffect(() => {
     if (!hasAcceptedTerms()) {
       setIsTermsOpen(true)
+      return
+    }
+    if (!hasSeenGithubStarModal()) {
+      setIsGithubStarOpen(true)
       return
     }
     window.dispatchEvent(new CustomEvent('open-page-tour', { detail: { force: false } }))
@@ -317,6 +323,18 @@ export function InicioLayoutShell({
         open={isTermsOpen}
         onAccept={() => {
           setIsTermsOpen(false)
+          if (!hasSeenGithubStarModal()) {
+            setIsGithubStarOpen(true)
+            return
+          }
+          window.dispatchEvent(new CustomEvent('open-page-tour', { detail: { force: false } }))
+        }}
+      />
+
+      <GithubStarModal
+        open={isGithubStarOpen}
+        onClose={() => {
+          setIsGithubStarOpen(false)
           window.dispatchEvent(new CustomEvent('open-page-tour', { detail: { force: false } }))
         }}
       />

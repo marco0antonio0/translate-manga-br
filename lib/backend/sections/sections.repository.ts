@@ -20,6 +20,41 @@ function extFromName(name: string) {
   return ext
 }
 
+function writeSectionImages(sectionId: number, data: SectionLangs, files: SectionImageFileInput[], startIndex: number) {
+  const now = new Date().toISOString()
+  const sectionDir = path.join(sectionsRoot, String(sectionId), 'images')
+  fs.mkdirSync(sectionDir, { recursive: true })
+
+  const insertImage = db.prepare(`
+    INSERT INTO section_images (
+      section_id, order_index, original_name, mime, size_bytes, original_path, translated_path,
+      status, translation_status, selected_for_processing, source_lang, target_lang, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, NULL, 'queued', 'pending', 1, ?, ?, ?, ?)
+  `)
+
+  files.forEach((file, index) => {
+    const orderIndex = startIndex + index
+    const fileName = `${String(orderIndex + 1).padStart(4, '0')}${extFromName(file.name)}`
+    const localPath = path.join(sectionDir, fileName)
+    fs.writeFileSync(localPath, file.buffer)
+
+    insertImage.run(
+      sectionId,
+      orderIndex,
+      file.name || fileName,
+      file.type || 'application/octet-stream',
+      file.buffer.byteLength,
+      localPath,
+      data.sourceLang,
+      data.targetLang,
+      now,
+      now
+    )
+  })
+
+  db.prepare('UPDATE sections SET updated_at = ? WHERE id = ?').run(now, sectionId)
+}
+
 
 export class SectionsRepository {
   listSections(userId: number) {
@@ -100,36 +135,33 @@ export class SectionsRepository {
     `).run(userId, data.name, data.sourceLang, data.targetLang, data.providerLang, now, now)
     const sectionId = Number(sectionInsert.lastInsertRowid)
 
-    const sectionDir = path.join(sectionsRoot, String(sectionId), 'images')
-    fs.mkdirSync(sectionDir, { recursive: true })
-
-    const insertImage = db.prepare(`
-      INSERT INTO section_images (
-        section_id, order_index, original_name, mime, size_bytes, original_path, translated_path,
-        status, translation_status, selected_for_processing, source_lang, target_lang, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, NULL, 'queued', 'pending', 1, ?, ?, ?, ?)
-    `)
-
-    files.forEach((file, index) => {
-      const fileName = `${String(index + 1).padStart(4, '0')}${extFromName(file.name)}`
-      const localPath = path.join(sectionDir, fileName)
-      fs.writeFileSync(localPath, file.buffer)
-
-      insertImage.run(
-        sectionId,
-        index,
-        file.name || fileName,
-        file.type || 'application/octet-stream',
-        file.buffer.byteLength,
-        localPath,
-        data.sourceLang,
-        data.targetLang,
-        now,
-        now
-      )
-    })
+    writeSectionImages(sectionId, data, files, 0)
 
     return sectionId
+  }
+
+  appendImagesToSection(userId: number, sectionId: number, files: SectionImageFileInput[]) {
+    const section = db.prepare(
+      'SELECT id, source_lang, target_lang, provider_lang FROM sections WHERE id = ? AND user_id = ?'
+    ).get(sectionId, userId) as any
+    if (!section) return null
+
+    const countRow = db.prepare('SELECT COUNT(*) as count FROM section_images WHERE section_id = ?')
+      .get(sectionId) as any
+    const startIndex = Number(countRow?.count ?? 0)
+    const langs = {
+      sourceLang: String(section.source_lang || 'auto'),
+      targetLang: String(section.target_lang || 'pt-BR'),
+      providerLang: String(section.provider_lang || 'google'),
+    }
+
+    writeSectionImages(sectionId, langs, files, startIndex)
+
+    return {
+      appended: files.length,
+      totalImages: startIndex + files.length,
+      langs,
+    }
   }
 
   getSectionLangs(sectionId: number, userId: number): SectionLangs | null {

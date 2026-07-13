@@ -75,20 +75,44 @@ export default function SetupPageClient({ lanUrls = [], domainUrl = null }: Setu
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-background via-background to-muted/30">
-      <div className="mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center gap-10 px-6 py-12 lg:flex-row lg:items-stretch lg:gap-12">
+    <div className="relative min-h-screen overflow-hidden bg-linear-to-br from-background via-background to-primary/5">
+      <div className="pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full bg-primary/15 blur-3xl" aria-hidden />
+      <div className="pointer-events-none absolute -right-32 top-1/3 h-96 w-96 rounded-full bg-accent/10 blur-3xl" aria-hidden />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-linear-to-r from-primary via-accent to-primary" aria-hidden />
+
+      <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center gap-10 px-6 py-12 lg:flex-row lg:items-stretch lg:gap-12">
         <section className="flex w-full max-w-xl flex-col justify-center lg:max-w-2xl">
-          <div className="inline-flex w-fit items-center gap-2 rounded-full border bg-card/60 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary backdrop-blur">
+            <Sparkles className="h-3.5 w-3.5" />
             Primeira execução
           </div>
 
-          <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-            Bem-vindo ao{' '}
-            <span className="bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              MangaIOTranslate
-            </span>
-          </h1>
+          <div className="mt-5 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <div className="relative shrink-0">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-primary to-accent text-primary-foreground shadow-[0_0_24px_-4px_color-mix(in_oklch,var(--primary)_70%,transparent)] sm:h-14 sm:w-14">
+                <Languages className="h-6 w-6 sm:h-7 sm:w-7" />
+              </div>
+              <Sparkles className="absolute -right-2 -top-2 h-4 w-4 text-accent drop-shadow-[0_0_8px_color-mix(in_oklch,var(--accent)_80%,transparent)]" />
+            </div>
+            <h1 className="min-w-0 text-[1.65rem] leading-tight font-bold tracking-tight sm:text-4xl lg:text-5xl">
+              Bem-vindo ao{' '}
+              <span className="bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">
+                MangaIOTranslate
+              </span>
+            </h1>
+          </div>
+
+          <div className="mt-5 flex flex-wrap items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+            <span className="rounded-full border border-border/70 bg-card/60 px-2.5 py-1">📤 upload</span>
+            <span className="text-primary">→</span>
+            <span className="rounded-full border border-border/70 bg-card/60 px-2.5 py-1">🎯 detecção</span>
+            <span className="text-primary">→</span>
+            <span className="rounded-full border border-border/70 bg-card/60 px-2.5 py-1">🔍 OCR</span>
+            <span className="text-primary">→</span>
+            <span className="rounded-full border border-border/70 bg-card/60 px-2.5 py-1">🌐 tradução</span>
+            <span className="text-primary">→</span>
+            <span className="rounded-full border border-border/70 bg-card/60 px-2.5 py-1">📖 leitura</span>
+          </div>
 
           <p className="mt-4 text-base text-muted-foreground sm:text-lg">
             Uma plataforma para ler, traduzir e organizar capítulos de mangás, quadrinhos e
@@ -113,8 +137,10 @@ export default function SetupPageClient({ lanUrls = [], domainUrl = null }: Setu
           </div>
 
           <ul className="mt-6 grid gap-3 sm:grid-cols-2">
-            <li className="flex items-start gap-3 rounded-xl border bg-card/50 p-3">
-              <ImageIcon className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+            <li className="group flex items-start gap-3 rounded-xl border border-border/70 bg-card/50 p-3 transition-colors hover:border-primary/40">
+              <div className="rounded-lg bg-primary/10 p-2 transition-colors group-hover:bg-primary/20">
+                <ImageIcon className="h-4.5 w-4.5 shrink-0 text-primary" />
+              </div>
               <div>
                 <p className="text-sm font-medium">OCR de imagens</p>
                 <p className="text-xs text-muted-foreground">
@@ -122,8 +148,10 @@ export default function SetupPageClient({ lanUrls = [], domainUrl = null }: Setu
                 </p>
               </div>
             </li>
-            <li className="flex items-start gap-3 rounded-xl border bg-card/50 p-3">
-              <Languages className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+            <li className="group flex items-start gap-3 rounded-xl border border-border/70 bg-card/50 p-3 transition-colors hover:border-primary/40">
+              <div className="rounded-lg bg-accent/10 p-2 transition-colors group-hover:bg-accent/20">
+                <Languages className="h-4.5 w-4.5 shrink-0 text-accent" />
+              </div>
               <div>
                 <p className="text-sm font-medium">Tradução automática</p>
                 <p className="text-xs text-muted-foreground">
@@ -131,8 +159,10 @@ export default function SetupPageClient({ lanUrls = [], domainUrl = null }: Setu
                 </p>
               </div>
             </li>
-            <li className="flex items-start gap-3 rounded-xl border bg-card/50 p-3">
-              <HardDrive className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+            <li className="group flex items-start gap-3 rounded-xl border border-border/70 bg-card/50 p-3 transition-colors hover:border-primary/40">
+              <div className="rounded-lg bg-primary/10 p-2 transition-colors group-hover:bg-primary/20">
+                <HardDrive className="h-4.5 w-4.5 shrink-0 text-primary" />
+              </div>
               <div>
                 <p className="text-sm font-medium">Armazenamento local</p>
                 <p className="text-xs text-muted-foreground">
@@ -140,8 +170,10 @@ export default function SetupPageClient({ lanUrls = [], domainUrl = null }: Setu
                 </p>
               </div>
             </li>
-            <li className="flex items-start gap-3 rounded-xl border bg-card/50 p-3">
-              <BookOpenText className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+            <li className="group flex items-start gap-3 rounded-xl border border-border/70 bg-card/50 p-3 transition-colors hover:border-primary/40">
+              <div className="rounded-lg bg-accent/10 p-2 transition-colors group-hover:bg-accent/20">
+                <BookOpenText className="h-4.5 w-4.5 shrink-0 text-accent" />
+              </div>
               <div>
                 <p className="text-sm font-medium">Biblioteca pessoal</p>
                 <p className="text-xs text-muted-foreground">
@@ -153,9 +185,12 @@ export default function SetupPageClient({ lanUrls = [], domainUrl = null }: Setu
         </section>
 
         <section className="flex w-full max-w-md items-center">
-          <div className="w-full rounded-2xl border bg-card p-6 shadow-lg sm:p-8">
+          <div className="relative w-full overflow-hidden rounded-2xl border border-primary/25 bg-card p-6 shadow-[0_24px_60px_rgb(0_0_0/0.35),0_0_40px_-12px_color-mix(in_oklch,var(--primary)_40%,transparent)] sm:p-8">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-linear-to-r from-primary via-accent to-primary" aria-hidden />
+            <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-primary/10 blur-3xl" aria-hidden />
+
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Lock className="h-4 w-4" />
+              <Lock className="h-4 w-4 text-primary" />
               Configuração inicial
             </div>
             <h2 className="mt-2 text-2xl font-bold">Crie o administrador</h2>

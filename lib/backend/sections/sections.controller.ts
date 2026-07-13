@@ -12,6 +12,10 @@ export class SectionsController {
     return this.service.createSectionFromFormData(userId, formData)
   }
 
+  appendSectionImagesFromFormData(userId: number, sectionId: number, formData: FormData) {
+    return this.service.appendSectionImagesFromFormData(userId, sectionId, formData)
+  }
+
   getSectionDetail(sectionId: number, userId: number) {
     return this.service.getSectionDetail(sectionId, userId)
   }
