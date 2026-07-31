@@ -22,6 +22,38 @@ IA rodando em CPU, seus dados ficam com você.</samp>
 
 <kbd><a href="#-instalação-rápida-para-produção-docker">&nbsp;🚀 Instalar&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-quick-start">&nbsp;🛠️ Dev&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-features">&nbsp;✨ Features&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-benchmarks-em-cpu">&nbsp;📊 Benchmarks&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#%EF%B8%8F-arquitetura">&nbsp;🏗️ Arquitetura&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-documentação">&nbsp;📚 Docs&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-contribuindo">&nbsp;🤝 Contribuir&nbsp;</a></kbd>
 
+<!-- MANGAIOTRANSLATE_DOWNLOAD_START -->
+<p><strong>MangaIOTranslate para Android</strong></p>
+
+<a href="https://pub-f819838a77944f35a4edc23737502f27.r2.dev/mangaiotranslate-v1.0.3.apk">
+  <img
+    alt="Baixar MangaIOTranslate para Android v1.0.3"
+    src="https://img.shields.io/badge/Baixar%20APK-v1.0.3-34A853?style=for-the-badge&logo=android&logoColor=white"
+  />
+</a>
+
+<br />
+
+<a href="https://pub-f819838a77944f35a4edc23737502f27.r2.dev/mangaiotranslate-latest.apk">
+  <img
+    alt="Baixar APK mais recente"
+    src="https://img.shields.io/badge/APK%20mais%20recente-download-1f6feb?style=flat-square"
+  />
+</a>
+<img
+  alt="Canal beta"
+  src="https://img.shields.io/badge/canal-beta-f59e0b?style=flat-square"
+/>
+
+<p>
+  <sub>
+    Versão atual: v1.0.3 · Atualizado em 2026-07-31 03:13 UTC.<br />
+    Aplicativo em beta e em desenvolvimento ativo.
+  </sub>
+</p>
+<!-- MANGAIOTRANSLATE_DOWNLOAD_END -->
+
+
 <br>
 <br>
 
