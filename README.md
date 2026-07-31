@@ -25,10 +25,10 @@ IA rodando em CPU, seus dados ficam com você.</samp>
 <!-- MANGAIOTRANSLATE_DOWNLOAD_START -->
 <p><strong>MangaIOTranslate para Android</strong></p>
 
-<a href="https://pub-f819838a77944f35a4edc23737502f27.r2.dev/mangaiotranslate-v1.0.3.apk">
+<a href="https://pub-f819838a77944f35a4edc23737502f27.r2.dev/mangaiotranslate-v1.0.4.apk">
   <img
-    alt="Baixar MangaIOTranslate para Android v1.0.3"
-    src="https://img.shields.io/badge/Baixar%20APK-v1.0.3-34A853?style=for-the-badge&logo=android&logoColor=white"
+    alt="Baixar MangaIOTranslate para Android v1.0.4"
+    src="https://img.shields.io/badge/Baixar%20APK-v1.0.4-34A853?style=for-the-badge&logo=android&logoColor=white"
   />
 </a>
 
@@ -47,7 +47,7 @@ IA rodando em CPU, seus dados ficam com você.</samp>
 
 <p>
   <sub>
-    Versão atual: v1.0.3 · Atualizado em 2026-07-31 03:13 UTC.<br />
+    Versão atual: v1.0.4 · Atualizado em 2026-07-31 15:25 UTC.<br />
     Aplicativo em beta e em desenvolvimento ativo.
   </sub>
 </p>
