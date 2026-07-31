@@ -23,34 +23,47 @@ IA rodando em CPU, seus dados ficam com você.</samp>
 <kbd><a href="#-instalação-rápida-para-produção-docker">&nbsp;🚀 Instalar&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-quick-start">&nbsp;🛠️ Dev&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-features">&nbsp;✨ Features&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-benchmarks-em-cpu">&nbsp;📊 Benchmarks&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#%EF%B8%8F-arquitetura">&nbsp;🏗️ Arquitetura&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-documentação">&nbsp;📚 Docs&nbsp;</a></kbd> &nbsp;&nbsp; <kbd><a href="#-contribuindo">&nbsp;🤝 Contribuir&nbsp;</a></kbd>
 
 <!-- MANGAIOTRANSLATE_DOWNLOAD_START -->
-<p><strong>MangaIOTranslate para Android</strong></p>
+<h2 align="center">Baixar App Android</h2>
 
-<a href="https://pub-f819838a77944f35a4edc23737502f27.r2.dev/mangaiotranslate-v1.0.5.apk">
-  <img
-    alt="Baixar MangaIOTranslate para Android v1.0.5"
-    src="https://img.shields.io/badge/Baixar%20APK-v1.0.5-34A853?style=for-the-badge&logo=android&logoColor=white"
-  />
-</a>
-
-<br />
-
-<a href="https://pub-f819838a77944f35a4edc23737502f27.r2.dev/mangaiotranslate-latest.apk">
-  <img
-    alt="Baixar APK mais recente"
-    src="https://img.shields.io/badge/APK%20mais%20recente-download-1f6feb?style=flat-square"
-  />
-</a>
-<img
-  alt="Canal beta"
-  src="https://img.shields.io/badge/canal-beta-f59e0b?style=flat-square"
-/>
-
-<p>
-  <sub>
-    Versão atual: v1.0.5 · Atualizado em 2026-07-31 21:06 UTC.<br />
-    Aplicativo em beta e em desenvolvimento ativo.
-  </sub>
-</p>
+<div align="center">
+  <div
+    style="display:inline-block; max-width:520px; padding:24px; border:1px solid #d0d7de; border-radius:12px;"
+  >
+    <p>
+      <img src="assets/logo.png" alt="MangaIOTranslate" width="72" />
+    </p>
+    <h3>MangaIOTranslate para Android</h3>
+    <p>
+      Importe páginas de mangá, traduza localmente no aparelho e leia com
+      texto sobreposto editável.
+    </p>
+    <p>
+      <a href="https://github.com/marco0antonio0/app-MangaIOTranslate/releases/latest/download/mangaiotranslate-latest.apk">
+        <img
+alt="Baixar APK Android mais recente"
+src="https://img.shields.io/badge/Baixar%20APK%20mais%20recente-Android-2ea043?style=for-the-badge&logo=android&logoColor=white&labelColor=24292f"
+        />
+      </a>
+    </p>
+    <p>
+      <strong>Clique no botão acima para instalar o app.</strong><br />
+      <sub>
+        Download direto do GitHub Releases. Android pode pedir permissão para
+        instalar APK fora da Play Store.
+      </sub>
+    </p>
+    <p>
+      <img
+        alt="Distribuído via GitHub Releases"
+        src="https://img.shields.io/badge/distribuido%20via-GitHub%20Releases-1f6feb?style=flat-square&logo=github&logoColor=white"
+      />
+      <img
+        alt="Canal beta"
+        src="https://img.shields.io/badge/canal-beta-f59e0b?style=flat-square"
+      />
+    </p>
+  </div>
+</div>
 <!-- MANGAIOTRANSLATE_DOWNLOAD_END -->
 
 
