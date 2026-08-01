@@ -30,7 +30,7 @@ IA rodando em CPU, seus dados ficam com você.</samp>
     style="display:inline-block; max-width:520px; padding:24px; border:1px solid #d0d7de; border-radius:12px;"
   >
     <p>
-      <img src="assets/logo.png" alt="MangaIOTranslate" width="72" />
+      <img src="https://github.com/marco0antonio0/translate-manga-br/blob/main/app/icon.png?raw=true" alt="MangaIOTranslate" width="72" />
     </p>
     <h3>MangaIOTranslate para Android</h3>
     <p>
@@ -38,7 +38,7 @@ IA rodando em CPU, seus dados ficam com você.</samp>
       texto sobreposto editável.
     </p>
     <p>
-      <a href="https://github.com/marco0antonio0/app-MangaIOTranslate/releases/latest/download/mangaiotranslate-latest.apk">
+      <a href="https://pub-f819838a77944f35a4edc23737502f27.r2.dev/mangaiotranslate-latest.apk">
         <img
 alt="Baixar APK Android mais recente"
 src="https://img.shields.io/badge/Baixar%20APK%20mais%20recente-Android-2ea043?style=for-the-badge&logo=android&logoColor=white&labelColor=24292f"
@@ -48,14 +48,14 @@ src="https://img.shields.io/badge/Baixar%20APK%20mais%20recente-Android-2ea043?s
     <p>
       <strong>Clique no botão acima para instalar o app.</strong><br />
       <sub>
-        Download direto do GitHub Releases. Android pode pedir permissão para
+        Download direto pelo Cloudflare R2. Android pode pedir permissão para
         instalar APK fora da Play Store.
       </sub>
     </p>
     <p>
       <img
-        alt="Distribuído via GitHub Releases"
-        src="https://img.shields.io/badge/distribuido%20via-GitHub%20Releases-1f6feb?style=flat-square&logo=github&logoColor=white"
+        alt="Distribuído via Cloudflare R2"
+        src="https://img.shields.io/badge/distribuido%20via-Cloudflare%20R2-f38020?style=flat-square&logo=cloudflare&logoColor=white"
       />
       <img
         alt="Canal beta"
