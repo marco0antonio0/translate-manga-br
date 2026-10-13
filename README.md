@@ -38,7 +38,7 @@ IA rodando em CPU, seus dados ficam com você.</samp>
       texto sobreposto editável.
     </p>
     <p>
-      <a href="https://pub-f819838a77944f35a4edc23737502f27.r2.dev/mangaiotranslate-latest.apk">
+      <a href="https://clubetester.agevon.com/app/mangaiotranslate">
         <img
 alt="Baixar APK Android mais recente"
 src="https://img.shields.io/badge/Baixar%20APK%20mais%20recente-Android-2ea043?style=for-the-badge&logo=android&logoColor=white&labelColor=24292f"
